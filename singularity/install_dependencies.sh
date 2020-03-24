@@ -7,7 +7,7 @@ sudo apt-get install -y \
     build-essential \
     uuid-dev \
     libssl-dev \
-    libgpgme-dev \
+    libgpgme-dev \ #only for ubuntu18.04 or later
     squashfs-tools \
     libseccomp-dev \
     wget \
