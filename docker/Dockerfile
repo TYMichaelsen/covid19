@@ -33,5 +33,6 @@ ENV PATH="/opt/miniconda/bin:${PATH}"
 #install artic-ncov2019 conda environment
 RUN git clone --recursive https://github.com/artic-network/artic-ncov2019.git
 RUN conda env create -f artic-ncov2019/environment.yml
+RUN conda env create -f artic-ncov2019/environment-medaka.yml
 
 WORKDIR /home/user
