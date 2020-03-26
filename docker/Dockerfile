@@ -47,7 +47,7 @@ RUN mkdir -p /opt/nextstrain && \
 RUN conda run -n nextstrain npm install --global /opt/nextstrain/auspice \
   || echo "*** Auspice install returned an error, please inspect ***"
 
-#install R
+#install R and R packages
 #specific version of R to be installed
 ENV R_BASE_VERSION 3.6.3
 #add R CRAN mirror to apt sources to install R using APT
@@ -64,6 +64,7 @@ RUN apt-key adv --keyserver keyserver.ubuntu.com \
     r-base-dev=${R_BASE_VERSION}* \
     r-base-html=${R_BASE_VERSION}* \
     r-recommended=${R_BASE_VERSION}*
+RUN R -e "install.packages(c('data.table', 'tidyverse', 'rmarkdown'), Ncpus = 100)"
 
 #install RStudio Server
 #RUN apt-get -y install --no-install-recommends --no-install-suggests \
