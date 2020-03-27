@@ -88,7 +88,7 @@ RUN wget -O- https://mirror.oxfordnanoportal.com/apt/ont-repo.pub | apt-key add 
   echo "deb http://mirror.oxfordnanoportal.com/apt bionic-stable non-free" | \
   tee /etc/apt/sources.list.d/nanoporetech.sources.list && \
   apt-get update && \
-  apt-get install -y install --no-install-recommends --no-install-suggests \
+  apt-get install -y --no-install-recommends --no-install-suggests \
   minion-nc
 
 WORKDIR /home/user
