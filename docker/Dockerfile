@@ -67,10 +67,13 @@ RUN apt-key adv --keyserver keyserver.ubuntu.com \
     r-recommended=${R_BASE_VERSION}*
 RUN R -e "install.packages(c('data.table', 'tidyverse', 'rmarkdown'), Ncpus = 100)"
 
-#install RStudio Server
+#install RStudio Server (SKIPPED)
 #RUN apt-get -y install --no-install-recommends --no-install-suggests \
 #  gdebi-core
 #RUN wget https://download2.rstudio.org/server/bionic/amd64/rstudio-server-1.2.5033-amd64.deb
 #RUN gdebi rstudio-server-1.2.5033-amd64.deb
+
+#install primer prospector
+RUN conda create --name primerprospector -c bioconda/label/cf201901 primerprospector
 
 WORKDIR /home/user
