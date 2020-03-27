@@ -30,10 +30,11 @@ ENV PATH="/opt/miniconda/bin:${PATH}"
 #install minimap2 (v2.17) (SKIPPED)
 #RUN /opt/miniconda/bin/conda install -c bioconda minimap2=2.17 -y
 
-#install artic-ncov2019 conda environment
+#install artic-ncov2019-medaka conda environment
 RUN git clone --recursive https://github.com/artic-network/artic-ncov2019.git && \
-  conda env create -f artic-ncov2019/environment.yml && \
   conda env create -f artic-ncov2019/environment-medaka.yml
+#install artic-ncov2019-medaka conda environment (SKIPPED)
+#conda env create -f artic-ncov2019/environment.yml
 
 #install nextstrain+augur+auspice conda environment
 RUN mkdir -p /opt/nextstrain && \
