@@ -76,4 +76,10 @@ RUN R -e "install.packages(c('data.table', 'tidyverse', 'rmarkdown'), Ncpus = 10
 #install primer prospector
 RUN conda create --name primerprospector -c bioconda/label/cf201901 primerprospector
 
+#install bedtools (binary)
+RUN wget https://github.com/arq5x/bedtools2/releases/download/v2.29.2/bedtools.static.binary \
+  -O /opt/bin/bedtools && \
+  chmod +x /opt/bin/bedtools
+ENV PATH="/opt/bin:${PATH}"
+
 WORKDIR /home/user
