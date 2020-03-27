@@ -9,7 +9,7 @@ ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
 #general requirements
 RUN apt-get update && \
   apt-get install -y --no-install-recommends --no-install-suggests \
-  nano less git wget make g++ ca-certificates curl \
+  nano less git wget make g++ ca-certificates curl libidn11 \
   parallel=20161222* software-properties-common build-essential
 
 #install GUPPY (3.4.3) (with GPU support) !!remember to add the correct path to $PATH
