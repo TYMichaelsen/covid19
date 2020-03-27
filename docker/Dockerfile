@@ -9,7 +9,8 @@ ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
 #general requirements
 RUN apt-get update && \
   apt-get install -y --no-install-recommends --no-install-suggests \
-  nano less git wget make g++ ca-certificates curl software-properties-common
+  nano less git wget make g++ ca-certificates curl \
+  parallel=20161222* software-properties-common build-essential
 
 #install GUPPY (3.4.3) (with GPU support) !!remember to add the correct path to $PATH
 RUN wget -q https://mirror.oxfordnanoportal.com/software/analysis/ont-guppy_3.4.3_linux64.tar.gz && \
