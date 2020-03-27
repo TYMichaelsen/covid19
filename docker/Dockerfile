@@ -82,4 +82,12 @@ RUN wget https://github.com/arq5x/bedtools2/releases/download/v2.29.2/bedtools.s
   chmod +x /opt/bin/bedtools
 ENV PATH="/opt/bin:${PATH}"
 
+#install MinKnow
+RUN wget -O- https://mirror.oxfordnanoportal.com/apt/ont-repo.pub | apt-key add - && \
+  echo "deb http://mirror.oxfordnanoportal.com/apt bionic-stable non-free" | \
+  tee /etc/apt/sources.list.d/nanoporetech.sources.list && \
+  apt-get update && \
+  apt-get install -y install --no-install-recommends --no-install-suggests \
+  minion-nc
+
 WORKDIR /home/user
