@@ -65,8 +65,8 @@ RUN apt-key adv --keyserver keyserver.ubuntu.com \
     r-base-core=${R_BASE_VERSION}* \
     r-base-dev=${R_BASE_VERSION}* \
     r-base-html=${R_BASE_VERSION}* \
-    r-recommended=${R_BASE_VERSION}*
-RUN R -e "install.packages(c('data.table', 'tidyverse', 'rmarkdown'), Ncpus = 100)"
+    r-recommended=${R_BASE_VERSION}* && \
+    R -e "install.packages(c('data.table', 'tidyverse', 'rmarkdown'), Ncpus = 100)"
 
 #install RStudio Server (SKIPPED)
 #RUN apt-get -y install --no-install-recommends --no-install-suggests \
