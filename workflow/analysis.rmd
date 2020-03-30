@@ -1,7 +1,7 @@
 ---
 title: "COVID19DK"
 author: "Rasmus Kirkegaard"
-date: "30/03/2020"
+date: "24/03/2020"
 output: html_document
 ---
 
@@ -18,7 +18,6 @@ library(dplyr)
 library(readxl)
 library(gridExtra)
 library(data.table)
-library(cowplot)
 ```
 
 ```{r message=FALSE,echo=FALSE,warning=FALSE}
@@ -81,5 +80,5 @@ ggplot(ampliconcov,aes(x = SampleID,y = amplicon,fill = coverage + 1)) +
 The RNA was reverse transcribed and PCR amplified according to the Artic Network protocol [https://www.protocols.io/view/ncov-2019-sequencing-protocol-bbmuik6w](https://www.protocols.io/view/ncov-2019-sequencing-protocol-bbmuik6w) with the V2 primer scheme. The DNA libraries were sequenced on the MinION platform Mk1B on R9.4.1 flowcells. The sequencing was carried out with MinKNOW v. .
 
 ## Data processing
-The data was basecalled using guppy v. 3.4.5 using the high accuracy model. The basecalled data was processed using the "artic-ncov2019-medaka" protocol with the "--minimap2" setting  [https://artic.network/ncov-2019/ncov2019-bioinformatics-sop.html](https://artic.network/ncov-2019/ncov2019-bioinformatics-sop.html). Read coverage was extracted from the bam files using samtools depth with the "-a" option. Variants were clustered using ___________. The processed data was visualised using R v. 3.6.1. The genomes were submitted to GISAID [https://www.gisaid.org/](https://www.gisaid.org/).
+The data was basecalled using guppy v. 3.4.5 using the high accuracy model. The basecalled data was processed using the "artic-ncov2019-medaka" protocol with the "--minimap2" setting  [https://artic.network/ncov-2019/ncov2019-bioinformatics-sop.html](https://artic.network/ncov-2019/ncov2019-bioinformatics-sop.html). Read coverage was extracted from the bam files using samtools depth with the "-a" option. The processed data was visualised using R v. 3.6.1. The genomes will be submitted to GISAID [https://www.gisaid.org/](https://www.gisaid.org/) and the reads mapping to the virus genome will be submitted to ENA
 
