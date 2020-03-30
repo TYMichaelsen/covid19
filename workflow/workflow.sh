@@ -1,9 +1,16 @@
+#/bin/bash
+exec 3>&1 4>&2
+trap 'exec 2>&4 1>&3' 0 1 2 3
+exec 1>log.out 2>&1
 cd /srv/rbd
 singularity shell docker://kasperskytte/covid19
+cd covid19/
+
+eval "$(conda shell.bash hook)"
 source activate artic-ncov2019-medaka
 # Settings
 FASTQ=/srv/rbd/covid19/data/COVID19/analysis/AAU-batch001/data/aaubatch001.fastq
-RUNID=${}basename $FASTQ | sed 's/.fastq//'}
+RUNID=$(basename $FASTQ | sed 's/.fastq//')
 SCHEMEDIR=/srv/rbd/covid19/data/COVID19/artic-ncov2019/primer_schemes
 THREADS=120
 REF=/srv/rbd/covid19/data/COVID19/artic-ncov2019/primer_schemes/nCoV-2019/V2/nCoV-2019.reference.fasta
@@ -49,8 +56,10 @@ cat temp/filtered.fastq | parallel --progress -j $THREADS -L 4 --round-robin --p
 find temp/trim/ -name "*.fastq" | while read file
 do
         base=${file##*/}    # ditch the directory portion of the filename
-        cat $file >> temp/demultiplexed/$RUNID$base
+        cat $file >> temp/demultiplexed/$RUNID"_"$base
 done
+
+rm temp/demultiplexed/none.fastq
 
 #################################################
 # Process samples 								#
@@ -59,7 +68,7 @@ done
 FILES=temp/demultiplexed/*.fastq
 for f in $FILES
 do
-SAMPLE=${}basename $f | sed 's/.fastq//'}
+SAMPLE=$(basename $f | sed 's/.fastq//')
 OUTPUTFILE=results/coverage/$SAMPLE.cov.tsv
 if [ -s $OUTPUTFILE ]; then echo "$OUTPUTFILE has already been generated"; 
 else
@@ -72,9 +81,9 @@ samtools depth -a temp/articminion/$SAMPLE.sorted.bam >> results/coverage/$SAMPL
 
 mv temp/articminion/$SAMPLE.consensus.fasta results/genomes/
 # Extract mapped reads
-samtools view --threads $THREADS -F 0x04 -b temp/articminion/$SAMPLE.sorted.bam | bam2fastq --output results/mapped_fastq/$SAMPLE
+samtools view --threads $THREADS -F 0x04 -b temp/articminion/$SAMPLE.sorted.bam | bam2fastq --output results/mapped_fastq/$SAMPLE"_virus"
 # Calculate the number of Ns in the sequences
-awk '!/^>/ { next } { getline seq; len=length(seq); Nn=gsub(/N/,"",seq) } {sub(/^>/,"",$0); print $0 "\t" Nn/len}' results/genomes/$SAMPLE.consensus.fasta > results/N_counts/N_count$SAMPLE.tsv
+awk '!/^>/ { next } { getline seq; len=length(seq); Nn=gsub(/N/,"",seq) } {sub(/^>/,"",$0); print $0 "\t" Nn/len}' results/genomes/$SAMPLE.consensus.fasta > results/N_counts/$SAMPLE"N_count.tsv"
 
 fi
 done
