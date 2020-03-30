@@ -78,8 +78,8 @@ RUN apt-key adv --keyserver keyserver.ubuntu.com \
 RUN conda create --name primerprospector -c bioconda/label/cf201901 primerprospector
 
 #install bedtools (binary)
-RUN mkdir -p /opt/bin
-RUN wget -q https://github.com/arq5x/bedtools2/releases/download/v2.29.2/bedtools.static.binary && \
+RUN mkdir -p /opt/bin && \
+  wget -q https://github.com/arq5x/bedtools2/releases/download/v2.29.2/bedtools.static.binary && \
   mv bedtools.static.binary /opt/bin/bedtools && \
   chmod +x /opt/bin/bedtools
 ENV PATH="/opt/bin:${PATH}"
