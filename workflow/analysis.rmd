@@ -1,0 +1,85 @@
+---
+title: "COVID19DK"
+author: "Rasmus Kirkegaard"
+date: "30/03/2020"
+output: html_document
+---
+
+# Sequencing of COVID19 genomes in Denmark using the Artic Network protocols
+A joint collaboration between Danish Serum Institute, Denish Hospitals and Aalborg University has aimed to sequence all the corona virus genomes from Danish patients during the COVID19 outbreak. The first Danish case was reported February 27 2020. 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r message=FALSE,echo=FALSE,warning=FALSE}
+library(ggplot2)
+library(dplyr)
+library(readxl)
+library(gridExtra)
+library(data.table)
+library(cowplot)
+```
+
+```{r message=FALSE,echo=FALSE,warning=FALSE}
+# Load general metadata
+metadata<-read_excel(path = "metadata.xlsx")
+# Load pr base coverage data
+covd<-data.frame(scaffold=NULL,position=NULL,coverage=NULL,SampleID=NULL)
+for (f in metadata$SampleID) {
+  covdtemp<-read.delim(file = paste0("results/coverage/",f,".cov.tsv"),sep = "\t",header = T) %>% mutate(SampleID=f)
+  covd<-rbind(covd,covdtemp)
+}
+cov_summary<-covd %>% group_by(SampleID) %>% summarise(data_vol=round(sum(coverage)/10^6),avg_cov=round(sum(coverage)/max(position)),zeros=length(which(coverage==0)))
+primerscheme<-read.delim(file = "2020-03-27_nCoV-2019-primer.bed",sep = "\t",header = F,col.names = c("track","start","end","amplicon"))
+
+# Calculate pr amplicon coverage
+covd$amplicon<-NA
+for (i in 1:dim(primerscheme)[1]) {
+  covd$amplicon[covd$position>primerscheme$start[i] & covd$position<primerscheme$end[i]]<-as.character(primerscheme$amplicon[i])
+}
+ampliconcov<-covd %>% filter(!is.na(amplicon)) %>% group_by(SampleID,amplicon) %>% summarise(coverage=mean(coverage))
+thr_cov<-100
+n_above_thr<-ampliconcov %>% group_by(SampleID) %>% summarise(n_above_thr=length(which(coverage>thr_cov)))
+```
+
+## Sample overview
+
+```{r fig.width=13,fig.height=7,echo=FALSE, message=FALSE, warning=FALSE}
+tt2 <- ttheme_default(core = list(fg_params = list(hjust = 1, x = 0.95, fontsize = 12)),
+                      colhead = list(fg_params = list(fontsize = 7)))
+tab_fordisplay<-full_join(metadata,cov_summary) %>% full_join(n_above_thr)
+names(tab_fordisplay)[which(names(tab_fordisplay)=="n_above_thr")]<-paste0('# amplicons\nabove ',thr_cov,"x\ncoverage")
+names(tab_fordisplay)[which(names(tab_fordisplay)=="data_vol")]<-"Data (Mbp)"
+names(tab_fordisplay)[which(names(tab_fordisplay)=="avg_cov")]<-"Average\ncoverage"
+grid.table(tab_fordisplay %>% select(SampleID,Samplename,Sampletype,qPCR_Ct,Primetscheme,`Data (Mbp)`,`Average\ncoverage`,paste0('# amplicons\nabove ',thr_cov,"x\ncoverage")), rows= NULL, theme = tt2)
+```
+
+## Genome coverage for all samples
+
+```{r fig.width=15,fig.height=10,message=FALSE,echo=FALSE,warning=FALSE}
+ggplot(covd,aes(x = position,y = coverage,col=SampleID))+geom_line()+scale_y_log10()+theme(legend.position = "bottom")
+```
+
+## Amplicon coverage
+```{r fig.height=20,fig.width=10, message=FALSE,echo=FALSE,warning=FALSE}
+ggplot(ampliconcov,aes(x = SampleID,y = amplicon,fill = coverage + 1)) + 
+  geom_tile() +
+  scale_fill_gradient(
+    low      = "white",
+    high     = "red",
+    #limits   = c(NA,mx),
+    trans    = "log10",
+    na.value = "grey") +
+  theme(axis.text.x = element_text(angle = 45,hjust = 1))
+```
+
+
+
+# Methods
+## Library preparation and sequencing
+The RNA was reverse transcribed and PCR amplified according to the Artic Network protocol [https://www.protocols.io/view/ncov-2019-sequencing-protocol-bbmuik6w](https://www.protocols.io/view/ncov-2019-sequencing-protocol-bbmuik6w) with the V2 primer scheme. The DNA libraries were sequenced on the MinION platform Mk1B on R9.4.1 flowcells. The sequencing was carried out with MinKNOW v. .
+
+## Data processing
+The data was basecalled using guppy v. 3.4.5 using the high accuracy model. The basecalled data was processed using the "artic-ncov2019-medaka" protocol with the "--minimap2" setting  [https://artic.network/ncov-2019/ncov2019-bioinformatics-sop.html](https://artic.network/ncov-2019/ncov2019-bioinformatics-sop.html). Read coverage was extracted from the bam files using samtools depth with the "-a" option. Variants were clustered using ___________. The processed data was visualised using R v. 3.6.1. The genomes were submitted to GISAID [https://www.gisaid.org/](https://www.gisaid.org/).
+
