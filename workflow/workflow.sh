@@ -4,7 +4,7 @@ trap 'exec 2>&4 1>&3' 0 1 2 3
 exec 1>log.out 2>&1
 cd /srv/rbd
 singularity shell docker://kasperskytte/covid19
-cd covid19/
+cd rhk/test/
 
 eval "$(conda shell.bash hook)"
 source activate artic-ncov2019-medaka
@@ -19,8 +19,8 @@ REF=/srv/rbd/covid19/data/COVID19/artic-ncov2019/primer_schemes/nCoV-2019/V2/nCo
 mkdir -p data
 mkdir -p temp/TMPDIR/
 mkdir -p temp/trim
-mkdir -p temp/articminion/
 mkdir -p temp/demultiplexed/
+mkdir -p temp/articminion/
 mkdir -p results/genomes/
 mkdir -p results/coverage/
 mkdir -p results/mapped_fastq/
@@ -34,10 +34,15 @@ mkdir -p results/N_counts/
 # Pre-process samples 							#
 #################################################
 # Filter fastq by size (https://www.biostars.org/p/66996/)
+OUTPUTFILE=temp/filtered.fastq
+if [ -s $OUTPUTFILE ]; then rm $OUTPUTFILE; awk 'BEGIN {OFS = "\n"} {header = $0 ; getline seq ; getline qheader ; getline qseq ; if (length(seq) >= 400 && length(seq) <= 700) {print header, seq, qheader, qseq}}' < $FASTQ > temp/filtered.fastq; 
+else
 awk 'BEGIN {OFS = "\n"} {header = $0 ; getline seq ; getline qheader ; getline qseq ; if (length(seq) >= 400 && length(seq) <= 700) {print header, seq, qheader, qseq}}' < $FASTQ > temp/filtered.fastq
-
+fi
 # Run porechop in parallel
 TRIM_DIR=temp/trim
+rm -r $TRIM_DIR
+mkdir -p $TRIM_DIR
 cat temp/filtered.fastq | parallel --progress -j $THREADS -L 4 --round-robin --pipe --tmpdir temp/TMPDIR \
     "cat > $TRIM_DIR/{#}.tmp;\
     porechop \
@@ -59,7 +64,7 @@ do
         cat $file >> temp/demultiplexed/$RUNID"_"$base
 done
 
-rm temp/demultiplexed/none.fastq
+rm temp/demultiplexed/$RUNID"_"none.fastq
 
 #################################################
 # Process samples 								#
@@ -81,7 +86,7 @@ samtools depth -a temp/articminion/$SAMPLE.sorted.bam >> results/coverage/$SAMPL
 
 mv temp/articminion/$SAMPLE.consensus.fasta results/genomes/
 # Extract mapped reads
-samtools view --threads $THREADS -F 0x04 -b temp/articminion/$SAMPLE.sorted.bam | bam2fastq --output results/mapped_fastq/$SAMPLE"_virus"
+samtools fastq --threads $THREADS -F 4 temp/articminion/$SAMPLE.sorted.bam > results/mapped_fastq/$SAMPLE"_virus".fastq
 # Calculate the number of Ns in the sequences
 awk '!/^>/ { next } { getline seq; len=length(seq); Nn=gsub(/N/,"",seq) } {sub(/^>/,"",$0); print $0 "\t" Nn/len}' results/genomes/$SAMPLE.consensus.fasta > results/N_counts/$SAMPLE"N_count.tsv"
 
