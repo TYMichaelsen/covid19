@@ -1,6 +1,11 @@
 #!/bin/bash
 set -e
 cd ~
+# install basic tools
+sudo apt-get update
+sudo apt-get install -y \
+  tmux nano git curl
+
 #installs dependencies required for compiling singularity from source
 #from: https://sylabs.io/guides/3.5/admin-guide/installation.html
 sudo apt-get update
