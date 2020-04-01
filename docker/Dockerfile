@@ -91,8 +91,5 @@ RUN wget -O- https://mirror.oxfordnanoportal.com/apt/ont-repo.pub | apt-key add 
   apt-get update && \
   apt-get install -y --no-install-recommends --no-install-suggests \
   minion-nc
-
-#install bam2fastx
-RUN conda install -c bioconda bam2fastx -y
-
+  
 WORKDIR /home/user
