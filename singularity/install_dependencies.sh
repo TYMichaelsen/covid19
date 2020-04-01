@@ -37,8 +37,8 @@ sudo apt-get install -y nvidia-driver-440
 
 # Install R
 export R_VERSION=3.6.3
-sudo add-apt-repository "deb http://cran.r-project.org/bin/linux/ubuntu bionic-cran35/"
 sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9
+sudo add-apt-repository "deb http://cran.r-project.org/bin/linux/ubuntu bionic-cran35/"
 sudo apt-get update
 sudo apt-get install -y --no-install-recommends \
   r-base=${R_VERSION}* \
