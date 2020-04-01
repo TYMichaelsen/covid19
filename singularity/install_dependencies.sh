@@ -51,7 +51,8 @@ sudo apt-get install -y --no-install-recommends \
   libssl-dev \
   libxml2-dev \
   libcairo2-dev \
-  libxt-dev
+  libxt-dev \
+  libclang-dev
 
 #install RStudio
 wget -q https://download1.rstudio.org/desktop/bionic/amd64/rstudio-1.2.5033-amd64.deb
