@@ -31,6 +31,6 @@ make -j -C ./builddir install #remove sudo if without setuid
 #rm -rf $GOPATH
 echo "export PATH=${usersoftwaredir}/singularity/bin:$PATH" >> ${HOME}/.bashrc
 echo ". ${usersoftwaredir}/singularity/etc/bash_completion.d/singularity" >> ${HOME}/.bashrc
-source ~/.bashrc
 unset GOPATH
 
+echo "End of script. To start using singularity reload your BASH terminal or run: source ~/.bashrc"
