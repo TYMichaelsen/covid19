@@ -88,7 +88,7 @@ mv tempo/articminion/$SAMPLE.consensus.fasta results/genomes/
 # Extract mapped reads
 samtools fastq --threads $THREADS -F 4 tempo/articminion/$SAMPLE.sorted.bam > results/mapped_fastq/$SAMPLE"_virus".fastq
 # Calculate the number of Ns in the sequences
-awk '!/^>/ { next } { getline seq; len=length(seq); Nn=gsub(/N/,"",seq) } {sub(/^>/,"",$0); print $0 "\t" Nn/len}' results/genomes/$SAMPLE.consensus.fasta > results/N_counts/$SAMPLE"N_count.tsv"
+awk '!/^>/ { next } { getline seq; len=length(seq); Nn=gsub(/N/,"",seq) } {sub(/^>/,"",$0); print $0 "\t" Nn}' results/genomes/$SAMPLE.consensus.fasta > results/N_counts/$SAMPLE"N_count.tsv"
 
 fi
 done
