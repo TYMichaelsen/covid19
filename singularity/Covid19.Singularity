@@ -34,7 +34,8 @@ From: biocyberman/singularity-r:3.6.3
  apt-get update && \
    apt-get install -y --no-install-recommends --no-install-suggests \
    nano less git wget make g++ ca-certificates curl libidn11 \
-   parallel=20161222* software-properties-common build-essential
+   parallel=20161222* software-properties-common build-essential \
+   gawk
  
  #install GUPPY (3.4.3) (with GPU support) !!remember to add the correct path to $PATH
  wget -q https://mirror.oxfordnanoportal.com/software/analysis/ont-guppy_3.4.3_linux64.tar.gz && \
@@ -54,7 +55,10 @@ From: biocyberman/singularity-r:3.6.3
  
  #install minimap2 (v2.17) (SKIPPED)
  #/opt/miniconda/bin/conda install -c bioconda minimap2=2.17 -y
- 
+
+ #install cutadapt
+ conda install -c bioconda cutadapt=1.18 -y
+  
  #install artic-ncov2019-medaka conda environment
  git clone --recursive https://github.com/artic-network/artic-ncov2019.git && \
    conda env create -f artic-ncov2019/environment-medaka.yml
