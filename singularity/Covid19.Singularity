@@ -68,11 +68,12 @@ From: biocyberman/singularity-r:3.6.3
    conda env create -f nextstrain.yml && \
    git clone https://github.com/nextstrain/auspice.git && \
    cd /opt/nextstrain/auspice && \
-   git checkout -q v2.10.0
- #install auspice with a separate command to catch error
- #inspect manually to verify it's only the postinstall script that fails
- conda run -n nextstrain npm install --global /opt/nextstrain/auspice \
-   || echo "*** Auspice install returned an error, please inspect ***"
+   git checkout -q v2.11.3 && \
+   conda run -n nextstrain npm update && \
+   conda run -n nextstrain npm install && \
+   conda run -n nextstrain npm run build && \
+   conda run -n nextstrain npm link
+
  #install primer prospector
  conda create --name primerprospector -c bioconda/label/cf201901 primerprospector
  
