@@ -29,6 +29,12 @@ for (f in metadata$SampleID) {
   covdtemp<-read.delim(file = paste0("results/coverage/",f,".cov.tsv"),sep = "\t",header = T) %>% mutate(SampleID=f)
   covd<-rbind(covd,covdtemp)
 }
+genomesize=max(covd$position)
+countNs<-data.frame(SampleID=NULL,countN=NULL)
+for (f in metadata$SampleID) {
+  countNstemp<-read.delim(file = paste0("results/N_counts/",f,"N_count.tsv"),sep = "\t",header = F,col.names = c("fileID","countN")) %>% mutate(SampleID=f) %>% select(SampleID,countN)
+  countNs<-rbind(countNs,countNstemp)
+}
 cov_summary<-covd %>% group_by(SampleID) %>% summarise(data_vol=round(sum(coverage)/10^6),avg_cov=round(sum(coverage)/max(position)),zeros=length(which(coverage==0)))
 primerscheme<-read.delim(file = "2020-03-27_nCoV-2019-primer.bed",sep = "\t",header = F,col.names = c("track","start","end","amplicon"))
 
@@ -40,6 +46,12 @@ for (i in 1:dim(primerscheme)[1]) {
 ampliconcov<-covd %>% filter(!is.na(amplicon)) %>% group_by(SampleID,amplicon) %>% summarise(coverage=mean(coverage))
 thr_cov<-100
 n_above_thr<-ampliconcov %>% group_by(SampleID) %>% summarise(n_above_thr=length(which(coverage>thr_cov)))
+#
+tab_fordisplay<-full_join(metadata,cov_summary) %>% full_join(n_above_thr) %>% full_join(countNs)
+names(tab_fordisplay)[which(names(tab_fordisplay)=="n_above_thr")]<-paste0('# amplicons\nabove ',thr_cov,"x\ncoverage")
+names(tab_fordisplay)[which(names(tab_fordisplay)=="data_vol")]<-"Data (Mbp)"
+names(tab_fordisplay)[which(names(tab_fordisplay)=="avg_cov")]<-"Average\ncoverage"
+names(tab_fordisplay)[which(names(tab_fordisplay)=="countN")]<-"Number\nof\nNs"
 ```
 
 ## Sample overview
@@ -47,11 +59,7 @@ n_above_thr<-ampliconcov %>% group_by(SampleID) %>% summarise(n_above_thr=length
 ```{r fig.width=13,fig.height=7,echo=FALSE, message=FALSE, warning=FALSE}
 tt2 <- ttheme_default(core = list(fg_params = list(hjust = 1, x = 0.95, fontsize = 12)),
                       colhead = list(fg_params = list(fontsize = 7)))
-tab_fordisplay<-full_join(metadata,cov_summary) %>% full_join(n_above_thr)
-names(tab_fordisplay)[which(names(tab_fordisplay)=="n_above_thr")]<-paste0('# amplicons\nabove ',thr_cov,"x\ncoverage")
-names(tab_fordisplay)[which(names(tab_fordisplay)=="data_vol")]<-"Data (Mbp)"
-names(tab_fordisplay)[which(names(tab_fordisplay)=="avg_cov")]<-"Average\ncoverage"
-grid.table(tab_fordisplay %>% select(SampleID,Samplename,Sampletype,qPCR_Ct,Primetscheme,`Data (Mbp)`,`Average\ncoverage`,paste0('# amplicons\nabove ',thr_cov,"x\ncoverage")), rows= NULL, theme = tt2)
+grid.table(tab_fordisplay %>% select(SampleID,Samplename,Sampletype,qPCR_Ct,Primetscheme,`Data (Mbp)`,`Average\ncoverage`,paste0('# amplicons\nabove ',thr_cov,"x\ncoverage"),'Number\nof\nNs'), rows= NULL, theme = tt2)
 ```
 
 ## Genome coverage for all samples
