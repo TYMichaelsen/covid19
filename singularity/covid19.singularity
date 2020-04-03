@@ -25,7 +25,7 @@ From: biocyberman/singularity-r:3.6.3
     ./build/ont-guppy_3.4.3_linux64.tar.gz /opt/
     ./build/auspice /opt/nextstrain/ 
     ./build/artic-ncov2019 /opt/
-    ./build/miniconda.sh  /opt
+    ./build/miniconda.sh  /opt/
 
 
 %post
@@ -58,7 +58,6 @@ From: biocyberman/singularity-r:3.6.3
 
   # this is for build time
   . /opt/miniconda/etc/profile.d/conda.sh
-  #echo "conda activate base" >> ~/.bashrc
   export PATH="/opt/miniconda/bin:${PATH}"
   
   #install minimap2 (v2.17) (SKIPPED)
@@ -78,8 +77,7 @@ From: biocyberman/singularity-r:3.6.3
   curl http://data.nextstrain.org/nextstrain.yml --compressed -o nextstrain.yml 
   conda env create -f nextstrain.yml 
   ### git clone https://github.com/nextstrain/auspice.git 
-  cd /opt/nextstrain/auspice 
-  git checkout -q v2.11.3 
+  cd /opt/nextstrain/auspice
   conda run -n nextstrain npm update 
   conda run -n nextstrain npm install 
   conda run -n nextstrain npm run build 
@@ -99,7 +97,10 @@ From: biocyberman/singularity-r:3.6.3
   wget -O- https://mirror.oxfordnanoportal.com/apt/ont-repo.pub | apt-key add - 
   echo "deb http://mirror.oxfordnanoportal.com/apt bionic-stable non-free" | tee /etc/apt/sources.list.d/nanoporetech.sources.list 
   apt-get update 
-  apt-get install -y --no-install-recommends --no-install-suggests minion-nc
+  apt-get install -y --no-install-recommends --no-install-suggests minion-nc=19.12.5-1*
+
+  #install covid-util
+  pip install covid-util==0.0.4
   
   # Clean up
   apt-get clean
