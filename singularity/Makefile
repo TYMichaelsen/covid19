@@ -1,6 +1,6 @@
 all: 
 	bash ./prep_build.sh
-	singularity build --fakeroot singularity-covid19.sif Covid19.Singularity
+	singularity build --fakeroot -F singularity-covid19.sif covid19.singularity
 
 clean:
 	rm -f singularity-covid19.sif
