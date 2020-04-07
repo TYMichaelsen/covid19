@@ -4,7 +4,6 @@ From: nvidia/cuda:10.2-base-ubuntu18.04
 %labels
   Maintainer Vang Le-Quy
   Maintainer Kasper Skytte Andersen
-  RStudio_Version 1.2.5033
 
 %help
   This will run r and applications for covid19 analysis without rstudio. This image has GPU/CUDA support
@@ -21,12 +20,6 @@ From: nvidia/cuda:10.2-base-ubuntu18.04
 %setup
    #install -Dv install_cuda.sh ${SINGULARITY_ROOTFS}/usr/local/bin/install_cuda
     mkdir -p ${SINGULARITY_ROOTFS}/opt/nextstrain
-%files
-    #./build/ont-guppy_3.4.3_linux64.tar.gz /opt/
-    #./build/auspice /opt/nextstrain/ 
-    #./build/artic-ncov2019 /opt/
-    #./build/miniconda.sh  /opt/
-
 
 %post
   export DEBIAN_FRONTEND=noninteractive
@@ -35,9 +28,9 @@ From: nvidia/cuda:10.2-base-ubuntu18.04
   cd /opt
   apt-get update 
   apt-get install -y --no-install-recommends --no-install-suggests \
-  	nano less git wget make g++ ca-certificates curl libidn11 \
-  	parallel=20161222* software-properties-common build-essential \
-	gawk locales
+  nano less git wget make g++ ca-certificates curl libidn11 \
+  parallel=20161222* software-properties-common build-essential \
+  gawk locales
 
   # Configure default locale
   echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
@@ -95,8 +88,9 @@ From: nvidia/cuda:10.2-base-ubuntu18.04
 
   #install artic-ncov2019-medaka conda environment
   git clone --recursive https://github.com/artic-network/artic-ncov2019.git
+  cd artic-ncov2019
   git checkout 2127aef
-  conda env create -f artic-ncov2019/environment-medaka.yml
+  conda env create -f environment-medaka.yml
   #install artic-ncov2019-medaka conda environment (SKIPPED)
   #conda env create -f artic-ncov2019/environment.yml
   
