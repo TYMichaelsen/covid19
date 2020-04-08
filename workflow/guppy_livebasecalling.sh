@@ -25,13 +25,14 @@ else
     exit 1
   else
     # Yes - continue basecalling
-    echo "$(wc -l < $FASTQ_DIR/basecalled_files.txt) fast5 files processed in session already."
+    echo "$(($(wc -l < $FASTQ_DIR/basecalled_files.txt) - 1)) fast5 files processed in session already."
     echo "Continuing basecalling session..."
+    rm -rf $FASTQ_DIR/processing/
     BATCH=$(find $FASTQ_DIR -type f |\
       sed -e "s|$FASTQ_DIR/||" -e 's/_.*//'|\
       sort -n |\
       tail -n 1)
-    rm -rf $FASTQ_DIR/processing/
+    BATCH=$((BATCH+0))
   fi
 fi
 
@@ -42,7 +43,8 @@ while : ; do
   # Find new fast5 files
   FAST5_NEW=$(
     find "$RUN_DIR" -name "*.fast5" -type f |\
-    grep -vFf $FASTQ_DIR/basecalled_files.txt
+    grep -vFf $FASTQ_DIR/basecalled_files.txt |\
+    head -n 100
   )
 
   FAST5_NEW_N=$(echo "$FAST5_NEW" | grep -c '[^[:space:]]')
