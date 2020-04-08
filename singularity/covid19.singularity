@@ -8,14 +8,23 @@ From: nvidia/cuda:10.2-base-ubuntu18.04
 %help
   This will run r and applications for covid19 analysis without rstudio. This image has GPU/CUDA support
 
-%apprun covidan 
-  exec covidan "${@}"
+%apprun generateGenomesNP
+  exec generateGenomesNP.sh "${@}"
+
+%apphelp generateGenomesNP
+  Provide some basic usage info here
+
+%appenv generateGenomesNP
+  source activate nextstrain
 
 %runscript
-  exec covidan "${@}"
+  exec generateGenomesNP "${@}"
 
 %environment
   export PATH=/opt/covid19/bin:${PATH}
+
+%files
+  workflow/generateGenomesNP.sh /opt/workflow/generateGenomesNP.sh
 
 %setup
    #install -Dv install_cuda.sh ${SINGULARITY_ROOTFS}/usr/local/bin/install_cuda
