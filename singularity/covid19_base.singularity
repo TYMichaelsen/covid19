@@ -121,9 +121,6 @@ From: nvidia/cuda:10.2-base-ubuntu18.04
   #install covid-util
   pip install covid-util==0.0.4
 
-  #install tablet
-  conda install -c bioconda tablet==1.17.08.17 -y
-  
   # Clean up
   apt-get clean
   apt-get autoclean
