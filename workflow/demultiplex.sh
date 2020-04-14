@@ -20,7 +20,8 @@ exec &> >(tee -a "$LOG_NAME")
 exec 2>&1
 
 # Trim end adaptors and filter by length
-# NB: 20 bp of each terminal adaptor was targeted
+#-- 20 bp of each terminal adaptor is targeted
+#-- Sequences are reverse complemented to obtain same i7i5 adapter orientation 
 echo ""
 echo "[$(date +"%T")] Trimming adapter terminals and filtering by length"
 echo ""
@@ -63,11 +64,12 @@ gawk \
   > $OUT_DIR/barcodes_used.fasta
 
 # Demultiplex based
+#-- Demultiplexing depends on the i7i5 adaptor orientation
 echo ""
 echo "[$(date +"%T")] Demultiplexing trimmed reads"
 echo ""
 cutadapt \
-  -e 0.1 \
+  -e 0.2 \
   -O 10 \
   -m 450 \
   -M 1800 \
@@ -75,7 +77,8 @@ cutadapt \
   -o "$OUT_DIR/{name}.tmp" \
   $OUT_DIR/reads_trim.fq
 
-# Trim adapter and primers
+# Trim internal adapter sequences and revert reverse complement
+#-- Revert sequence orientation to prepare for downstream consensus calling
 echo ""
 echo "[$(date +"%T")] Trimming remaining adapter sequence"
 echo ""
