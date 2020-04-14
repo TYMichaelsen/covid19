@@ -20,6 +20,7 @@ exec &> >(tee -a "$LOG_NAME")
 exec 2>&1
 
 # Trim end adaptors and filter by length
+# NB: 20 bp of each terminal adaptor was targeted
 echo ""
 echo "[$(date +"%T")] Trimming adapter terminals and filtering by length"
 echo ""
@@ -35,7 +36,7 @@ cutadapt \
   -M 1800 \
   --discard-untrimmed \
   --revcomp \
-  -g CAAGCAGAAGACGGCATACGAGAT...GTGTAGATCTCGGTGGTCGCCGTATCATT \
+  -g CAGAAGACGGCATACGAGAT...GTGTAGATCTCGGTGGTCGC \
   -o $OUT_DIR/reads_trim.fq \
   -
 
