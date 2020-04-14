@@ -1,15 +1,16 @@
 BootStrap: library
-From: kasperskytte/default/covid19:1.4
+From: kasperskytte/default/covid19:1.5
 
 %labels
   Maintainer Vang Le-Quy
   Maintainer Kasper Skytte Andersen
+  version 1.6
 
 %help
   Tools and scripts for COVID19 nanopore genome assembly and analysis.
 
 %apprun generateGenomesNP
-  exec generateGenomesNP.sh "${@}"
+  exec /opt/workflow/generateGenomesNP.sh "${@}"
 
 %apphelp generateGenomesNP
   Provide some basic usage info here
@@ -25,6 +26,7 @@ From: kasperskytte/default/covid19:1.4
 
 %files
   #copy scripts from git repo
+  #workflow/generateGenomesNP.sh /opt/workflow/generateGenomesNP.sh
 
 %setup
    #add
