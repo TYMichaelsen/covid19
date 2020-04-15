@@ -1,15 +1,16 @@
-BootStrap: docker
-From: nvidia/cuda:10.2-base-ubuntu18.04
+BootStrap: localimage
+From: covid19_1.5.sif
 
 %labels
   Maintainer Vang Le-Quy
   Maintainer Kasper Skytte Andersen
+  version 1.6
 
 %help
-  This will run r and applications for covid19 analysis without rstudio. This image has GPU/CUDA support
+  Tools and scripts for COVID19 nanopore genome assembly and analysis.
 
 %apprun generateGenomesNP
-  exec generateGenomesNP.sh "${@}"
+  exec /opt/workflow/generateGenomesNP.sh "${@}"
 
 %apphelp generateGenomesNP
   Provide some basic usage info here
@@ -21,124 +22,14 @@ From: nvidia/cuda:10.2-base-ubuntu18.04
   exec generateGenomesNP "${@}"
 
 %environment
-  export PATH=/opt/covid19/bin:${PATH}
+  #add
 
 %files
-  workflow/generateGenomesNP.sh /opt/workflow/generateGenomesNP.sh
+  #copy scripts from git repo
+  #workflow/generateGenomesNP.sh /opt/workflow/generateGenomesNP.sh
 
 %setup
-   #install -Dv install_cuda.sh ${SINGULARITY_ROOTFS}/usr/local/bin/install_cuda
-    mkdir -p ${SINGULARITY_ROOTFS}/opt/nextstrain
+   #add
 
 %post
-  export DEBIAN_FRONTEND=noninteractive
-
-  #general requirements
-  cd /opt
-  apt-get update 
-  apt-get install -y --no-install-recommends --no-install-suggests \
-  nano less git wget make g++ ca-certificates curl libidn11 \
-  parallel=20161222* software-properties-common build-essential \
-  gawk locales
-
-  # Configure default locale
-  echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
-  locale-gen en_US.utf8
-  /usr/sbin/update-locale LANG=en_US.UTF-8
-  export LC_ALL=en_US.UTF-8
-  export LANG=en_US.UTF-8
-
-  #install R and R packages
-  #specific version of R to be installed
-  export R_BASE_VERSION=3.6.3
-  #add R CRAN mirror to apt sources to install R using APT
-  apt-key adv --keyserver keyserver.ubuntu.com \
-  --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9 && \
-  echo "deb https://mirrors.dotsrc.org/cran/bin/linux/ubuntu bionic-cran35/" > /etc/apt/sources.list.d/cran.list && \
-  apt-get update && \
-  apt-get -y install --no-install-recommends --no-install-suggests \
-    libcurl4-openssl-dev \
-    libssl-dev \
-    libxml2-dev \
-    libxt-dev \
-    libcairo2-dev \
-    r-base=${R_BASE_VERSION}* \
-    r-base-core=${R_BASE_VERSION}* \
-    r-cran-class \
-    r-cran-nnet \
-    r-base-dev=${R_BASE_VERSION}* \
-    r-base-html=${R_BASE_VERSION}* \
-    r-recommended=${R_BASE_VERSION}*
-   R -e "install.packages(c('data.table', 'tidyverse', 'rmarkdown'), Ncpus = 7)"
-  
-  #install GUPPY (3.4.3) (with GPU support) !!remember to add the correct path to $PATH
-  wget -q https://mirror.oxfordnanoportal.com/software/analysis/ont-guppy_3.4.3_linux64.tar.gz 
-  tar -zxf /opt/ont-guppy_3.4.3_linux64.tar.gz -C /opt 
-  rm /opt/ont-guppy_3.4.3_linux64.tar.gz
-  echo 'export PATH="/opt/ont-guppy/bin:${PATH}"' >> $SINGULARITY_ENVIRONMENT
-  
-  #install miniconda3 in silent mode (4.7.12.1)
-  wget -q https://repo.anaconda.com/miniconda/Miniconda3-4.7.12.1-Linux-x86_64.sh -O miniconda.sh 
-  bash miniconda.sh -b -p /opt/miniconda 
-  rm miniconda.sh 
-  ln -s /opt/miniconda/etc/profile.d/conda.sh /etc/profile.d/conda.sh 
-  echo ". /opt/miniconda/etc/profile.d/conda.sh" >> $SINGULARITY_ENVIRONMENT
-  echo 'export PATH="/opt/miniconda/bin:${PATH}"' >> $SINGULARITY_ENVIRONMENT
-
-  # this is for build time
-  . /opt/miniconda/etc/profile.d/conda.sh
-  export PATH="/opt/miniconda/bin:${PATH}"
-  
-  #install minimap2 (v2.17) (SKIPPED)
-  #/opt/miniconda/bin/conda install -c bioconda minimap2=2.17 -y
-  
-  #install cutadapt
-  conda install -c bioconda cutadapt=1.18 -y
-
-  #install artic-ncov2019-medaka conda environment
-  git clone --recursive https://github.com/artic-network/artic-ncov2019.git
-  cd artic-ncov2019
-  git checkout 2127aef
-  conda env create -f environment-medaka.yml
-  #install artic-ncov2019-medaka conda environment (SKIPPED)
-  #conda env create -f artic-ncov2019/environment.yml
-  
-  #install nextstrain+augur+auspice conda environment
-  cd /opt/nextstrain 
-  curl http://data.nextstrain.org/nextstrain.yml --compressed -o nextstrain.yml 
-  conda env create -f nextstrain.yml 
-  git clone https://github.com/nextstrain/auspice.git
-  cd auspice
-  git checkout -q v2.11.3
-  cd /opt/nextstrain/auspice
-  conda run -n nextstrain npm update 
-  conda run -n nextstrain npm install 
-  conda run -n nextstrain npm run build 
-  conda run -n nextstrain npm link
-
-  #install primer prospector
-  conda create --name primerprospector -c bioconda/label/cf201901 primerprospector
-  
-  #install bedtools (binary)
-  mkdir -p /opt/bin
-  wget -q https://github.com/arq5x/bedtools2/releases/download/v2.29.2/bedtools.static.binary 
-  mv bedtools.static.binary /opt/bin/bedtools 
-  chmod +x /opt/bin/bedtools
-  echo 'export PATH="/opt/bin:${PATH}"' >> $SINGULARITY_ENVIRONMENT
-  
-  #install MinKnow
-  wget -O- https://mirror.oxfordnanoportal.com/apt/ont-repo.pub | apt-key add - 
-  echo "deb http://mirror.oxfordnanoportal.com/apt bionic-stable non-free" | tee /etc/apt/sources.list.d/nanoporetech.sources.list 
-  apt-get update 
-  apt-get install -y --no-install-recommends --no-install-suggests minion-nc=19.12.5-1*
-
-  #install covid-util
-  pip install covid-util==0.0.4
-  
-  # Clean up
-  apt-get clean
-  apt-get autoclean
-  apt-get autoremove
-  rm -rf /var/lib/apt/lists/*
-  
-  unset DEBIAN_FRONTEND
+  #install extras here
