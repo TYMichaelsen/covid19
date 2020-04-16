@@ -1,5 +1,5 @@
-BootStrap: library
-From: kasperskytte/default/covid19:1.5
+BootStrap: localimage
+From: covid19_1.5.sif
 
 %labels
   Maintainer Vang Le-Quy
