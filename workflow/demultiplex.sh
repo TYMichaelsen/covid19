@@ -68,38 +68,117 @@ gawk \
 echo ""
 echo "[$(date +"%T")] Demultiplexing trimmed reads"
 echo ""
-cutadapt \
-  -e 0.2 \
-  -O 10 \
-  -m 450 \
-  -M 1800 \
-  -g file:$OUT_DIR/barcodes_used.fasta \
-  -o "$OUT_DIR/{name}.tmp" \
-  $OUT_DIR/reads_trim.fq
+
+demux_wrap(){
+  # Input
+  local BARCODE_FILE=$1
+  local OUT_DIR=$2
+  
+  # Create outdir
+  mkdir $OUT_DIR
+  
+  # Demultiplex
+  cutadapt \
+    -e 0.2 \
+    -O 10 \
+    -m 450 \
+    -M 1800 \
+    -g file:$BARCODE_FILE \
+    -o "$OUT_DIR/{name}.tmp" \
+    -
+}
+
+export -f demux_wrap
+
+cat $OUT_DIR/reads_trim.fq |\
+  parallel \
+    --env demux_wrap \
+    -L4 \
+    -j $THREADS \
+    --block 300M \
+    --pipe \
+    "demux_wrap \
+      $OUT_DIR/barcodes_used.fasta \
+      $OUT_DIR/demux{#}
+    "
 
 # Trim internal adapter sequences and revert reverse complement
 #-- Revert sequence orientation to prepare for downstream consensus calling
 echo ""
 echo "[$(date +"%T")] Trimming remaining adapter sequence"
 echo ""
-BARCODE_LIST=$(gawk -F "," 'NR > 1{print $18}' $METADATA)
-for BARCODE in $BARCODE_LIST; do
-  BARCODE_FILE=$(find $OUT_DIR -name "*$BARCODE*tmp")
-  BARCODE_BASE=${BARCODE_FILE%.*}
-  cutadapt \
-    -m 450 \
-    -M 1800 \
-    -u 15 \
-    -u -14 \
-    -o ${BARCODE_BASE}.fastq \
-    $BARCODE_FILE
-done
+trim_revertrc() {
+
+  # Input
+  local OUT_DIR=$1
+  local BARCODE=$2
+  
+  # Find file
+  BARCODE_FILES=$(find $OUT_DIR -name "*$BARCODE*tmp")
+  BARCODE_NAME=$(
+    echo $BARCODE_FILES |\
+    sed -e 's| .*||g' -e 's|.*/||g' -e 's|.tmp$||'
+  )
+  
+  # Trim adaptor and revert rc
+  cat \
+    $BARCODE_FILES |\
+  gawk '
+    # Define function for reverse complement
+    function revcomp(s,  i, o) {
+      o = ""
+      for(i = length; i > 0; i--)
+           o = o c[substr(s, i, 1)]
+      return(o)
+    }
+    function rev(s,  i, o) {
+      o = ""
+      for(i = length; i > 0; i--)
+           o = o substr(s, i, 1)
+      return(o)
+    }
+    BEGIN{
+      # Define revcomp mapping vector
+      c["A"] = "T"
+      c["C"] = "G"
+      c["G"] = "C"
+      c["T"] = "A"
+      
+    }
+    NR%4==1{
+      # Trim record
+      HEAD=$0
+      getline; SEQ=substr($0, 16, length($0) - 15 - 14)
+      getline; SPACER=$0
+      getline; QUAL=substr($0, 16, length($0) - 15 - 14)
+      # Print sequence based on orientation
+      if(HEAD ~ /.* rc$/){
+        sub(/ rc$/, "", HEAD)
+        print HEAD "\n" revcomp(SEQ) "\n" SPACER "\n" rev(QUAL)
+      } else {
+        print HEAD "\n" SEQ "\n" SPACER "\n" QUAL
+      }
+    }
+  ' \
+  - \
+  > ${OUT_DIR}/${BARCODE_NAME}.fastq
+}
+export -f trim_revertrc
+
+gawk \
+  -F "," \
+  'NR > 1{print $18}' \
+  $METADATA |\
+parallel \
+  --env trim_revertrc \
+  -j $THREADS \
+  "trim_revertrc $OUT_DIR {}"
 
 # Cleanup
 echo ""
 echo "[$(date +"%T")] Cleaning up temp files"
 echo ""
-#rm ./reads_trim.fq ./*tmp
+#rm -rf $OUT_DIR/reads_trim.fq $OUT_DIR/*tmp
 
 echo ""
 echo "[$(date +"%T")] Demultiplexing done..."
