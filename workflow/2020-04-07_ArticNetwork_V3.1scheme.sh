@@ -9,7 +9,7 @@ USAGE="$(basename "$0") [-h] [-g file -b file -i string -s]
 
 Arguments:
     -h  Show this help text.
-    -d  Directory with fastq files.
+    -d  Library pool directory.
     -o  Output directory.
     -t  Number of threads.
 
@@ -25,7 +25,7 @@ This is beta software!
 while getopts ':hd:o:t:' OPTION; do
   case $OPTION in
     h) echo "$USAGE"; exit 1;;
-    d) FASTQDIR=$OPTARG;;
+    d) POOLDIR=$OPTARG;;
     o) OUTDIR=$OPTARG;;
     t) THREADS=$OPTARG;;
     :) printf "missing argument for -$OPTARG\n" >&2; exit 1;;
@@ -35,7 +35,7 @@ done
 
 # Check missing arguments
 MISSING="is missing but required. Exiting."
-if [ -z ${FASTQDIR+x} ]; then echo "-d $MISSING"; exit 1; fi;
+if [ -z ${POOLDIR+x} ]; then echo "-d $MISSING"; exit 1; fi;
 if [ -z ${OUTDIR+x} ]; then echo "-d $MISSING"; exit 1; fi;
 if [ -z ${THREADS+x} ]; then THREADS=50; fi;
 
@@ -51,65 +51,55 @@ exec 1>$OUTDIR/log.out 2>&1
 # Settings
 #RUNID=CJ023
 SCHEMEDIR=/srv/rbd/covid19/software/artic-ncov2019/primer_schemes/
-REF=/srv/rbd/covid19/software/artic-ncov2019/primer_schemes/nCoV-2019/V3/nCoV-2019.reference.fasta
+REF=$SCHEMEDIR/nCoV-2019/V3.1/*reference.fasta
 
 mkdir -p $OUTDIR/data
 mkdir -p $OUTDIR/tempo/TMPDIR/
 mkdir -p $OUTDIR/tempo/trim
-#mkdir -p $OUTDIR/tempo/demultiplexed/
 mkdir -p $OUTDIR/tempo/articminion/
 mkdir -p $OUTDIR/results/genomes/
 mkdir -p $OUTDIR/results/coverage/
 mkdir -p $OUTDIR/results/mapped_fastq/
 mkdir -p $OUTDIR/results/N_counts/
 
-#################################################
-# Basecall reads	 							#
-#################################################
+# add metadata to output folder. 
+cp $POOLDIR/*sequencing.csv $OUTDIR/
 
-#################################################
-# Pre-process samples 							#
-#################################################
+FILES=$POOLDIR/demultiplexed/*.fastq
 
-#cp $FASTQDIR/*.fastq $OUTDIR/tempo/demultiplexed/
+### Basic artic workflow in parallel.##########################################
+parallel -j $THREADS \
+'
+SAMPLE=$(basename {1} | sed 's/.fastq//');
 
-#################################################
-# Process samples 								#
-#################################################
-# Run reference "assemblies"
+cd {2}/tempo/articminion;
 
-FILES=$FASTQDIR/*.fastq
+artic minion \
+    --medaka \
+    --minimap2 \
+    --normalise 200 \
+    --threads 1 \
+    --scheme-directory {3} \
+    --read-file {1} \
+    nCoV-2019/V3.1 $SAMPLE;
 
-for f in $FILES; do
+' ::: $FILES ::: $OUTDIR ::: $SCHEMEDIR
 
-  SAMPLE=$(basename $f | sed 's/.fastq//')
-  OUTPUTFILE=$OUTDIR/results/coverage/$SAMPLE.cov.tsv
-  
-  if [ -s $OUTPUTFILE ]; then 
-    echo "$OUTPUTFILE has already been generated"; 
-  else
+### Misc stuff in parallel. ###################################################
+parallel -j $THREADS \
+'
+SAMPLE=$(basename {1} | sed 's/.fastq//');
 
-    # Basic artic minion workflow.
-    artic minion --medaka --minimap2 --normalise 200 --threads $THREADS --scheme-directory $SCHEMEDIR --read-file $FASTQDIR/$SAMPLE.fastq nCoV-2019/V3.1 $SAMPLE
-    mv $SAMPLE* $OUTDIR/tempo/articminion/
-    
-    # Generate coverage.
-    echo -e 'scaffold\tposition\tcoverage' > $OUTDIR/results/coverage/$SAMPLE.cov.tsv
-    samtools depth -a $OUTDIR/tempo/articminion/$SAMPLE.sorted.bam >> $OUTDIR/results/coverage/$SAMPLE.cov.tsv
-    
-    mv $OUTDIR/tempo/articminion/$SAMPLE.consensus.fasta $OUTDIR/results/genomes/
-    
-    # Extract mapped reads.
-    samtools fastq --threads $THREADS -F 4 $OUTDIR/tempo/articminion/$SAMPLE.sorted.bam > $OUTDIR/results/mapped_fastq/$SAMPLE"_virus".fastq
-    md5sum $OUTDIR/results/mapped_fastq/$SAMPLE"_virus".fastq >> $OUTDIR/results/md5sums.txt
-    
-    # Calculate the number of Ns in the sequences.
-    awk '!/^>/ { printf "%s", $0; n = "\n" } /^>/ { print n $0; n = "" } END { printf "%s", n }' $OUTDIR/results/genomes/$SAMPLE.consensus.fasta |\
-    awk '!/^>/ { next } { getline seq; len=length(seq); Nn=gsub(/N/,"",seq) } {sub(/^>/,"",$0); print $0 "\t" Nn}' - > $OUTDIR/results/N_counts/$SAMPLE"N_count.tsv"
-    
-  fi
-done
+# Generate coverage.
+echo -e 'scaffold\tposition\tcoverage' > {2}/results/coverage/$SAMPLE.cov.tsv
+samtools depth -a {2}/tempo/articminion/$SAMPLE.sorted.bam >> {2}/results/coverage/$SAMPLE.cov.tsv
 
-#################################################
-# Plotting		 								#
-#################################################
+# Extract mapped reads.
+samtools fastq --threads 1 -F 4 {2}/tempo/articminion/$SAMPLE.sorted.bam > {2}/results/mapped_fastq/$SAMPLE"_virus".fastq
+md5sum {2}/results/mapped_fastq/$SAMPLE"_virus".fastq >> {2}/results/md5sums.txt
+
+# Calculate the number of Ns in the sequences.
+awk '!/^>/ { printf "%s", $0; n = "\n" } /^>/ { print n $0; n = "" } END { printf "%s", n }' $OUTDIR/results/genomes/$SAMPLE.consensus.fasta |\
+awk '!/^>/ { next } { getline seq; len=length(seq); Nn=gsub(/N/,"",seq) } {sub(/^>/,"",$0); print $0 "\t" Nn}' - > $OUTDIR/results/N_counts/$SAMPLE"N_count.tsv"
+
+' ::: $FILES ::: $OUTDIR
