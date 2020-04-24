@@ -46,7 +46,7 @@ if [ ! -f $META ]; then echo "-m does not exist. It has likely been updated, che
 SEQS=QC/genomes/raw.fasta
 ARTICDIR=( CJ* )
 HUMANREF=/srv/rbd/covid19/data/reference/human_g1k_v37.fasta
-NAMESTRING="DK/ALAB-@/2020"
+NAMESTRING="hCoV-19/DK/ALAB-@/2020"
 
 # Make time-stamped export subfolder.
 DT=$(date +%Y_%m_%d_%H-%M)"_export"
