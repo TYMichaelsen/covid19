@@ -79,7 +79,7 @@ From: nvidia/cuda:10.2-base-ubuntu18.04
   #/opt/miniconda/bin/conda install -c bioconda minimap2=2.17 -y
   
   #install cutadapt
-  conda install -c bioconda cutadapt=1.18 -y
+  conda install -c bioconda cutadapt=1.18 pandoc -y
 
   #install artic-ncov2019-medaka conda environment
   git clone --recursive https://github.com/artic-network/artic-ncov2019.git
