@@ -1,4 +1,6 @@
 #!/bin/bash
+# By Thomas Y. Michaelsen
+# Heavily inspired by the ncov19 workflow provided by the nextstrain team.
 
 VERSION=0.1.0
 
@@ -53,9 +55,9 @@ if [ "$OUTDIR" != "$PWD" ]; then rm -rf $OUTDIR; mkdir $OUTDIR; fi
 #exec 1>$OUTDIR/log.out 2>&1
 
 # Settings
-REF=/srv/rbd/covid19/data/reference
-ROOT_SEQS=/srv/rbd/covid19/nextstrain-analysis/GISAID-data/root.fasta
-ROOT_META=/srv/rbd/covid19/nextstrain-analysis/GISAID-data/root.tsv
+REF=misc_to-be-properly-placed/reference
+ROOT_SEQS=analysis/nextstrain/GISAID-data/root.fasta
+ROOT_META=analysis/nextstrain/GISAID-data/root.tsv
 
 # Add root sequences (See folder GISAID-data for details).
 cat $SEQS $ROOT_SEQS > $OUTDIR/raw.fasta
@@ -88,7 +90,7 @@ rm -r $OUTDIR/split_align
 ### Mask bases ###
 mask_sites="18529 29849 29851 29853"
 
-python3 /srv/rbd/covid19/nextstrain-analysis/GISAID-data/ncov/scripts/mask-alignment.py \
+python3 analysis/nextstrain/GISAID-data/ncov/scripts/mask-alignment.py \
     --alignment $OUTDIR/aligned.fasta \
     --mask-from-beginning 130 \
     --mask-from-end 50 \

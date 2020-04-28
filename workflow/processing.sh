@@ -69,9 +69,6 @@ REF=/srv/rbd/covid19/data/reference/MN908947.3.fasta
 rm -rf $OUTDIR/TMPDIR; mkdir $OUTDIR/TMPDIR/
 mkdir -p $OUTDIR/results/
 
-# add metadata to output folder. 
-cp $POOLDIR/*sequencing.csv $OUTDIR/
-
 FILES=$POOLDIR/demultiplexed/*.fastq
 
 ### Basic artic workflow in parallel.##########################################
@@ -202,6 +199,12 @@ for i in $FILES; do
   fi
 done
 
+### Fetch longshot .vcf files #################################################
+grep -v "#" $OUTDIR/articminion/*longshot.vcf | awk '{print $0, FILENAME}' > $OUTDIR/results/longshot_all.tsv
+
+### Fetch coverage masking ####################################################
+awk '{print $0, FILENAME}' $OUTDIR/articminion/*mask.txt > $OUTDIR/results/coverage_mask_all.txt
+
 ### Dump genomes passing crude QC filter ######################################
 rm -f $OUTDIR/results/filtered.txt
 MAXN=5000
@@ -214,13 +217,16 @@ awk -v THR=$MAXN -v LEN=$MINLENGTH -v outdir=$OUTDIR '!/^>/ { next } { getline s
 
 echo $(wc -l $OUTDIR/results/filtered.txt | sed 's/ .*//') genomes failed QC, see $OUTDIR/results/filtered.txt
 
+###############################################################################
 exit 1
+###############################################################################
 
 # Positions of SNVs and Ns.
-echo -e 'LIB_ID\tposition\tALT' > $OUTDIR/results/artic_vcf.tsv
+echo -e 'LIB_ID\tposition\tREF\tALT\ttype' > $OUTDIR/results/artic_vcf.tsv
 
 PASSFAIL=$OUTDIR/articminion/*fail.vcf
 
+# Specify IN_FAIL directly, for testing.
 IN_FAIL=CJ024/articminion/COV003_LIB-CJ024-75-A-1_UDP0215.fail.vcf
 
 for IN_FAIL in $PASSFAIL; do
@@ -230,8 +236,12 @@ for IN_FAIL in $PASSFAIL; do
   grep -v "^#" <(gunzip -c $IN_PASS.gz) > $OUTDIR/TMPDIR/pass
   grep -v "^#" $IN_FAIL > $OUTDIR/TMPDIR/fail
   
-  awk -F'\t' -v id=$LIBID 'FNR == NR {print id"\t"$2"\tN"} FNR != NR {print id"\t"$2"\t"$5}' $OUTDIR/TMPDIR/fail $OUTDIR/TMPDIR/pass | 
+  # If fail print ALT as an N, if pass print the actual ALT.
+  awk -F'\t' -v id=$LIBID 'FNR == NR {print id"\t"$2"\t"$5} FNR != NR {print id"\t"$2"\t"$5}' $OUTDIR/TMPDIR/fail $OUTDIR/TMPDIR/pass | 
   sort -n -k 2 - >> $OUTDIR/results/artic_vcf.tsv
+  
+  # Add coverage masking to the vcf.
+  # bedtools intersect
   
   rm $OUTDIR/TMPDIR/pass 
   rm $OUTDIR/TMPDIR/fail
