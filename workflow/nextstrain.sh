@@ -2,6 +2,8 @@
 # By Thomas Y. Michaelsen
 # Heavily inspired by the ncov19 workflow provided by the nextstrain team.
 
+set -ex
+
 VERSION=0.1.0
 
 ### Description ----------------------------------------------------------------
@@ -11,7 +13,7 @@ USAGE="$(basename "$0") [-h] [-m file -s file -o dir -t string]
 
 Arguments:
     -h  Show this help text.
-    -m  File (.tsv) with metadata.
+    -m  File (.tsv) with metadata formatted specific for nextstrain.
     -s  Sequences corresponding to metadata.
     -o  Output directory.
     -t  Number of threads.
@@ -40,7 +42,7 @@ done
 # Check missing arguments
 MISSING="is missing but required. Exiting."
 if [ -z ${META+x} ]; then echo "WARNING: -m not provided, parts of the pipeline will not be performed."; fi;
-if [ -z ${SEQS+x} ]; then echo "-s $MISSING"; exit 1; fi;
+if [ -z ${SEQS+x} ]; then echo "-s $MISSING"; echo "$USAGE"; exit 1; fi;
 if [ -z ${OUTDIR+x} ]; then OUTDIR=$PWD; fi;
 if [ -z ${THREADS+x} ]; then THREADS=50; fi;
 
@@ -55,9 +57,15 @@ if [ "$OUTDIR" != "$PWD" ]; then rm -rf $OUTDIR; mkdir $OUTDIR; fi
 #exec 1>$OUTDIR/log.out 2>&1
 
 # Settings
-REF=misc_to-be-properly-placed/reference
-ROOT_SEQS=analysis/nextstrain/GISAID-data/root.fasta
-ROOT_META=analysis/nextstrain/GISAID-data/root.tsv
+# Distribution directory, the root of all input and final output
+DISTDIR="/srv/rbd/covid19/current"
+
+REF="${DISTDIR}/auxdata/reference/"
+METADIR="${DISTDIR}/metadata/metadata_SSI"
+NCOVDIR="${DISTDIR}/auxdata/ncov"
+ROOTSEQSDIR="${DISTDIR}/auxdata/root_seqs"
+ROOT_SEQS=${ROOTSEQSDIR}/root.fasta
+ROOT_META=${ROOTSEQSDIR}/root.tsv
 
 # Add root sequences (See folder GISAID-data for details).
 cat $SEQS $ROOT_SEQS > $OUTDIR/raw.fasta
@@ -68,30 +76,54 @@ rm -rf $OUTDIR/split_fasta; mkdir $OUTDIR/split_fasta
 rm -rf $OUTDIR/split_align; mkdir $OUTDIR/split_align
 
 split -d -l 40 --additional-suffix=.fasta $OUTDIR/raw.fasta $OUTDIR/split_fasta/
+FASTAFILES=`ls $OUTDIR/split_fasta` 
 
 parallel -j$THREADS \
 '
 augur align \
 --sequences {2}/split_fasta/{1} \
 --reference-sequence {3} \
---output {2}/split_align/{1} \
+--output {2}/split_align/{1}.aligned \
 --nthreads 1 \
 --remove-reference \
 --fill-gaps &> {2}/log.out
 
-' ::: `ls $OUTDIR/split_fasta` ::: $OUTDIR ::: $REF/MN908947.3.gb
+' ::: $FASTAFILES ::: $OUTDIR ::: $REF/MN908947.3.gb
 
-cat $OUTDIR/split_align/*.fasta > $OUTDIR/aligned.fasta
+cat $OUTDIR/split_align/*.aligned > $OUTDIR/aligned.fasta
 cat $OUTDIR/split_align/*.log > $OUTDIR/aligned.log
 
 rm -r $OUTDIR/split_fasta
 rm -r $OUTDIR/split_align
 
+if [ -z ${META+x} ] || [ ! -f $META ]; then
+    echo "No metadata provided or not founds, stopping after alignment and initial tree."
+    exit 1
+fi
+
+if [ ! -f $META ]; then
+    echo "ERROR: Metadata not found, exiting."; exit 1
+else
+    cat $META $ROOT_META > $OUTDIR/metadata.tsv
+    # cat $META > $OUTDIR/metadata.tsv
+    # Replace fasta header (library_id) withs strain names (ssi_id)
+    awk -F'\t' '
+    (FNR==NR){
+        lib2id[$3]=$8; next}
+    { if ($0 ~/^>/) { hdr=$0; sub(">","", hdr);
+            if (length(lib2id[hdr]) >0)
+            {$0=">"lib2id[hdr]; }
+     }
+     print $0} ' \
+    ${METADIR}/2020-04-28-19-57_metadata.tsv $OUTDIR/aligned.fasta > ${OUTDIR}/aligned.fixheader.fasta
+fi
+
+
 ### Mask bases ###
 mask_sites="18529 29849 29851 29853"
 
-python3 analysis/nextstrain/GISAID-data/ncov/scripts/mask-alignment.py \
-    --alignment $OUTDIR/aligned.fasta \
+python3 ${NCOVDIR}/scripts/mask-alignment.py \
+    --alignment $OUTDIR/aligned.fixheader.fasta \
     --mask-from-beginning 130 \
     --mask-from-end 50 \
     --mask-sites $mask_sites \
@@ -105,17 +137,6 @@ augur tree \
     --alignment $OUTDIR/masked.fasta \
     --output $OUTDIR/tree_raw.nwk \
     --nthreads $THREADS
-
-if [ -z ${META+x} ] || [ ! -f $META ]; then
-  echo "No metadata provided or not founds, stopping after alignment and initial tree."
-  exit 1
-fi
-
-if [ ! -f $META ]; then
-  echo "ERROR: Metadata not found, exiting."; exit 1
-else
-  cat $META $ROOT_META > $OUTDIR/metadata.tsv
-fi
 
 ### build time-adjusted tree (THE TIME KILLER!).
 augur refine \
@@ -152,39 +173,38 @@ augur translate \
   --output-node-data $OUTDIR/aa_muts.json
             
 ### traits.
-#augur traits \
-#  --tree results/tree.nwk \
-#  --metadata $META \
-#  --weights ncov/config/weight.tsv \
-#  --output results/traits.json \
-#  --columns country_exposure \
-#  --confidence \
-#  --sampling-bias-correction 2.5 
+augur traits \
+ --tree ${OUTDIR}/tree.nwk \
+ --metadata ${OUTDIR}/metadata.tsv \
+ --output ${OUTDIR}/traits.json \
+ --columns country_exposure \
+ --confidence \
+ --sampling-bias-correction 2.5 
             
 ### add clades.
 augur clades \
   --tree $OUTDIR/tree.nwk \
   --mutations $OUTDIR/nt_muts.json $OUTDIR/aa_muts.json \
-  --clades GISAID-data/ncov/config/clades.tsv \
+  --clades ${ROOTSEQSDIR}/pangolin_clades.tsv \
   --output-node-data $OUTDIR/clades.json
   
 ### construct colouring.
-python3 GISAID-data/ncov/scripts/assign-colors.py \
-  --ordering GISAID-data/ncov/config/ordering.tsv \
-  --color-schemes GISAID-data/ncov/config/color_schemes.tsv \
+python3 ${NCOVDIR}/scripts/assign-colors.py \
+  --ordering ${NCOVDIR}/config/ordering.tsv \
+  --color-schemes ${NCOVDIR}/config/color_schemes.tsv \
   --output $OUTDIR/colors.tsv
   
 ### Construct output for auspice.
 mkdir -p $OUTDIR/auspice
 
 # Cat DK lat long with auspice.
-cat GISAID-data/ncov/config/lat_longs.tsv /srv/rbd/covid19/data/metadata_SSI/latlong_DK_nextstrain.tsv > $OUTDIR/latlongs.tsv
+cat ${NCOVDIR}/config/lat_longs.tsv ${METADIR}/latlong_DK_nextstrain.tsv > $OUTDIR/latlongs.tsv
 
 augur export v2 \
   --tree $OUTDIR/tree.nwk \
   --metadata $OUTDIR/metadata.tsv \
-  --node-data $OUTDIR/branch_lengths.json $OUTDIR/nt_muts.json $OUTDIR/aa_muts.json $OUTDIR/clades.json \
-  --auspice-config GISAID-data/ncov/config/auspice_config.json \
+  --node-data $OUTDIR/branch_lengths.json $OUTDIR/nt_muts.json $OUTDIR/aa_muts.json ${OUTDIR}/traits.json $OUTDIR/clades.json \
+  --auspice-config ${NCOVDIR}/config/auspice_config.json \
   --colors $OUTDIR/colors.tsv \
   --color-by-metadata region country division location \
   --lat-longs $OUTDIR/latlongs.tsv \
