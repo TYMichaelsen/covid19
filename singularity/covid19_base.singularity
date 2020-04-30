@@ -34,6 +34,14 @@ From: nvidia/cuda:10.2-base-ubuntu18.04
   export LC_ALL=en_US.UTF-8
   export LANG=en_US.UTF-8
 
+  #install miniconda3 in silent mode (4.7.12.1)
+  wget -q https://repo.anaconda.com/miniconda/Miniconda3-4.7.12.1-Linux-x86_64.sh -O miniconda.sh 
+  bash miniconda.sh -b -p /opt/miniconda 
+  rm miniconda.sh 
+  ln -s /opt/miniconda/etc/profile.d/conda.sh /etc/profile.d/conda.sh 
+  echo ". /opt/miniconda/etc/profile.d/conda.sh" >> $SINGULARITY_ENVIRONMENT
+  echo 'export PATH="/opt/miniconda/bin:${PATH}"' >> $SINGULARITY_ENVIRONMENT
+
   #install R, R packages, and system dependencies
   #specific version of R to be installed
   export R_BASE_VERSION=3.6.3
@@ -63,14 +71,6 @@ From: nvidia/cuda:10.2-base-ubuntu18.04
   tar -zxf /opt/ont-guppy_3.6.0_linux64.tar.gz -C /opt 
   rm /opt/ont-guppy_3.6.0_linux64.tar.gz
   echo 'export PATH="/opt/ont-guppy/bin:${PATH}"' >> $SINGULARITY_ENVIRONMENT
-  
-  #install miniconda3 in silent mode (4.7.12.1)
-  wget -q https://repo.anaconda.com/miniconda/Miniconda3-4.7.12.1-Linux-x86_64.sh -O miniconda.sh 
-  bash miniconda.sh -b -p /opt/miniconda 
-  rm miniconda.sh 
-  ln -s /opt/miniconda/etc/profile.d/conda.sh /etc/profile.d/conda.sh 
-  echo ". /opt/miniconda/etc/profile.d/conda.sh" >> $SINGULARITY_ENVIRONMENT
-  echo 'export PATH="/opt/miniconda/bin:${PATH}"' >> $SINGULARITY_ENVIRONMENT
 
   # this is for build time
   . /opt/miniconda/etc/profile.d/conda.sh
