@@ -1,2 +1,4 @@
 *.sif
 build
+
+singularity/.Rhistory
