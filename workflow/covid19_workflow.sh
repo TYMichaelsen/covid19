@@ -21,7 +21,7 @@ THREADS=100
 
 source activate artic-ncov2019-medaka
 
-bash $AAU_COVID19_PATH/processing.sh -d $runID -s nCoV-2019/V3.1 -o $runID/processing -t $THREADS -a 
+bash $AAU_COVID19_PATH/processing.sh -d $runID -s nCoV-2019/V3.1 -o $runID/processing -t $THREADS
 
 source deactivate
 
@@ -32,7 +32,7 @@ source deactivate
 source activate nextstrain
 
 QC=$AAU_COVID19_PATH/QC.sh
-RMD=$AAU_COVID19_PATH/QC_ma.rmd
+RMD=$AAU_COVID19_PATH/QC.rmd
 
 bash $QC -b $runID -r $RMD -t $THREADS
 
