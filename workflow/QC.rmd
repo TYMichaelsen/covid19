@@ -1,0 +1,306 @@
+---
+title: "QC report - `r params$batch`"
+author: "Microflora Corona"
+date: "`r format(Sys.time(), '%d-%m-%Y')`, Aalborg, Denmark"
+output:
+  html_document
+params:
+  batch: "Batch name"
+  labmeta:  "lab metadata"
+editor_options: 
+      chunk_output_type: console
+---
+
+```{r setup,include = F}
+knitr::opts_chunk$set(
+  fig.cap    = " ",
+  fig.align  = "center",
+  fig.width  = 12,
+  fig.height = 8,
+  message    = FALSE, 
+  warning    = FALSE,
+  echo       = FALSE)
+
+options(scipen=999)
+
+# Make sure bioc is available.
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+
+# Load libraries.
+getPackage <- function(mypkg,bioc = F){
+    isInst <- is.element(mypkg, installed.packages()[,1])
+    if (!isInst){
+      if (bioc){
+        BiocManager::install(mypkg)
+      } else {
+        install.packages(mypkg)
+      }
+    } else{
+      library(mypkg,character.only = T)
+    } 
+}
+getPackage("tidyverse")
+getPackage("magrittr")
+getPackage("ape")
+getPackage("ggtree",bioc = T)
+getPackage("knitr")
+getPackage("kableExtra")
+```
+
+```{r,eval=F}
+# For build mode.
+setwd("/srv/rbd/covid19/current")
+batch   <- "CJ024"
+labmeta <- "rawdata/CJ024/LIB-CJ024-pool1/CJ024_metadata_sequencing.csv"
+```
+
+```{r}
+batch   <- params$batch
+labmeta <- params$labmeta 
+
+# Load amplicon counts.---------------------------------------------------------
+
+cov <- read_delim(file = paste0("processing/",batch,"/results/amplicon_count.tsv"), delim = "\t") %>%
+  mutate(
+    library_id = str_match(library_id, "_(.*?)_")[,2],
+    primer_id  = str_match(primer_id,"_(.*?)_")[,2] %>% as.numeric()) %>%
+  # Catch amplicons with 0 coverage
+  pivot_wider(
+    names_from  = "library_id", 
+    values_from = "count", 
+    values_fill = list("count" = 0)) %>% 
+  pivot_longer(
+    names_to  = "library_id",
+    values_to = "count", 
+    cols      = c(-primer_id,-start,-end)) %>%
+  dplyr::rename(coverage = count) %>%
+  group_by(library_id) %>%
+  mutate(
+    coverage_relative = coverage/sum(coverage)*100,
+    pos_mean          = start + (end-start)/2)
+
+cov_tot <- mutate(cov,
+                  bp_temp = (end-start)*coverage %>% round(0)) %>%
+           group_by(library_id) %>%
+           summarise(bp = sum(bp_temp))
+
+# Load naive snv frequencies.---------------------------------------------------
+
+nsnv <- read_delim(file = paste0("processing/",batch,"/results/naive_vcf.tsv"), delim = "\t") %>%
+  mutate(library_id = str_match(library_id, "_(.*?)_")[,2])
+
+# Load artic snv frequencies.---------------------------------------------------
+
+asnv <- read_delim(file = paste0("processing/",batch,"/results/artic_vcf.tsv"), delim = "\t") %>%
+  mutate(
+    library_id = str_match(library_id, "_(.*?)_")[,2],
+    depth      = str_match(string, "DP=(.*?);")[,2] %>% as.numeric(),
+    AC         = str_match(string, "AC=(.*?);")[,2]) %>%
+  separate(AC, into = c("ref_count", "alt_count"), sep = ",", convert = T) %>%
+  mutate(alt_frac = round(alt_count/depth, 2)) %>%
+  mutate(snv_type = ifelse(nchar(ref) > nchar(alt), "D", 
+                    ifelse(nchar(ref) < nchar(alt), "I", alt))) %>%
+  select(library_id, type, position, ref, alt, depth, ref_count, alt_count, alt_frac, snv_type) 
+
+# Fix multi-snvs.
+asnv <- asnv %>%
+  mutate(
+    position = ifelse(!(snv_type %in% c("D","I")) & nchar(ref) > 1,
+      mapply(function(pos,ref){paste(seq(pos,pos+(nchar(ref)-1)),collapse = ",")},pos = position,ref = ref),position),
+    ref      = ifelse(!(snv_type %in% c("D","I")) & nchar(ref) > 1,
+      gsub('(?<=.)(?=.)', ',', ref,perl=TRUE),ref),
+    alt      = ifelse(!(snv_type %in% c("D","I")) & nchar(ref) > 1,
+      gsub('(?<=.)(?=.)', ',', alt,perl=TRUE),alt),
+    snv_type = ifelse(!(snv_type %in% c("D","I")) & nchar(ref) > 1,
+      alt,snv_type)) %>%
+  separate_rows(position,ref,alt,snv_type,sep = ",") %>%
+  mutate(position = as.numeric(position))
+
+# Load longshot vcf.------------------------------------------------------------
+# longshot_snv <- read_delim(file = paste0("processing/",batch,"/results/longshot_all.tsv"), delim = "\t") %>%
+#   mutate(
+#     library_id = str_match(library_id, "_(.*?)_")[,2],
+#     depth      = str_match(string, "DP=(.*?);")[,2] %>% as.numeric(),
+#     AC         = str_match(string, "AC=(.*?);")[,2]) %>%
+#   filter(depth > 10) %>% # Need to know what Loman uses (not sure it is really important here... but well, would be nice to know)
+#   separate(AC, into = c("ref_count", "alt_count"), sep = ",", convert = T) %>%
+#   mutate(alt_frac = round(alt_count/depth, 2)) %>%
+#   mutate(snv_type = ifelse(nchar(ref) > nchar(alt), "D",
+#                     ifelse(nchar(ref) < nchar(alt), "I", alt))) %>%
+#   select(library_id, position, ref, alt, depth, ref_count, alt_count, alt_frac, snv_type)
+# 
+# # Fix multi-snvs.
+# longshot_snv <- longshot_snv %>%
+#   mutate(
+#     position = ifelse(!(snv_type %in% c("D","I")) & nchar(ref) > 1,
+#       mapply(function(pos,ref){paste(seq(pos,pos+(nchar(ref)-1)),collapse = ",")},pos = position,ref = ref),position),
+#     ref      = ifelse(!(snv_type %in% c("D","I")) & nchar(ref) > 1,
+#       gsub('(?<=.)(?=.)', ',', ref,perl=TRUE),ref),
+#     alt      = ifelse(!(snv_type %in% c("D","I")) & nchar(ref) > 1,
+#       gsub('(?<=.)(?=.)', ',', alt,perl=TRUE),alt),
+#     snv_type = alt) %>%
+#   separate_rows(position,ref,alt,snv_type,sep = ",") %>%
+#   mutate(position = as.numeric(position))
+
+# Load masked areas.------------------------------------------------------------
+mask <- read_delim(file = paste0("processing/",batch,"/results/cov_mask_all.tsv"), delim = "\t") %>%
+  mutate(position = mapply(function(start,end){paste(seq(start,end),collapse = ",")},start = start,end = end)) %>%
+  separate_rows(position,sep = ",") %>%
+  mutate(position   = as.numeric(position)) %>%
+  mutate(library_id = str_match(library_id, "_(.*?)_")[,2]) %>%
+  select(-start,-end)
+
+# Get number of Ns.
+ncount <- mask %>% 
+  group_by(library_id) %>%
+  summarise(n_count = n()) %>%
+  mutate(genome_qc  = cut(n_count,breaks = c(-Inf,130,5000,Inf),labels = c("HQ","MQ","Fail")))
+
+# filter mask.
+mask <- mask %>%
+  group_by(library_id) %>%
+  filter(n() < 5000) %>%
+  filter(position > 130 & position < 29903-100) %>%
+  mutate(mask = "N")
+
+# Load tree.--------------------------------------------------------------------
+ntree <- read.tree(file = paste0("QC/",batch,"/aligntree/tree_raw.nwk"))
+
+# Load the library concentrations.----------------------------------------------
+libconc <- read_delim(labmeta,delim = ",") %>%
+  {`colnames<-`(.,tolower(colnames(.)))} %>%
+  select(
+    # Fetch the library_id column.
+    (contains("lib") & contains("id") & !contains("conc") & !contains("method") & !contains("storage")) | 
+    # Fetch the library_conc column.
+    (contains("amplicon") & contains("conc"))) %>%
+  `colnames<-`(c("library_id","library_conc"))
+
+# Merge data.-------------------------------------------------------------------
+
+d <- left_join(libconc,cov_tot,by = "library_id") %>%
+  left_join(.,ncount,by = "library_id") %>%
+  mutate(tree = ifelse(library_id %in% ntree$tip.label, "Yes", "No")) %>%
+  mutate(sample_type = tolower(library_id) %>%
+    {case_when(grepl("neg",.) ~ "NEG",grepl("pos",.) ~ "POS",!grepl("neg|pos",.) ~ "sample")})    
+
+# Create snv table.-------------------------------------------------------------
+snv <- asnv %>%
+  mutate(snv_type = ifelse(type == "pass",snv_type,"N")) %>%
+  select(library_id,position,snv_type) %>%
+  full_join(.,mask,by = c("library_id","position")) %>%
+  mutate(snv_type = ifelse(is.na(mask),snv_type,mask))
+```
+
+# General overview
+
+## Overview of genome qualities
+
+- `HQ`: A genome with < 130 N's in total and < 10 N's excluding end regions.
+- `MQ`: A genome with < 5000 N's in total.
+- `Fail`: A genome with > 5000 N's in total.
+
+```{r}
+ncount %>% 
+  group_by(genome_qc) %>%
+  summarise(!!batch := n()) %>%
+  dplyr::rename(`Genome Quality` = genome_qc) %>%
+  kable() %>%
+  kable_styling(bootstrap_options = c("striped", "hover"), full_width = F)
+```
+
+## Library concentrations vs. coverage
+
+```{r}
+ggplot(data = d, aes(x=library_conc, y = bp/29903, color = genome_qc)) +
+  geom_point() +
+  labs(x      = "Theoretical average coverage",
+       y      = "Library Concentration [ng/ul]",
+       colour = "Genome Quality") +
+  scale_y_log10() +
+  theme_bw()
+```
+
+## Genome positions with N's (Only MQ & HQ)
+
+```{r}
+wh <- filter(d, genome_qc %in% c("MQ", "HQ") & sample_type == "sample") %>%
+  pull(library_id)
+
+snv_freq <- filter(snv, library_id %in% wh & snv_type == "N") %>%
+            mutate(n_libs)
+            group_by(position) %>%
+            summarise(count = n()) %>%
+            ungroup() %>%
+            mutate(frac = count/max(count))
+
+ggplot(snv_freq, aes(x = position, y = frac)) +
+  geom_point() +
+  xlab("Genome position (bp)") +
+  ylab("Fraction of genomes with N")
+```
+
+## Coverage for each primer-pair (samples only)
+
+```{r, fig.height=8}
+wh <- filter(d, !is.na(genome_qc) & sample_type == "sample") %>% pull(library_id)
+
+cov_sub <- subset(cov, library_id %in% wh) %>% 
+  mutate(coverage_relative = ifelse(coverage_relative < 0.01, 0.01, coverage_relative)) %>%
+  left_join(d %>% select(library_id, genome_qc), by = "library_id") %>%
+  mutate(genome_qc = factor(genome_qc, levels = c("HQ", "MQ", "Fail")))
+
+ggplot(cov_sub, aes(x = primer_id, y = coverage_relative, group = primer_id, color = coverage_relative)) +
+  geom_jitter(width = 0.1 , height = 0.1) +
+  scale_colour_viridis_b(trans = "log10", direction = -1, breaks = c(0, 0.1, 1, 10, 100)) +
+  scale_x_continuous(breaks = c(0,5,10,15,20,25,30)) +
+  facet_grid(cols = vars(genome_qc)) +
+  scale_y_log10(breaks = c(0.01, 0.1, 1, 10, 100), limits = c(0.005, NA)) +
+  labs(x = "Primer pair", y = "Relative coverage [%]") +
+  theme(legend.position = "none")
+```
+
+## Coverage for each primer-pair (controls only)
+
+```{r, fig.height=8}
+wh <- filter(d, sample_type != "sample") %>% pull(library_id)
+
+cov_sub <- subset(cov, library_id %in% wh) %>% 
+  mutate(coverage_relative = ifelse(coverage_relative < 0.01, 0.01, coverage_relative)) %>%
+  left_join(d %>% select(library_id, sample_type), by = "library_id") %>%
+  mutate(sample_type = factor(sample_type, levels = c("POS", "NEG")))
+
+ggplot(cov_sub, aes(x = primer_id, y = coverage_relative, group = primer_id, color = coverage_relative)) +
+  geom_jitter(width = 0.1 , height = 0.1) +
+  scale_colour_viridis_b(trans = "log10", direction = -1, breaks = c(0, 0.1, 1, 10, 100)) +
+  scale_x_continuous(breaks = c(0,5,10,15,20,25,30)) +
+  facet_grid(cols = vars(sample_type)) +
+  scale_y_log10(breaks = c(0.01, 0.1, 1, 10, 100), limits = c(0.005, NA)) +
+  labs(x = "Primer pair", y = "Relative coverage [%]") +
+  theme(legend.position = "none")
+```
+
+# Detail overview
+
+## Coverage (HQ)
+
+```{r}
+meta_sub <- filter(d,sample_type == "sample" & genome_qc == "HQ") %>%
+  head(n = 10) 
+
+# Subset.
+cov_sub  <- filter(cov, library_id %in% meta_sub$library_id)
+asnv_sub <- filter(asnv, library_id %in% meta_sub$library_id)
+
+ggplot(cov_sub, aes(x = pos_mean, y = coverage+1, color = coverage+1)) +
+  geom_segment(aes(x = start, xend = end, y = coverage + 1, yend = coverage +1), size = 1) +
+  scale_colour_viridis_c(trans = "log10", direction = -1, breaks = c(1, 10, 100, 1000, 10000),limits = c(1, NA)) +
+  facet_wrap(~library_id, ncol = 2) +
+  scale_y_log10(limits=c(1,100000), breaks = c(1, 10 ,100 ,1000, 10000)) +
+  labs(x = "Genome position [bp]", y = "Coverage [fold]") +
+  theme(legend.position = "none") +
+  geom_text(data = meta_sub, aes(x = 15000, y = 100000, label = paste0("Library conc.: ", round(library_conc, 0), " ng/ul, Coverage: ", round(bp/30000,0))), color = "black", size = 3) +
+  geom_text(data = asnv_sub, aes(x = position, y = 10, label = snv_type), color = "black", size = 2)
+```
+
