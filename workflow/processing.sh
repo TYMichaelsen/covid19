@@ -9,8 +9,8 @@ USAGE="$(basename "$0") [-h] [-d dir -s dir -o dir -t string -a flag]
 
 Arguments:
     -h  Show this help text.
-    -d  Library pool directory.
-    -s  Scheme version directory.
+    -d  Library pool directory. MUST BE RELATIVE TO CURRENT WORKING DIRECTORY.
+    -s  Scheme version directory. 
     -o  Output directory.
     -t  Number of threads.
     -a  Flag: set if you don't want to rerun artic.
@@ -47,15 +47,10 @@ if [ -z ${THREADS+x} ]; then THREADS=50; fi;
 
 ### Code.----------------------------------------------------------------------
 # setup output folders.
-if [ ! -d "$OUTDIR" ]; then mkdir $OUTDIR; fi
-
-# Capture stdout to log file.
-#exec 3>&1 4>&2
-#trap 'exec 2>&4 1>&3' 0 1 2 3
-#exec 1>$OUTDIR/log.out 2>&1
+mkdir -p $OUTDIR
 
 # Setup log.
-echo "# input settings" > $OUTDIR/log.out
+echo "# input settings (created on $(date))" > $OUTDIR/log.out
 echo "-d: "$POOLDIR >> $OUTDIR/log.out
 echo "-s: "$SCHEMEVERS >> $OUTDIR/log.out
 echo "-o: "$OUTDIR >> $OUTDIR/log.out
@@ -63,13 +58,19 @@ echo "-t: "$THREADS >> $OUTDIR/log.out
 echo "-a: "$RERUN >> $OUTDIR/log.out
 
 # Settings
-SCHEMEDIR=/srv/rbd/covid19/git/covid19/workflow/primer_schemes
-REF=/srv/rbd/covid19/data/reference/MN908947.3.fasta
+SCHEMEDIR=/srv/rbd/covid19/git/covid19/workflow/primer_schemes                ### OBS: NEED TO SET PATH CORRECT!!!
+REF=/srv/rbd/covid19/current/auxdata/reference/MN908947.3.fasta
+HUMANREF=/srv/rbd/covid19/current/auxdata/reference/human_g1k_v37.fasta
 
 rm -rf $OUTDIR/TMPDIR; mkdir $OUTDIR/TMPDIR/
 mkdir -p $OUTDIR/results/
+mkdir -p $OUTDIR/results/mapped_fastq
 
 FILES=$POOLDIR/demultiplexed/*.fastq
+
+# For artic, need to make sure we are pointing correctly at files.
+nrep=$(echo $OUTDIR/articminion | awk -F'/' '{for (i = 1; i <= NF; i++) a=a"../"; print a}')
+FILES_ARTIC=$(for i in $FILES; do echo $nrep$i; done)
 
 ### Basic artic workflow in parallel.##########################################
 if [ -z ${RERUN+x} ]; then
@@ -90,7 +91,7 @@ if [ -z ${RERUN+x} ]; then
       --read-file {1} \
       {4} $SAMPLE;
   
-  ' ::: $FILES ::: $OUTDIR ::: $SCHEMEDIR ::: $SCHEMEVERS
+  ' ::: $FILES_ARTIC ::: $OUTDIR ::: $SCHEMEDIR ::: $SCHEMEVERS
    
 else
 
@@ -107,7 +108,7 @@ fi
 echo "Creating $OUTDIR/results/amplicon_count.tsv"
 
 ### Amplicon counts.
-echo -e 'LIB_ID\tprimer_id\tstart\tend\tcount' > $OUTDIR/results/amplicon_count.tsv
+echo -e 'library_id\tprimer_id\tstart\tend\tcount' > $OUTDIR/results/amplicon_count.tsv
 
 for i in $FILES; do
   SAMPLE="$(basename $i .fastq)";
@@ -116,32 +117,32 @@ for i in $FILES; do
   fi
 done
 
-echo -e 'LIB_ID\tposition\tcoverage' > $OUTDIR/results/coverage.tsv
-touch $OUTDIR/results/md5sums.txt
+### Coverage. #################################################################
 
-### Coverage.
+#echo -e 'library_id\tposition\tcoverage' > $OUTDIR/results/coverage.tsv
+
 # Function for moving average.
-mvavg () {
-  FILE=$1
-  MVINT=$2
-  NAMECOL=$3
-  
-  awk -v id=$NAMECOL -v mvint=$MVINT '{sum+=$3} (NR%10)==0 {print id"\t"$2-(mvint/2)"\t"sum/mvint; sum=0}' $FILE
-}
-export -f mvavg
+#mvavg () {
+#  FILE=$1
+#  MVINT=$2
+#  NAMECOL=$3
+#  
+#  awk -v id=$NAMECOL -v mvint=$MVINT '{sum+=$3} (NR%10)==0 {print id"\t"$2-(mvint/2)"\t"sum/mvint; sum=0}' $FILE
+#}
+#export -f mvavg
 
 # Compute coverage.
-parallel -j $THREADS \
-'
-SAMPLE="$(basename {1} .fastq)";
+#parallel -j $THREADS \
+#'
+#SAMPLE="$(basename {1} .fastq)";
 
-if [ -f {2}/articminion/$SAMPLE.sorted.bam ]; then
-  samtools depth -a -d 0 {2}/articminion/$SAMPLE.sorted.bam | mvavg - 10 $SAMPLE > {2}/TMPDIR/$SAMPLE.cov.tsv;
-fi
-' ::: $FILES ::: $OUTDIR ::: $HUMANREF
+#if [ -f {2}/articminion/$SAMPLE.sorted.bam ]; then
+#  samtools depth -a -d 0 {2}/articminion/$SAMPLE.sorted.bam | mvavg - 10 $SAMPLE > {2}/TMPDIR/$SAMPLE.cov.tsv;
+#fi
+#' ::: $FILES ::: $OUTDIR ::: $HUMANREF
 
-cat $OUTDIR/TMPDIR/*.cov.tsv >> $OUTDIR/results/coverage.tsv
-rm $OUTDIR/TMPDIR/*.cov.tsv
+#cat $OUTDIR/TMPDIR/*.cov.tsv >> $OUTDIR/results/coverage.tsv
+#rm $OUTDIR/TMPDIR/*.cov.tsv
 
 ### Call naive variants in parallel. ##########################################
 MINALT=0.05 # the minimum fraction of bases which supports the alternative base.
@@ -172,7 +173,7 @@ filter_vcf () {
 export -f filter_vcf
 
 # Run pileup and filter in parallel.
-echo -e 'LIB_ID\tposition\tfrac_ALT' > $OUTDIR/results/naive_vcf.tsv
+echo -e 'library_id\tposition\tfrac_ALT' > $OUTDIR/results/naive_vcf.tsv
 
 echo "Creating $OUTDIR/results/naive_vcf.tsv"
 
@@ -191,7 +192,10 @@ cat $OUTDIR/TMPDIR/*.naivevcf.tsv >> $OUTDIR/results/naive_vcf.tsv
 rm $OUTDIR/TMPDIR/*.naivevcf.tsv
 
 ### Count number of Ns ########################################################
-echo -e 'LIB_ID\tNs' > $OUTDIR/results/N_counts.tsv;
+
+echo "Creating $OUTDIR/results/N_counts.tsv"
+
+echo -e 'library_id\tn_count' > $OUTDIR/results/N_counts.tsv;
 for i in $FILES; do
   SAMPLE="$(basename $i .fastq)";
   if [ -f $OUTDIR/articminion/$SAMPLE.consensus.fasta ]; then
@@ -200,10 +204,19 @@ for i in $FILES; do
 done
 
 ### Fetch longshot .vcf files #################################################
-grep -v "#" $OUTDIR/articminion/*longshot.vcf | awk '{print $0, FILENAME}' > $OUTDIR/results/longshot_all.tsv
 
-### Fetch coverage masking ####################################################
-awk '{print $0, FILENAME}' $OUTDIR/articminion/*mask.txt > $OUTDIR/results/coverage_mask_all.txt
+echo "Creating $OUTDIR/results/longshot_all.tsv"
+
+echo -e "library_id\tposition\tref\talt\tstring" > $OUTDIR/results/longshot_all.tsv
+grep -v "#" $OUTDIR/articminion/*longshot.vcf |
+awk -F'\t' '{sub(/.longshot.*/,"",$1); sub(/.*\//,"",$1); print $1"\t"$2"\t"$4"\t"$5"\t"$8}' >> $OUTDIR/results/longshot_all.tsv 
+
+### Fetch masked regions ######################################################
+
+echo "Creating $OUTDIR/results/cov_mask_all.tsv"
+
+echo -e "library_id\tstart\tend" > $OUTDIR/results/cov_mask_all.tsv
+awk -F'\t' '{sub(/.coverage_mask.txt.*/,"",FILENAME); sub(/.*\//,"",FILENAME); print FILENAME"\t"$2"\t"$3}' $OUTDIR/articminion/*mask.txt >> $OUTDIR/results/cov_mask_all.tsv
 
 ### Dump genomes passing crude QC filter ######################################
 rm -f $OUTDIR/results/filtered.txt
@@ -212,37 +225,33 @@ MINLENGT=25000
 
 cat $OUTDIR/articminion/*.consensus.fasta | 
 awk '/^>/ {printf("\n%s\n",$0);next; } { printf("%s",$0);}  END {printf("\n");}' - | awk 'NR > 1' - | # make one-line fasta.
-awk '/^>/ {sub(/_UDP.*$/,"",$0);sub(/.*_LIB/,">LIB",$0)}1' - |
+awk '/^>/ {sub(/\/ARTIC.*$/,"",$0)}1' - |
 awk -v THR=$MAXN -v LEN=$MINLENGTH -v outdir=$OUTDIR '!/^>/ { next } { getline seq; seq2=seq; Nn=gsub(/N/,"",seq) }; {if (length(seq2) > LEN && Nn <= THR) { print $0 "\n" seq2 } else {sub(/^>/,"",$0); print $0 >> outdir"/results/filtered.txt"}}' - > $OUTDIR/results/consensus.fasta # Tidy header.
 
 echo $(wc -l $OUTDIR/results/filtered.txt | sed 's/ .*//') genomes failed QC, see $OUTDIR/results/filtered.txt
 
+### Remove human reads.########################################################
+echo "Output .fastq file with mapped reads for each genome"
+
+# List all available .bam files.
+grep ">" $OUTDIR/results/consensus.fasta | sed "s|^>|$OUTDIR\/articminon\/|" | sed 's/$/.sorted.bam/'> $OUTDIR/TMPDIR/bamfiles
+
+# for each mapping, run sanitize-me.
+awk -v outdir=$OUTDIR -v human=$HUMANREF '{print $1":"outdir":"human}' $OUTDIR/TMPDIR/bamfiles | parallel -j $THREADS --colsep ':' --bar \
+'
+if [ -z {1} ]; then
+  >&2 echo "warning: .bam file {1} was not in the artic output." 
+else
+  SAMPLE=$(basename {1} | sed 's/.sorted.bam//')
+
+  # Extract mapped reads and remove human reads with the CDC protocol: https://github.com/CDCgov/SanitizeMe
+  samtools fastq --threads 1 -F 4 {1} 2> /dev/null |\
+  minimap2 -ax map-ont {3} - -t 1 2> /dev/null |\
+  samtools view --threads 1 -u -f 4 - 2> /dev/null |\
+  samtools bam2fq --threads 1 - 2> /dev/null |\
+  gzip -c - > {2}/mapped_fastq/$SAMPLE.fastq.gz 2> /dev/null
+fi' 
+
 ###############################################################################
 exit 1
 ###############################################################################
-
-# Positions of SNVs and Ns.
-echo -e 'LIB_ID\tposition\tREF\tALT\ttype' > $OUTDIR/results/artic_vcf.tsv
-
-PASSFAIL=$OUTDIR/articminion/*fail.vcf
-
-# Specify IN_FAIL directly, for testing.
-IN_FAIL=CJ024/articminion/COV003_LIB-CJ024-75-A-1_UDP0215.fail.vcf
-
-for IN_FAIL in $PASSFAIL; do
-  IN_PASS="$(sed s/fail/pass/ <<< $IN_FAIL)"
-  LIBID="$(basename $IN_FAIL .fail.vcf)"
-  
-  grep -v "^#" <(gunzip -c $IN_PASS.gz) > $OUTDIR/TMPDIR/pass
-  grep -v "^#" $IN_FAIL > $OUTDIR/TMPDIR/fail
-  
-  # If fail print ALT as an N, if pass print the actual ALT.
-  awk -F'\t' -v id=$LIBID 'FNR == NR {print id"\t"$2"\t"$5} FNR != NR {print id"\t"$2"\t"$5}' $OUTDIR/TMPDIR/fail $OUTDIR/TMPDIR/pass | 
-  sort -n -k 2 - >> $OUTDIR/results/artic_vcf.tsv
-  
-  # Add coverage masking to the vcf.
-  # bedtools intersect
-  
-  rm $OUTDIR/TMPDIR/pass 
-  rm $OUTDIR/TMPDIR/fail
-done
