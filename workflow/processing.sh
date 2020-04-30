@@ -46,8 +46,19 @@ if [ -z ${OUTDIR+x} ]; then echo "-d $MISSING"; exit 1; fi;
 if [ -z ${THREADS+x} ]; then THREADS=50; fi;
 
 ### Code.----------------------------------------------------------------------
+
+AAU_COVID19_PATH="$(dirname "$(readlink -f "$0")")"
+
+# Dependencies.
+SCHEMEDIR=$AAU_COVID19_PATH/primer_schemes                
+REF=$AAU_COVID19_PATH/MN908947.3.fasta
+HUMANREF=$AAU_COVID19_PATH/human_g1k_v37.fasta
+
 # setup output folders.
 mkdir -p $OUTDIR
+rm -rf $OUTDIR/TMPDIR; mkdir $OUTDIR/TMPDIR/
+mkdir -p $OUTDIR/results/
+mkdir -p $OUTDIR/results/mapped_fastq
 
 # Setup log.
 echo "# input settings (created on $(date))" > $OUTDIR/log.out
@@ -56,15 +67,6 @@ echo "-s: "$SCHEMEVERS >> $OUTDIR/log.out
 echo "-o: "$OUTDIR >> $OUTDIR/log.out
 echo "-t: "$THREADS >> $OUTDIR/log.out
 echo "-a: "$RERUN >> $OUTDIR/log.out
-
-# Settings
-SCHEMEDIR=/srv/rbd/covid19/git/covid19/workflow/primer_schemes                ### OBS: NEED TO SET PATH CORRECT!!!
-REF=/srv/rbd/covid19/current/auxdata/reference/MN908947.3.fasta
-HUMANREF=/srv/rbd/covid19/current/auxdata/reference/human_g1k_v37.fasta
-
-rm -rf $OUTDIR/TMPDIR; mkdir $OUTDIR/TMPDIR/
-mkdir -p $OUTDIR/results/
-mkdir -p $OUTDIR/results/mapped_fastq
 
 FILES=$POOLDIR/demultiplexed/*.fastq
 
@@ -103,6 +105,8 @@ else
   fi
 
 fi 
+
+exit 1
 
 ### Misc stuff. ###############################################################
 echo "Creating $OUTDIR/results/amplicon_count.tsv"
@@ -219,6 +223,8 @@ echo -e "library_id\tstart\tend" > $OUTDIR/results/cov_mask_all.tsv
 awk -F'\t' '{sub(/.coverage_mask.txt.*/,"",FILENAME); sub(/.*\//,"",FILENAME); print FILENAME"\t"$2"\t"$3}' $OUTDIR/articminion/*mask.txt >> $OUTDIR/results/cov_mask_all.tsv
 
 ### Fetch pass/fail .vcf files ###############################################
+
+echo "Creating $OUTDIR/results/artic_vcf.tsv"
 
 # Positions of SNVs and Ns.
 PASSFAIL=$OUTDIR/articminion/*fail.vcf
