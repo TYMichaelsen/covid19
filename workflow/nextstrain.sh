@@ -90,7 +90,7 @@ rm -r $OUTDIR/split_align
 ### Mask bases ###
 mask_sites="18529 29849 29851 29853"
 
-python3 analysis/nextstrain/GISAID-data/ncov/scripts/mask-alignment.py \
+python3 auxdata/ncov/scripts/mask-alignment.py \
     --alignment $OUTDIR/aligned.fasta \
     --mask-from-beginning 130 \
     --mask-from-end 50 \
