@@ -1,21 +1,19 @@
 #!/bin/bash
 runID=$1
 
-echo $runID
+AAU_COVID19_PATH="$(dirname "$(readlink -f "$0")")"
+
+#AAU_COVID19_PATH=/srv/rbd/tym/covid19/workflow
 
 # This is the full workflow script.
 
-###############################################################################
-# Run basecalling  
-###############################################################################
-
-# Some script for basecalling.
+THREADS=100
 
 ###############################################################################
 # Run demultiplexing
 ###############################################################################
 
-# Some script for demultiplexing.
+#bash $AAU_COVID19_PATH/demultiplex.sh $runID/fastq $runID/*.csv $runID/demultiplexed $THREADS
 
 ###############################################################################
 # Run processing
@@ -23,22 +21,27 @@ echo $runID
 
 source activate artic-ncov2019-medaka
 
-PROCESS=/srv/rbd/tym/covid19/workflow/processing.sh
-
-bash $PROCESS -d $runID/rawdata -s nCoV-2019/V3.1 -o $runID/processing -t 100 
+bash $AAU_COVID19_PATH/processing.sh -d $runID -s nCoV-2019/V3.1 -o $runID/processing -t $THREADS -a 
 
 source deactivate
-
-exit 1
 
 ###############################################################################
 # Run QC
 ###############################################################################
+
 source activate nextstrain
 
-QC=/srv/rbd/tym/covid19/workflow/QC.sh
-RMD=/srv/rbd/tym/covid19/workflow/QC.rmd
+QC=$AAU_COVID19_PATH/QC.sh
+RMD=$AAU_COVID19_PATH/QC_ma.rmd
 
-bash $QC -b $runID -r $RMD -t 100
+bash $QC -b $runID -r $RMD -t $THREADS
 
 source deactivate
+
+################################################################################
+# Sweep important data and put in "output"
+################################################################################
+
+mkdir $runID/final_output
+cp $runID/QC/$runID.html $runID/final_output/$runID.html
+cp $runID/processing/results/consensus.fasta $runID/final_output/consensus.fasta
