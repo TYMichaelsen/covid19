@@ -34,7 +34,7 @@ From: nvidia/cuda:10.2-base-ubuntu18.04
   export LC_ALL=en_US.UTF-8
   export LANG=en_US.UTF-8
 
-  #install R and R packages
+  #install R, R packages, and system dependencies
   #specific version of R to be installed
   export R_BASE_VERSION=3.6.3
   #add R CRAN mirror to apt sources to install R using APT
@@ -56,11 +56,12 @@ From: nvidia/cuda:10.2-base-ubuntu18.04
     r-base-html=${R_BASE_VERSION}* \
     r-recommended=${R_BASE_VERSION}*
    R -e "install.packages(c('data.table', 'tidyverse', 'rmarkdown'), Ncpus = 7)"
-  
-  #install GUPPY (3.4.3) (with GPU support) !!remember to add the correct path to $PATH
-  wget -q https://mirror.oxfordnanoportal.com/software/analysis/ont-guppy_3.4.3_linux64.tar.gz 
-  tar -zxf /opt/ont-guppy_3.4.3_linux64.tar.gz -C /opt 
-  rm /opt/ont-guppy_3.4.3_linux64.tar.gz
+  conda install -y pandoc==2.2.3.2 #pandoc from conda is more up to date
+
+  #install GUPPY (3.6.0) (with GPU support)
+  wget -q https://mirror.oxfordnanoportal.com/software/analysis/ont-guppy_3.6.0_linux64.tar.gz
+  tar -zxf /opt/ont-guppy_3.6.0_linux64.tar.gz -C /opt 
+  rm /opt/ont-guppy_3.6.0_linux64.tar.gz
   echo 'export PATH="/opt/ont-guppy/bin:${PATH}"' >> $SINGULARITY_ENVIRONMENT
   
   #install miniconda3 in silent mode (4.7.12.1)
@@ -79,7 +80,7 @@ From: nvidia/cuda:10.2-base-ubuntu18.04
   #/opt/miniconda/bin/conda install -c bioconda minimap2=2.17 -y
   
   #install cutadapt
-  conda install -c bioconda cutadapt=1.18 pandoc -y
+  conda install -c bioconda cutadapt=1.18 -y
 
   #install artic-ncov2019-medaka conda environment
   git clone --recursive https://github.com/artic-network/artic-ncov2019.git
