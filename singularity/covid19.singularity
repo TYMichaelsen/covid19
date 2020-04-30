@@ -33,3 +33,5 @@ From: covid19_1.5.sif
 
 %post
   #install extras here
+  apt update
+  apt install -y byobu vim emacs
