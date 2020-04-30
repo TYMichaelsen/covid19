@@ -9,10 +9,9 @@ USAGE="$(basename "$0") [-h] [-d dir -r file]
 
 Arguments:
     -h  Show this help text.
-    -d  Directory with batches from 'processing.sh' 
     -b  What batch to do QC for.
     -r  R script to run to generate QC report.
-    -o  Output folder.
+    -t  Number of threads.
 
 Output:
     To come.
@@ -20,13 +19,12 @@ Output:
 ### Terminal Arguments ---------------------------------------------------------
 
 # Import user arguments
-while getopts ':hd:b:r:o:' OPTION; do
+while getopts ':hb:r:t:' OPTION; do
   case $OPTION in
     h) echo "$USAGE"; exit 1;;
-    d) PROCDIR=$OPTARG;;
     b) BATCH=$OPTARG;;
-    r) RSCRIPT=$OPTARG;;
-    o) OUTDIR=$OPTARG;;
+    r) RMD=$OPTARG;;
+    t) THREADS=$OPTARG;;
     :) printf "missing argument for -$OPTARG\n" >&2; exit 1;;
     \?) printf "invalid option for -$OPTARG\n" >&2; exit 1;;
   esac
@@ -34,52 +32,62 @@ done
 
 # Check missing arguments
 MISSING="is missing but required. Exiting."
-if [ -z ${PROCDIR+x} ]; then echo "-d $MISSING"; exit 1; fi;
 if [ -z ${BATCH+x} ]; then echo "-b $MISSING"; exit 1; fi;
-if [ -z ${RSCRIPT+x} ]; then echo "-r $MISSING"; exit 1; fi;
-if [ -z ${OUTDIR+x} ]; then echo "-o $MISSING"; exit 1; fi;
+if [ -z ${RMD+x} ]; then echo "-r $MISSING"; exit 1; fi;
+if [ -z ${THREADS+x} ]; then THREADS=50; fi;
 
 ### Code.----------------------------------------------------------------------
-#BATCHDIR=/srv/rbd/covid19/artic-analysis
-#RSCRIPT=/srv/rbd/tym/covid19/workflow/QC.rmd
-#OUTDIR=/srv/rbd/test_workflow/QC/CJ024
-
 # Setup dirs.
 mkdir -p QC
-mkdir -p QC/aligntree
-mkdir -p QC/$OUTDIR
-mkdir -p QC/$OUTDIR/tmpdir
-
-# Make alignment and tree of all sequences.
-source activate nextstrain
-
-bash /srv/rbd/tym/covid19/workflow/nextstrain.sh -s <(cat $PROCDIR/CJ*/results/consensus.fasta) -o QC/aligntree -t 100
-
-source deactivate 
-
-# Render report. 
-# run QC.rmd with input args: $BATCH, $PROCDIR, $OUTDIR
-
-exit 1
-
-######################
-# MISC STUFF
+mkdir -p QC/$BATCH
+mkdir -p QC/$BATCH/aligntree
 
 
-# Find lab metadata through log-file.
-BATCHES=( $BATCHDIR/CJ* )
+###############################################################################
+# Setup data to be used in QC.
+###############################################################################
 
-for i in "${BATCHES[@]}"; do
-  METADIR=$(grep "\-d" $i/log.out | sed 's/-d: //')
-  if [ -f $METADIR/*sequencing.csv ]; then 
-    echo "Found
-done > $OUTDIR/tmpdir/lab_meta
+# Copy over sequences.
+cp processing/$BATCH/results/consensus.fasta QC/$BATCH/aligntree/sequences.fasta
+#cat export/*_export/sequences.fasta > QC/aligntree/sequences.fasta
+
+### Alignment ###
+augur align \
+--sequences QC/$BATCH/aligntree/sequences.fasta \
+--reference-sequence auxdata/reference/MN908947.3.gb \
+--output QC/$BATCH/aligntree/aligned.fasta \
+--nthreads $THREADS &> QC/$BATCH/aligntree/log.out
+
+### Mask bases ###
+mask_sites="18529 29849 29851 29853"
+
+python3 auxdata/ncov/scripts/mask-alignment.py \
+--alignment QC/$BATCH/aligntree/aligned.fasta \
+--mask-from-beginning 130 \
+--mask-from-end 50 \
+--mask-sites $mask_sites \
+--output QC/$BATCH/aligntree/masked.fasta
+    
+### Tree ###
+augur tree \
+--alignment QC/$BATCH/aligntree/masked.fasta \
+--output QC/$BATCH/aligntree/tree_raw.nwk \
+--nthreads $THREADS
+  
+###############################################################################
+# Generate the QC report.
+###############################################################################
+
+# Fetch path lab metadata.
+pth=$(grep "\-d" processing/$BATCH/log.out | sed 's/-d: //')
+labmeta=$(find $pth/*sequencing.csv)
+
+if [ ! -f $labmeta ]; then 
+  echo "ERROR: could not find lab metadata. Searched for '$pth/*sequencing.csv', but found nothing."
+  exit 1
+fi
+
+# Run .rmd script.
+Rscript -e "rmarkdown::render(input='$RMD',output_file='/srv/rbd/covid19/current/QC/$BATCH/$BATCH.html',knit_root_dir='$PWD',params=list(batch='$BATCH',labmeta='$labmeta'))"
 
 
-
-
-
-for i in "${BATCHES[@]}"; do grep "\-d" $i/log.out | sed 's/-d: //' ; done
-
-grep "-d"   
-cp $POOLDIR/*sequencing.csv $OUTDIR/
