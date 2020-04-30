@@ -218,6 +218,32 @@ echo "Creating $OUTDIR/results/cov_mask_all.tsv"
 echo -e "library_id\tstart\tend" > $OUTDIR/results/cov_mask_all.tsv
 awk -F'\t' '{sub(/.coverage_mask.txt.*/,"",FILENAME); sub(/.*\//,"",FILENAME); print FILENAME"\t"$2"\t"$3}' $OUTDIR/articminion/*mask.txt >> $OUTDIR/results/cov_mask_all.tsv
 
+### Fetch pass/fail .vcf files ###############################################
+
+# Positions of SNVs and Ns.
+PASSFAIL=$OUTDIR/articminion/*fail.vcf
+
+paste <(echo -e "library_id\ttype") <(grep "^#CHROM" $(echo $PASSFAIL | sed 's/ .*//') | sed 's/#//') --delimiter '\t' > $OUTDIR/results/artic_vcf.tsv
+
+# Specify IN_FAIL directly, for testing.
+#IN_FAIL=processing/CJ024/articminion/COV003_LIB-CJ024-75-A-1_UDP0215.fail.vcf	
+
+for IN_FAIL in $PASSFAIL; do	
+  
+  IN_PASS="$(sed s/fail/pass/ <<< $IN_FAIL)"	
+  LIBID="$(basename $IN_FAIL .fail.vcf)"
+  
+  grep -v "^#" <(gunzip -c $IN_PASS.gz) > $OUTDIR/TMPDIR/pass	  
+  grep -v "^#" $IN_FAIL > $OUTDIR/TMPDIR/fail	
+
+awk -F'\t' -v id=$LIBID 'FNR == NR {print id"\tfail\t"$0} FNR != NR {print id"\tpass\t"$0}' $OUTDIR/TMPDIR/fail $OUTDIR/TMPDIR/pass | 	  # If fail print ALT as an N, if pass print the actual ALT.
+sort -n -k 2 - >> $OUTDIR/results/artic_vcf.tsv
+
+done
+rm $OUTDIR/TMPDIR/pass 	 
+rm $OUTDIR/TMPDIR/fail
+
+
 ### Dump genomes passing crude QC filter ######################################
 rm -f $OUTDIR/results/filtered.txt
 MAXN=5000
@@ -231,26 +257,26 @@ awk -v THR=$MAXN -v LEN=$MINLENGTH -v outdir=$OUTDIR '!/^>/ { next } { getline s
 echo $(wc -l $OUTDIR/results/filtered.txt | sed 's/ .*//') genomes failed QC, see $OUTDIR/results/filtered.txt
 
 ### Remove human reads.########################################################
-echo "Output .fastq file with mapped reads for each genome"
+#echo "Output .fastq file with mapped reads for each genome"
 
 # List all available .bam files.
-grep ">" $OUTDIR/results/consensus.fasta | sed "s|^>|$OUTDIR\/articminon\/|" | sed 's/$/.sorted.bam/'> $OUTDIR/TMPDIR/bamfiles
+#grep ">" $OUTDIR/results/consensus.fasta | sed "s|^>|$OUTDIR\/articminion\/|" | sed 's/$/.sorted.bam/'> $OUTDIR/TMPDIR/bamfiles
 
 # for each mapping, run sanitize-me.
-awk -v outdir=$OUTDIR -v human=$HUMANREF '{print $1":"outdir":"human}' $OUTDIR/TMPDIR/bamfiles | parallel -j $THREADS --colsep ':' --bar \
-'
-if [ -z {1} ]; then
-  >&2 echo "warning: .bam file {1} was not in the artic output." 
-else
-  SAMPLE=$(basename {1} | sed 's/.sorted.bam//')
+#awk -v outdir=$OUTDIR -v human=$HUMANREF '{print $1":"outdir":"human}' $OUTDIR/TMPDIR/bamfiles | parallel -j $THREADS --colsep ':' --bar \
+#'
+#if [ -z {1} ]; then
+#  >&2 echo "warning: .bam file {1} was not in the artic output." 
+#else
+#  SAMPLE=$(basename {1} | sed 's/.sorted.bam//')
 
   # Extract mapped reads and remove human reads with the CDC protocol: https://github.com/CDCgov/SanitizeMe
-  samtools fastq --threads 1 -F 4 {1} 2> /dev/null |\
-  minimap2 -ax map-ont {3} - -t 1 2> /dev/null |\
-  samtools view --threads 1 -u -f 4 - 2> /dev/null |\
-  samtools bam2fq --threads 1 - 2> /dev/null |\
-  gzip -c - > {2}/mapped_fastq/$SAMPLE.fastq.gz 2> /dev/null
-fi' 
+#  samtools fastq --threads 1 -F 4 {1} 2> /dev/null |\
+#  minimap2 -ax map-ont {3} - -t 1 2> /dev/null |\
+#  samtools view --threads 1 -u -f 4 - 2> /dev/null |\
+#  samtools bam2fq --threads 1 - 2> /dev/null |\
+#  gzip -c - > {2}/mapped_fastq/$SAMPLE.fastq.gz 2> /dev/null
+#fi' 
 
 ###############################################################################
 exit 1
