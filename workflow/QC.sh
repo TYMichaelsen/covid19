@@ -37,41 +37,44 @@ if [ -z ${RMD+x} ]; then echo "-r $MISSING"; exit 1; fi;
 if [ -z ${THREADS+x} ]; then THREADS=50; fi;
 
 ### Code.----------------------------------------------------------------------
-# Setup dirs.
-mkdir -p QC
-mkdir -p QC/$BATCH
-mkdir -p QC/$BATCH/aligntree
 
+AAU_COVID19_PATH="$(dirname "$(readlink -f "$0")")"
+
+# Setup dirs.
+mkdir -p $BATCH/QC
+mkdir -p $BATCH/QC/aligntree
+
+REF=$AAU_COVID19_PATH/MN908947.3.gb
 
 ###############################################################################
 # Setup data to be used in QC.
 ###############################################################################
 
 # Copy over sequences.
-cp processing/$BATCH/results/consensus.fasta QC/$BATCH/aligntree/sequences.fasta
+cp $BATCH/processing/results/consensus.fasta $BATCH/QC/aligntree/sequences.fasta
 #cat export/*_export/sequences.fasta > QC/aligntree/sequences.fasta
 
 ### Alignment ###
 augur align \
---sequences QC/$BATCH/aligntree/sequences.fasta \
---reference-sequence auxdata/reference/MN908947.3.gb \
---output QC/$BATCH/aligntree/aligned.fasta \
---nthreads $THREADS &> QC/$BATCH/aligntree/log.out
+--sequences $BATCH/QC/aligntree/sequences.fasta \
+--reference-sequence $REF \
+--output $BATCH/QC/aligntree/aligned.fasta \
+--nthreads $THREADS &> $BATCH/QC/aligntree/log.out
 
 ### Mask bases ###
 mask_sites="18529 29849 29851 29853"
 
-python3 auxdata/ncov/scripts/mask-alignment.py \
---alignment QC/$BATCH/aligntree/aligned.fasta \
+python3 $AAU_COVID19_PATH/mask-alignment.py \
+--alignment $BATCH/QC/aligntree/aligned.fasta \
 --mask-from-beginning 130 \
 --mask-from-end 50 \
 --mask-sites $mask_sites \
---output QC/$BATCH/aligntree/masked.fasta
+--output $BATCH/QC/aligntree/masked.fasta
     
 ### Tree ###
 augur tree \
---alignment QC/$BATCH/aligntree/masked.fasta \
---output QC/$BATCH/aligntree/tree_raw.nwk \
+--alignment $BATCH/QC/aligntree/masked.fasta \
+--output $BATCH/QC/aligntree/tree_raw.nwk \
 --nthreads $THREADS
   
 ###############################################################################
@@ -79,15 +82,17 @@ augur tree \
 ###############################################################################
 
 # Fetch path lab metadata.
-pth=$(grep "\-d" processing/$BATCH/log.out | sed 's/-d: //')
-labmeta=$(find $pth/*sequencing.csv)
+pth=$(grep "\-d" $BATCH/processing/log.out | sed 's/-d: //')
 
-if [ ! -f $labmeta ]; then 
+if [ ! -f $pth/*sequencing.csv ]; then 
   echo "ERROR: could not find lab metadata. Searched for '$pth/*sequencing.csv', but found nothing."
   exit 1
+else
+  labmeta=$(find $pth/*sequencing.csv)
 fi
 
 # Run .rmd script.
-Rscript -e "rmarkdown::render(input='$RMD',output_file='/srv/rbd/covid19/current/QC/$BATCH/$BATCH.html',knit_root_dir='$PWD',params=list(batch='$BATCH',labmeta='$labmeta'))"
+Rscript -e "rmarkdown::render(input='$RMD',output_file='$PWD/$BATCH/QC/$BATCH.html',knit_root_dir='$PWD',params=list(batch='$BATCH',labmeta='$labmeta'))"
+
 
 
