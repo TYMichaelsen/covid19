@@ -9,29 +9,45 @@ From: covid19_1.5.sif
 %help
   Tools and scripts for COVID19 nanopore genome assembly and analysis.
 
-%apprun generateGenomesNP
-  exec /opt/workflow/generateGenomesNP.sh "${@}"
+#basecall + demultiplex script
+%apprun gogobasecalldemux
+  exec /opt/basecalldemux.sh "${@}"
 
-%apphelp generateGenomesNP
-  Provide some basic usage info here
+%apphelp gogobasecalldemux
+  Provide some basic usage info here unless already in script
 
-%appenv generateGenomesNP
+#nextstrain script
+%apprun gogonextstrain
+  exec /opt/nextstrain.sh
+
+%apphelp gogonextstrain
+  runs nextstrain
+
+%appenv gogonextstrain
   source activate nextstrain
 
-%runscript
-  exec generateGenomesNP "${@}"
+#QC script
+%apprun gogoQC
+  exec /opt/QC.sh "${@}"
+
+%apphelp gogoQC
+  Perform QC
+
+#optional default runscript 
+#%runscript
+#  exec gogobasecalldemux "${@}"
 
 %environment
-  #add
+  #optional global environment
 
 %files
-  #copy scripts from git repo
-  #workflow/generateGenomesNP.sh /opt/workflow/generateGenomesNP.sh
+  #make all workflow scripts available from inside the container
+  workflow/* /opt/workflows/
 
 %setup
-   #add
+   #optional
 
 %post
   #install extras here
-  apt update
-  apt install -y byobu vim emacs
+  #apt update
+  #apt install -y byobu vim emacs
