@@ -106,7 +106,10 @@ else
 
 fi 
 
-exit 1
+# Capture the libraries that for some reason did not produce consensus.
+comm -23 <(ls $FILES | sed 's|.*\/||' | sed 's|.fastq||' | sort) <(ls $OUTDIR/articminion/*.consensus.fasta | sed 's|.*\/||' | sed 's|.consensus.fasta||' | sort) > $OUTDIR/results/failed.txt
+
+echo "$(wc -l $OUTDIR/results/failed.txt | sed 's/ .*//') libraries did not produce consensus, see $OUTDIR/results/failed.txt"
 
 ### Misc stuff. ###############################################################
 echo "Creating $OUTDIR/results/amplicon_count.tsv"
@@ -260,7 +263,7 @@ awk '/^>/ {printf("\n%s\n",$0);next; } { printf("%s",$0);}  END {printf("\n");}'
 awk '/^>/ {sub(/\/ARTIC.*$/,"",$0)}1' - |
 awk -v THR=$MAXN -v LEN=$MINLENGTH -v outdir=$OUTDIR '!/^>/ { next } { getline seq; seq2=seq; Nn=gsub(/N/,"",seq) }; {if (length(seq2) > LEN && Nn <= THR) { print $0 "\n" seq2 } else {sub(/^>/,"",$0); print $0 >> outdir"/results/filtered.txt"}}' - > $OUTDIR/results/consensus.fasta # Tidy header.
 
-echo $(wc -l $OUTDIR/results/filtered.txt | sed 's/ .*//') genomes failed QC, see $OUTDIR/results/filtered.txt
+echo "$(wc -l $OUTDIR/results/filtered.txt | sed 's/ .*//') genomes failed QC, see $OUTDIR/results/filtered.txt"
 
 ### Remove human reads.########################################################
 #echo "Output .fastq file with mapped reads for each genome"
@@ -283,7 +286,3 @@ echo $(wc -l $OUTDIR/results/filtered.txt | sed 's/ .*//') genomes failed QC, se
 #  samtools bam2fq --threads 1 - 2> /dev/null |\
 #  gzip -c - > {2}/mapped_fastq/$SAMPLE.fastq.gz 2> /dev/null
 #fi' 
-
-###############################################################################
-exit 1
-###############################################################################
