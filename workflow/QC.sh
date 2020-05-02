@@ -45,6 +45,7 @@ mkdir -p $BATCH/QC
 mkdir -p $BATCH/QC/aligntree
 
 REF=$AAU_COVID19_PATH/MN908947.3.gb
+CLADES=/srv/rbd/covid19/current/auxdata/root_seqs/pangolin_clades.tsv
 
 ###############################################################################
 # Setup data to be used in QC.
@@ -76,6 +77,32 @@ augur tree \
 --alignment $BATCH/QC/aligntree/masked.fasta \
 --output $BATCH/QC/aligntree/tree_raw.nwk \
 --nthreads $THREADS
+  
+augur refine \
+--tree $BATCH/QC/aligntree/tree_raw.nwk \
+--output-tree $BATCH/QC/aligntree/tree.nwk
+
+### ancestral tree.
+augur ancestral \
+  --tree $BATCH/QC/aligntree/tree.nwk \
+  --alignment $BATCH/QC/aligntree/masked.fasta \
+  --output-node-data $BATCH/QC/aligntree/nt_muts.json \
+  --inference joint \
+  --infer-ambiguous
+  
+### Translate NT ot AA.
+augur translate \
+  --tree $BATCH/QC/aligntree/tree.nwk \
+  --ancestral-sequences $BATCH/QC/aligntree/nt_muts.json \
+  --reference-sequence $REF \
+  --output-node-data $BATCH/QC/aligntree/aa_muts.json
+                       
+### add clades.
+augur clades \
+  --tree $BATCH/QC/aligntree/tree.nwk \
+  --mutations $BATCH/QC/aligntree/nt_muts.json $BATCH/QC/aligntree/aa_muts.json \
+  --clades $CLADES \
+  --output-node-data $BATCH/QC/aligntree/clades.json
   
 ###############################################################################
 # Generate the QC report.
