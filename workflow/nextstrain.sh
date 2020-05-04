@@ -235,11 +235,11 @@ augur export v2 \
 # Pangolin creates quite large temporary files
 ### Doesn't work at the moment.
 # See this issue: https://github.com/hCoV-2019/pangolin/issues/61
-# bash -c "
-# source activate pangolin
-# pangolin $OUTDIR/masked.fasta -t $THREADS \
-#     --tempdir pangtmp \
-#     --outdir $OUTDIR
-# "
+bash -c "
+source activate pangolin
+pangolin $OUTDIR/masked.fasta -t $THREADS \
+    --tempdir pangtmp \
+    --outdir $OUTDIR
+    rm -rf ./pangtmp
+"
 
-# rm -rf ./pangtmp
