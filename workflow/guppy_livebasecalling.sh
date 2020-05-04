@@ -3,8 +3,10 @@
 # Terminal input
 RUN_DIR=$1
 FASTQ_DIR=${2:-fastq}
-THREADS=${3:-10}
-CONFIG=${3:-dna_r9.4.1_450bps_hac.cfg}
+GUPPY_NUM_CALLERS=${3:-4}
+GUPPY_CONFIG=${4:-dna_r9.4.1_450bps_hac.cfg}
+GUPPY_GPU_USAGE=${5:-cuda:all:100%}
+
 
 # Preparation -----------------------------------------------------------------
 echo "[$(date +"%T")] Preparing basecalling session.."
@@ -70,9 +72,10 @@ while : ; do
     # Basecall fast5 batch
     guppy_basecaller \
       --save_path $FASTQ_DIR/processing \
-      -c $CONFIG \
+      -c "$GUPPY_CONFIG" \
       --input_file_list <(echo "$FAST5_NEW") \
-      --device 'auto'
+      --device "$GUPPY_GPU_USAGE" \
+      --num_callers "$GUPPY_NUM_CALLERS"
   
     # Post basecalling
     if [ -f "$FASTQ_DIR/processing/sequencing_telemetry.js" ]; then
