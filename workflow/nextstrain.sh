@@ -69,6 +69,7 @@ ROOT_META=${ROOTSEQSDIR}/root.tsv
 
 # Add root sequences (See folder GISAID-data for details).
 cat $SEQS $ROOT_SEQS > $OUTDIR/raw.fasta
+cat $META $ROOT_META > $OUTDIR/metadata.tsv
 
 ### Alignment ###
 # Do alignment in chunks.
@@ -96,34 +97,11 @@ cat $OUTDIR/split_align/*.log > $OUTDIR/aligned.log
 rm -r $OUTDIR/split_fasta
 rm -r $OUTDIR/split_align
 
-if [ -z ${META+x} ] || [ ! -f $META ]; then
-    echo "No metadata provided or not founds, stopping after alignment and initial tree."
-    exit 1
-fi
-
-if [ ! -f $META ]; then
-    echo "ERROR: Metadata not found, exiting."; exit 1
-else
-    cat $META $ROOT_META > $OUTDIR/metadata.tsv
-    # cat $META > $OUTDIR/metadata.tsv
-    # Replace fasta header (library_id) withs strain names (ssi_id)
-    awk -F'\t' '
-    (FNR==NR){
-        lib2id[$3]=$8; next}
-    { if ($0 ~/^>/) { hdr=$0; sub(">","", hdr);
-            if (length(lib2id[hdr]) >0)
-            {$0=">"lib2id[hdr]; }
-     }
-     print $0} ' \
-    ${METADIR}/2020-04-28-19-57_metadata.tsv $OUTDIR/aligned.fasta > ${OUTDIR}/aligned.fixheader.fasta
-fi
-
-
 ### Mask bases ###
 mask_sites="18529 29849 29851 29853"
 
 python3 ${NCOVDIR}/scripts/mask-alignment.py \
-    --alignment $OUTDIR/aligned.fixheader.fasta \
+    --alignment $OUTDIR/aligned.fasta \
     --mask-from-beginning 130 \
     --mask-from-end 50 \
     --mask-sites $mask_sites \
@@ -193,7 +171,15 @@ python3 ${NCOVDIR}/scripts/assign-colors.py \
   --ordering ${NCOVDIR}/config/ordering.tsv \
   --color-schemes ${NCOVDIR}/config/color_schemes.tsv \
   --output $OUTDIR/colors.tsv
-  
+
+### Construct frequency tables.
+augur frequencies \
+--method kde \
+--metadata $OUTDIR/metadata.tsv \
+--tree $OUTDIR/tree.nwk \
+--alignments $OUTDIR/masked.fasta \
+--output $OUTDIR/tip-frequencies.json
+
 ### Construct output for auspice.
 mkdir -p $OUTDIR/auspice
 
@@ -203,11 +189,12 @@ cat ${NCOVDIR}/config/lat_longs.tsv ${METADIR}/latlong_DK_nextstrain.tsv > $OUTD
 augur export v2 \
   --tree $OUTDIR/tree.nwk \
   --metadata $OUTDIR/metadata.tsv \
-  --node-data $OUTDIR/branch_lengths.json $OUTDIR/nt_muts.json $OUTDIR/aa_muts.json ${OUTDIR}/traits.json $OUTDIR/clades.json \
+  --node-data $OUTDIR/branch_lengths.json $OUTDIR/nt_muts.json $OUTDIR/aa_muts.json ${OUTDIR}/traits.json $OUTDIR/clades.json $OUTDIR/tip-frequencies.json \
   --auspice-config ${NCOVDIR}/config/auspice_config.json \
   --colors $OUTDIR/colors.tsv \
   --color-by-metadata region country division location \
   --lat-longs $OUTDIR/latlongs.tsv \
+  --panels tree map entropy frequencies \
   --output $OUTDIR/auspice/ncov_custom.json
   
 
