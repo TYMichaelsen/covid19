@@ -49,6 +49,14 @@ if [ -z ${THREADS+x} ]; then THREADS=50; fi;
 
 AAU_COVID19_PATH="$(dirname "$(readlink -f "$0")")"
 
+# Logging
+LOG_NAME="$OUTDIR/processing_log_$(date +"%Y-%m-%d-%T").txt"
+echo "processing log" >> $LOG_NAME
+echo "AAU COVID-19 revision - $(git -C $AAU_COVID19_PATH rev-parse --short HEAD)" >> $LOG_NAME
+echo "Command: $0 $*" >> $LOG_NAME
+exec &> >(tee -a "$LOG_NAME")
+exec 2>&1
+
 # Dependencies.
 SCHEMEDIR=$AAU_COVID19_PATH/primer_schemes                
 REF=$AAU_COVID19_PATH/MN908947.3.fasta
