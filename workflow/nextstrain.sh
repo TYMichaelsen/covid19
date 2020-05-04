@@ -167,19 +167,19 @@ augur clades \
   --output-node-data $OUTDIR/clades.json
   
 ### construct colouring.
-#python3 ${NCOVDIR}/scripts/assign-colors.py \
-#  --ordering ${NCOVDIR}/config/ordering.tsv \
-#  --color-schemes ${NCOVDIR}/config/color_schemes.tsv \
-#  --output $OUTDIR/colors.tsv
+python3 ${NCOVDIR}/scripts/assign-colors.py \
+  --ordering ${NCOVDIR}/config/ordering.tsv \
+  --color-schemes ${NCOVDIR}/config/color_schemes.tsv \
+  --output $OUTDIR/colors.tsv \
+  --metadata ${OUTDIR}/metadata.tsv
 
 ### Construct frequency tables.
-#augur frequencies \
-#--method kde \
-#--metadata $OUTDIR/metadata.tsv \
-#--pivot-interval 1 \
-#--tree $OUTDIR/tree.nwk \
-#--alignments $OUTDIR/masked.fasta \
-#--output $OUTDIR/tip-frequencies.json
+augur frequencies \
+      --method kde \
+      --metadata $OUTDIR/metadata.tsv \
+      --tree $OUTDIR/tree.nwk \
+      --alignments $OUTDIR/masked.fasta \
+      --output $OUTDIR/tip-frequencies.json
 
 ### Construct output for auspice.
 mkdir -p $OUTDIR/auspice
