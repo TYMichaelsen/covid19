@@ -4,6 +4,7 @@ GIT_PATH="$(dirname "$(readlink -f "$0")")"
 #GIT_PATH=/srv/rbd/tym/covid19/workflow
 
 runID=$1
+SCHEME=$2
 
 THREADS=100
 
@@ -35,7 +36,7 @@ THREADS_MEDAKA=$((($THREADS+1)/3))
 if [ -d $runID/processing/articminion ]; then
   Flag="-a"
 fi
-bash $GIT_PATH/processing.sh -d $runID -s nCoV-2019/V3.1 -o $runID/processing -t $THREADS_MEDAKA $Flag
+bash $GIT_PATH/processing.sh -d $runID -s nCoV-2019/$SCHEME -o $runID/processing -t $THREADS_MEDAKA $Flag
 retn_code=$?
 
 if [ $retn_code == 1 ]; then echo "ERROR in processing.sh, exitting."; exit; fi
