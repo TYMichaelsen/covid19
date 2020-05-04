@@ -44,6 +44,14 @@ AAU_COVID19_PATH="$(dirname "$(readlink -f "$0")")"
 mkdir -p $BATCH/QC
 mkdir -p $BATCH/QC/aligntree
 
+# Logging
+LOG_NAME="$BATCH/QC/QC_log_$(date +"%Y-%m-%d-%T").txt"
+echo "QC log" >> $LOG_NAME
+echo "AAU COVID-19 revision - $(git -C $AAU_COVID19_PATH rev-parse --short HEAD)" >> $LOG_NAME
+echo "Command: $0 $*" >> $LOG_NAME
+exec &> >(tee -a "$LOG_NAME")
+exec 2>&1
+
 REF=$AAU_COVID19_PATH/MN908947.3.gb
 CLADES=/srv/rbd/covid19/current/auxdata/root_seqs/pangolin_clades.tsv
 
@@ -120,6 +128,3 @@ fi
 
 # Run .rmd script.
 Rscript -e "rmarkdown::render(input='$RMD',output_file='$PWD/$BATCH/QC/$BATCH.html',knit_root_dir='$PWD',params=list(batch='$BATCH',labmeta='$labmeta'))"
-
-
-
