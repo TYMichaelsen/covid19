@@ -18,7 +18,7 @@ From: covid19_1.5.sif
 
 #nextstrain script
 %apprun gogonextstrain
-  exec /opt/nextstrain.sh
+  exec /opt/nextstrain.sh "$@"
 
 %apphelp gogonextstrain
   runs nextstrain
@@ -33,6 +33,19 @@ From: covid19_1.5.sif
 %apphelp gogoQC
   Perform QC
 
+%apprun pangolin
+  # Looks urgly, but works. Still unclear why it requires a new bash session.
+  bash -c "source activate pangolin
+  pangolin \"$@\"
+  "
+
+%appenv pangolin
+  
+
+%apphelp pangolin
+  Doing clade asignment for sequences with multisequence alignment as input.
+  More information is can be found at https://github.com/hCoV-2019/pangolin
+
 #optional default runscript 
 #%runscript
 #  exec gogobasecalldemux "${@}"
@@ -42,12 +55,21 @@ From: covid19_1.5.sif
 
 %files
   #make all workflow scripts available from inside the container
-  workflow/* /opt/workflows/
+  ../workflow/* /opt/workflows/
 
 %setup
    #optional
 
 %post
   #install extras here
-  #apt update
+  # apt update
   #apt install -y byobu vim emacs
+  . /opt/miniconda/etc/profile.d/conda.sh
+  export PATH="/opt/miniconda/bin:${PATH}"
+  git clone --depth 1 -b v1.1.4 https://github.com/hCoV-2019/pangolin.git
+  cd pangolin
+  conda env create -f environment.yml
+  conda run -n pangolin python setup.py install
+  # Force update pangolin's important dependecy
+  conda run -n pangolin pip install git+https://github.com/hCoV-2019/lineages.git --upgrade
+  cd - ; rm -rf pangolin # Go back to default directory and remove pangolin source
