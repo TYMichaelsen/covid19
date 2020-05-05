@@ -97,6 +97,28 @@ cat $OUTDIR/split_align/*.log > $OUTDIR/aligned.log
 rm -r $OUTDIR/split_fasta
 rm -r $OUTDIR/split_align
 
+if [ -z ${META+x} ] || [ ! -f $META ]; then
+    echo "No metadata provided or not founds, stopping after alignment and initial tree."
+    exit 1
+fi
+
+if [ ! -f $META ]; then
+    echo "ERROR: Metadata not found, exiting."; exit 1
+else
+    cat $META $ROOT_META > $OUTDIR/metadata.tsv
+    # cat $META > $OUTDIR/metadata.tsv
+    # Replace fasta header (library_id) withs strain names (ssi_id)
+    # awk -F'\t' '
+    # (FNR==NR){
+    #     lib2id[$3]=$8; next}
+    # { if ($0 ~/^>/) { hdr=$0; sub(">","", hdr);
+    #         if (length(lib2id[hdr]) >0)
+    #         {$0=">"lib2id[hdr]; }
+    #  }
+    #  print $0} ' \
+    # ${METADIR}/2020-04-28-19-57_metadata.tsv $OUTDIR/aligned.fasta > ${OUTDIR}/aligned.fixheader.fasta
+fi
+
 ### Mask bases ###
 mask_sites="18529 29849 29851 29853"
 
@@ -167,19 +189,19 @@ augur clades \
   --output-node-data $OUTDIR/clades.json
   
 ### construct colouring.
-#python3 ${NCOVDIR}/scripts/assign-colors.py \
-#  --ordering ${NCOVDIR}/config/ordering.tsv \
-#  --color-schemes ${NCOVDIR}/config/color_schemes.tsv \
-#  --output $OUTDIR/colors.tsv
+python3 ${NCOVDIR}/scripts/assign-colors.py \
+  --ordering ${NCOVDIR}/config/ordering.tsv \
+  --color-schemes ${NCOVDIR}/config/color_schemes.tsv \
+  --output $OUTDIR/colors.tsv \
+  --metadata ${OUTDIR}/metadata.tsv
 
 ### Construct frequency tables.
-#augur frequencies \
-#--method kde \
-#--metadata $OUTDIR/metadata.tsv \
-#--pivot-interval 1 \
-#--tree $OUTDIR/tree.nwk \
-#--alignments $OUTDIR/masked.fasta \
-#--output $OUTDIR/tip-frequencies.json
+augur frequencies \
+      --method kde \
+      --metadata $OUTDIR/metadata.tsv \
+      --tree $OUTDIR/tree.nwk \
+      --alignments $OUTDIR/masked.fasta \
+      --output $OUTDIR/tip-frequencies.json
 
 ### Construct output for auspice.
 mkdir -p $OUTDIR/auspice
@@ -199,3 +221,21 @@ augur export v2 \
 #  --colors $OUTDIR/colors.tsv \
 #--auspice-config ${NCOVDIR}/config/auspice_config.json \
 #--description {input.description} \
+
+### Running pangolin
+# Pangolin itself has a conda environment.
+# And we are running inside augur conda one.
+# Therefore it is neccessary to run pangolin
+# this way (wrap inside a `bash -c` session)
+
+# Pangolin creates quite large temporary files
+### Doesn't work at the moment.
+# See this issue: https://github.com/hCoV-2019/pangolin/issues/61
+bash -c "
+source activate pangolin
+pangolin $OUTDIR/masked.fasta -t $THREADS \
+    --tempdir pangtmp \
+    --outdir $OUTDIR
+    rm -rf ./pangtmp
+"
+
