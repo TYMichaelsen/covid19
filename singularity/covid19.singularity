@@ -73,3 +73,13 @@ From: covid19_1.5.sif
   # Force update pangolin's important dependecy
   conda run -n pangolin pip install git+https://github.com/hCoV-2019/lineages.git --upgrade
   cd - ; rm -rf pangolin # Go back to default directory and remove pangolin source
+
+  # Upgrade auspice
+  cd /opt/nextstrain 
+  rm -rf auspice # The base image already has this directory
+  git clone --depth 1 -b v2.14.0 https://github.com/nextstrain/auspice.git
+  cd /opt/nextstrain/auspice
+  conda run -n nextstrain npm update 
+  conda run -n nextstrain npm install 
+  conda run -n nextstrain npm run build 
+  conda run -n nextstrain npm link
