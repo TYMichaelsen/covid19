@@ -214,7 +214,7 @@ augur export v2 \
   --metadata $OUTDIR/metadata.tsv \
   --node-data $OUTDIR/branch_lengths.json $OUTDIR/nt_muts.json $OUTDIR/aa_muts.json $OUTDIR/clades.json \
   --auspice-config ${NCOVDIR}/config/auspice_config.json \
-  --color-by-metadata region country country_exposure division location \
+  --color-by-metadata sex age region country country_exposure division location \
   --lat-longs $OUTDIR/latlongs.tsv \
   --output $OUTDIR/auspice/ncov_custom.json
   
