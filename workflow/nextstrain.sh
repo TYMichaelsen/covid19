@@ -97,8 +97,6 @@ cat $OUTDIR/split_align/*.log > $OUTDIR/aligned.log
 rm -r $OUTDIR/split_fasta
 rm -r $OUTDIR/split_align
 
-<<<<<<< 019b612b32e4a25c97bc919005d56117aeb3642a
-=======
 if [ -z ${META+x} ] || [ ! -f $META ]; then
     echo "No metadata provided or not founds, stopping after alignment and initial tree."
     exit 1
@@ -121,8 +119,6 @@ else
     # ${METADIR}/2020-04-28-19-57_metadata.tsv $OUTDIR/aligned.fasta > ${OUTDIR}/aligned.fixheader.fasta
 fi
 
-
->>>>>>> Add `pangolin` to `nextstrain.sh` (WIP)
 ### Mask bases ###
 mask_sites="18529 29849 29851 29853"
 
