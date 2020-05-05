@@ -167,36 +167,35 @@ augur clades \
   --output-node-data $OUTDIR/clades.json
   
 ### construct colouring.
-python3 ${NCOVDIR}/scripts/assign-colors.py \
-  --ordering ${NCOVDIR}/config/ordering.tsv \
-  --color-schemes ${NCOVDIR}/config/color_schemes.tsv \
-  --output $OUTDIR/colors.tsv
+#python3 ${NCOVDIR}/scripts/assign-colors.py \
+#  --ordering ${NCOVDIR}/config/ordering.tsv \
+#  --color-schemes ${NCOVDIR}/config/color_schemes.tsv \
+#  --output $OUTDIR/colors.tsv
 
 ### Construct frequency tables.
-augur frequencies \
---method kde \
---metadata $OUTDIR/metadata.tsv \
---tree $OUTDIR/tree.nwk \
---alignments $OUTDIR/masked.fasta \
---output $OUTDIR/tip-frequencies.json
+#augur frequencies \
+#--method kde \
+#--metadata $OUTDIR/metadata.tsv \
+#--pivot-interval 1 \
+#--tree $OUTDIR/tree.nwk \
+#--alignments $OUTDIR/masked.fasta \
+#--output $OUTDIR/tip-frequencies.json
 
 ### Construct output for auspice.
 mkdir -p $OUTDIR/auspice
 
 # Cat DK lat long with auspice.
-cat ${NCOVDIR}/config/lat_longs.tsv ${METADIR}/latlong_DK_nextstrain.tsv > $OUTDIR/latlongs.tsv
+cat ${METADIR}/latlong_nextstrain.tsv ${NCOVDIR}/config/lat_longs.tsv > $OUTDIR/latlongs.tsv
 
 augur export v2 \
   --tree $OUTDIR/tree.nwk \
   --metadata $OUTDIR/metadata.tsv \
-  --node-data $OUTDIR/branch_lengths.json $OUTDIR/nt_muts.json $OUTDIR/aa_muts.json ${OUTDIR}/traits.json $OUTDIR/clades.json $OUTDIR/tip-frequencies.json \
+  --node-data $OUTDIR/branch_lengths.json $OUTDIR/nt_muts.json $OUTDIR/aa_muts.json $OUTDIR/clades.json \
   --auspice-config ${NCOVDIR}/config/auspice_config.json \
-  --colors $OUTDIR/colors.tsv \
-  --color-by-metadata region country division location \
+  --color-by-metadata region country country_exposure division location \
   --lat-longs $OUTDIR/latlongs.tsv \
-  --panels tree map entropy frequencies \
   --output $OUTDIR/auspice/ncov_custom.json
   
-
-#--auspice-config {input.auspice_config} \
+#  --colors $OUTDIR/colors.tsv \
+#--auspice-config ${NCOVDIR}/config/auspice_config.json \
 #--description {input.description} \
