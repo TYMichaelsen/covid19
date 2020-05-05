@@ -2,13 +2,14 @@
 # By Thomas Y. Michaelsen
 # Heavily inspired by the ncov19 workflow provided by the nextstrain team.
 
-set -ex
+set -e
+# set -x
 
 VERSION=0.1.0
 
 ### Description ----------------------------------------------------------------
 
-USAGE="$(basename "$0") [-h] [-m file -s file -o dir -t string] 
+USAGE="$(basename "$0") [-h] [-m file -s file -o dir -t string] [-f (force delete)]
 -- COVID-19 analysis pipeline v. $VERSION:
 
 Arguments:
@@ -17,6 +18,7 @@ Arguments:
     -s  Sequences corresponding to metadata.
     -o  Output directory.
     -t  Number of threads.
+    -f  Force remove existing data (Be careful!)
 
 Output:
     To come.
@@ -27,13 +29,14 @@ This is beta software!
 ### Terminal Arguments ---------------------------------------------------------
 
 # Import user arguments
-while getopts ':hm:s:o:t:' OPTION; do
+while getopts ':hfm:s:o:t:' OPTION; do
   case $OPTION in
     h) echo "$USAGE"; exit 1;;
     m) META=$OPTARG;;
     s) SEQS=$OPTARG;;
     o) OUTDIR=$OPTARG;;
     t) THREADS=$OPTARG;;
+    f) FORCE=1 ;;
     :) printf "missing argument for -$OPTARG\n" >&2; exit 1;;
     \?) printf "invalid option for -$OPTARG\n" >&2; exit 1;;
   esac
@@ -49,7 +52,18 @@ if [ -z ${THREADS+x} ]; then THREADS=50; fi;
 ### Code.----------------------------------------------------------------------
 
 # setup output folders.
-if [ "$OUTDIR" != "$PWD" ]; then rm -rf $OUTDIR; mkdir $OUTDIR; fi
+if [ -d $OUTDIR -a  x$FORCE == x  ]; then
+    echo "$OUTDIR already exists!"
+    echo "Please choose a different output directory or use -f to force delete $OUTDIR"
+    exit 1
+fi
+
+if [ -d $OUTDIR -a x${FORCE} != x  ]; then
+    echo "Deleting $OUTDIR ..."
+    rm -rf $OUTDIR
+fi
+
+if [ ! -d "$OUTDIR" ]; then  mkdir $OUTDIR; fi
 
 # Capture stdout to log file.
 #exec 3>&1 4>&2
@@ -214,7 +228,7 @@ augur export v2 \
   --metadata $OUTDIR/metadata.tsv \
   --node-data $OUTDIR/branch_lengths.json $OUTDIR/nt_muts.json $OUTDIR/aa_muts.json $OUTDIR/clades.json \
   --auspice-config ${NCOVDIR}/config/auspice_config.json \
-  --color-by-metadata region country country_exposure division location \
+  --color-by-metadata sex age region country country_exposure division location \
   --lat-longs $OUTDIR/latlongs.tsv \
   --output $OUTDIR/auspice/ncov_custom.json
   
