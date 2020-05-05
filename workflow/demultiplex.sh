@@ -18,7 +18,7 @@ mkdir $OUT_DIR
 #-- The workflow expects barcoded adaptors in the following format
 #-- <ADP1_outer> <barcode1> <ADP1_inner> <Target sequence> <ADP2_inner> <barcode2> <ADP2_outer>
 
-if [ "$ARTIC_SCHEME" == "V1" || "$ARTIC_SCHEME" == "V2" || "$ARTIC_SCHEME" == "V3" ]; then
+if [ "$ARTIC_SCHEME" == "V1" ] || [ "$ARTIC_SCHEME" == "V2" ] || [ "$ARTIC_SCHEME" == "V3" ]; then
   AMP_MIN_LENGTH=350
   AMP_MAX_LENGTH=600
   # Expects ONT native barcodes 1-24
