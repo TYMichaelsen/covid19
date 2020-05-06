@@ -1,0 +1,10 @@
+MN908947.3	265	21555	orf1ab	.	+	Genbank	gene	.	ID=gene-orf1ab;Name=orf1ab;gbkey=Gene;gene=orf1ab;gene_biotype=protein_coding
+MN908947.3	21562	25384	S	.	+	Genbank	gene	.	ID=gene-S;Name=S;gbkey=Gene;gene=S;gene_biotype=protein_coding
+MN908947.3	25392	26220	ORF3a	.	+	Genbank	gene	.	ID=gene-ORF3a;Name=ORF3a;gbkey=Gene;gene=ORF3a;gene_biotype=protein_coding
+MN908947.3	26244	26472	E	.	+	Genbank	gene	.	ID=gene-E;Name=E;gbkey=Gene;gene=E;gene_biotype=protein_coding
+MN908947.3	26522	27191	M	.	+	Genbank	gene	.	ID=gene-M;Name=M;gbkey=Gene;gene=M;gene_biotype=protein_coding
+MN908947.3	27201	27387	ORF6	.	+	Genbank	gene	.	ID=gene-ORF6;Name=ORF6;gbkey=Gene;gene=ORF6;gene_biotype=protein_coding
+MN908947.3	27393	27759	ORF7a	.	+	Genbank	gene	.	ID=gene-ORF7a;Name=ORF7a;gbkey=Gene;gene=ORF7a;gene_biotype=protein_coding
+MN908947.3	27893	28259	ORF8	.	+	Genbank	gene	.	ID=gene-ORF8;Name=ORF8;gbkey=Gene;gene=ORF8;gene_biotype=protein_coding
+MN908947.3	28273	29533	N	.	+	Genbank	gene	.	ID=gene-N;Name=N;gbkey=Gene;gene=N;gene_biotype=protein_coding
+MN908947.3	29557	29674	ORF10	.	+	Genbank	gene	.	ID=gene-ORF10;Name=ORF10;gbkey=Gene;gene=ORF10;gene_biotype=protein_coding
