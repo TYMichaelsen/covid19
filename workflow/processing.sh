@@ -46,13 +46,12 @@ if [ -z ${OUTDIR+x} ]; then echo "-d $MISSING"; exit 1; fi;
 if [ -z ${THREADS+x} ]; then THREADS=50; fi;
 
 ### Code.----------------------------------------------------------------------
-
+mkdir -p $OUTDIR
 AAU_COVID19_PATH="$(dirname "$(readlink -f "$0")")"
-
 # Logging
 LOG_NAME="$OUTDIR/processing_log_$(date +"%Y-%m-%d-%T").txt"
 echo "processing log" >> $LOG_NAME
-echo "AAU COVID-19 revision - $(git -C $AAU_COVID19_PATH rev-parse --short HEAD)" >> $LOG_NAME
+#echo "AAU COVID-19 revision - $(git -C $AAU_COVID19_PATH rev-parse --short HEAD)" >> $LOG_NAME ##Not working in singularity
 echo "Command: $0 $*" >> $LOG_NAME
 exec &> >(tee -a "$LOG_NAME")
 exec 2>&1
@@ -63,7 +62,6 @@ REF=$AAU_COVID19_PATH/MN908947.3.fasta
 HUMANREF=$AAU_COVID19_PATH/human_g1k_v37.fasta
 
 # setup output folders.
-mkdir -p $OUTDIR
 rm -rf $OUTDIR/TMPDIR; mkdir $OUTDIR/TMPDIR/
 mkdir -p $OUTDIR/results/
 mkdir -p $OUTDIR/results/mapped_fastq

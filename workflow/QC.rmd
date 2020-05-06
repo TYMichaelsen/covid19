@@ -145,13 +145,8 @@ ntree$tip.label <- ntree$tip.label %>%
 
 ```{r}
 # Load the library concentrations.----------------------------------------------
-libconc <- read_delim(labmeta,delim = ",") %>%
-  {`colnames<-`(.,tolower(colnames(.)))} %>%
-  select(
-    # Fetch the library_id column.
-    (contains("lib") & contains("id") & !contains("conc") & !contains("method") & !contains("storage")) | 
-    # Fetch the library_conc column.
-    (contains("amplicon") & contains("conc"))) %>%
+libconc <- read_delim(labmeta,delim = ",", col_names = F) %>%
+  select(1,3) %>%
   `colnames<-`(c("library_id","library_conc"))
 ```
 
