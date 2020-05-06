@@ -83,7 +83,11 @@ ROOT_META=${ROOTSEQSDIR}/root.tsv
 
 # Add root sequences (See folder GISAID-data for details).
 cat $SEQS $ROOT_SEQS > $OUTDIR/raw.fasta
-cat $META $ROOT_META > $OUTDIR/metadata.tsv
+
+# Append \t to root meta to match metadata.
+rootcols=$(awk 'NR == 1 {print NF}' $META)
+cat $META <(awk -F'\t' -v Nroot=$rootcols 'BEGIN {OFS="\t"} { for(i=NF+1; i<=Nroot; i++) $i=""; print}' $ROOT_META) > $OUTDIR/metadata.tsv
+#cat $META $ROOT_META > $OUTDIR/metadata.tsv
 
 ### Alignment ###
 # Do alignment in chunks.
@@ -223,12 +227,15 @@ mkdir -p $OUTDIR/auspice
 # Cat DK lat long with auspice.
 cat ${METADIR}/latlong_nextstrain.tsv ${NCOVDIR}/config/lat_longs.tsv > $OUTDIR/latlongs.tsv
 
+# Get all metadata columns except strain, virus and date to display in auspice.
+cols=$(awk -F'\t' 'NR == 1 {$1=$2=$3=""; print $0}' $OUTDIR/metadata.tsv)
+
 augur export v2 \
   --tree $OUTDIR/tree.nwk \
   --metadata $OUTDIR/metadata.tsv \
   --node-data $OUTDIR/branch_lengths.json $OUTDIR/nt_muts.json $OUTDIR/aa_muts.json $OUTDIR/clades.json \
   --auspice-config ${NCOVDIR}/config/auspice_config.json \
-  --color-by-metadata sex age region country country_exposure division location \
+  --color-by-metadata $cols \
   --lat-longs $OUTDIR/latlongs.tsv \
   --output $OUTDIR/auspice/ncov_custom.json
   
