@@ -1,0 +1,63 @@
+#! /bin/sh -e
+
+### BEGIN INIT INFO
+# Provides:          auspice
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start and stop the auspice daemon
+# Description:       This start and stop system-wide Auspice server instance for viewing Nextstrain data
+### END INIT INFO
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/srv/rbd/covid19/git/covid19/workflow
+
+. /lib/lsb/init-functions
+
+start()
+{
+		log_action_msg "Starting Auspice..."
+		auspiceView.sh default 4000 &
+
+}
+
+stop()
+{
+    AUSPICE_PID=$(ps ux|grep auspiceView.sh|grep -v grep|awk '{print $2}')
+    NODE_PID=$(lsof -n -i :4000 | grep LISTEN|awk '{print $2}')
+		if [ "x$AUSPICE_PID" != "x" ]; then
+		    kill -15 $AUSPICE_PID $NODE_PID|| true
+		    log_action_msg "Stopped Auspice which was running at PID: $AUSPICE_PID"
+    else
+		    log_action_msg "Auspice is not running, no need to stop"
+    fi
+}
+
+case "$1" in
+	start)
+		start
+	;;
+	stop)
+		stop
+	;;
+	reload|force-reload|restart)
+		stop
+		sleep 1
+		start
+	;;
+	status)
+      AUSPICE_PID=$(ps ux|grep auspiceView.sh|grep -v grep|awk '{print $2}')
+		  if [ $AUSPICE_PID > 0 ]; then
+			log_action_msg "System Auspice is up and running at PID: $AUSPICE_PID"
+		else
+			log_warning_msg "System Aupice is not running"
+		fi
+	;;
+	*)
+		N=/etc/init.d/auspice-init
+		echo "Usage: $N {start|stop|restart|force-reload}" >&2
+		exit 1
+	;;
+esac
+
+exit 0
