@@ -43,62 +43,76 @@ if [ -z ${THREADS+x} ]; then THREADS=50; fi;
 
 ### Code.----------------------------------------------------------------------
 
-AAU_COVID19_PATH="$(dirname "$(readlink -f "$0")")"
+GITDIR="$(dirname "$(readlink -f "$0")")"
 
 # How the header should look like.
 NAMESTRING="DK/ALAB-@/2020"
 
 # Set dependent directories/data.
-ARTICDIR=( CJ*/processing )
-HUMANREF=$AAU_COVID19_PATH/human_g1k_v37.fasta
+#ARTICDIR=( CJ*/processing )
+#HUMANREF=$AAU_COVID19_PATH/human_g1k_v37.fasta
 
 # Make time-stamped export subfolder.
 DT=$(date +%Y_%m_%d_%H-%M)"_export"
-mkdir -p export
-mkdir -p export/$DT
-mkdir -p export/$DT/mapped_fastq
+mkdir -p genomes
+mkdir -p genomes/$DT
 
 # Sweep batch-folders for consensus sequences (OBS: renaming headers according to AAU library naming scheme).
-cat CJ*/final_output/consensus.fasta | awk '/^>/ {split($0,a,"_"); print ">"a[2]} !/^>/ {print}' > export/$DT/tmp_raw.fasta
+cat processing/CJ*/final_output/consensus.fasta | awk '/^>/ {split($0,a,"_"); print ">"a[2]} !/^>/ {print}' > genomes/$DT/tmp_raw.fasta
 
 # Get headers from sequences.
-grep ">" export/$DT/tmp_raw.fasta | sed 's/^>//' > export/$DT/tmp_header.txt
+grep ">" genomes/$DT/tmp_raw.fasta | sed 's/^>//' > genomes/$DT/tmp_header.txt
 
 # Export only ones not exported before. 
-if [ -f export/exported.txt ]; then
-  comm -13 <(sort -u export/exported.txt) <(sort -u export/$DT/tmp_header.txt) > export/$DT/tmp_notexported.txt # Find LIB-IDs that have not been exported.
-else
-  cat export/$DT/tmp_header.txt > export/$DT/tmp_notexported.txt
-  echo -e "library_id" > export/exported.txt
-fi
-  
-if [ ! -s export/$DT/tmp_notexported.txt ]; then
-  echo "All sequences has already been exported. Exiting."
-  rm -r export/$DT
-  exit 1
-fi
+#if [ -f export/exported.txt ]; then
+#  comm -13 <(sort -u export/exported.txt) <(sort -u export/$DT/tmp_header.txt) > export/$DT/tmp_notexported.txt # Find LIB-IDs that have not been exported.
+#else
+  cat genomes/$DT/tmp_header.txt > genomes/$DT/tmp_notexported.txt
+#  echo -e "library_id" > export/exported.txt
+#fi
+#  
+#if [ ! -s export/$DT/tmp_notexported.txt ]; then
+#  echo "All sequences has already been exported. Exiting."
+#  rm -r export/$DT
+#  exit 1
+#fi
 
 # Retain only lines from MAP_ID that are not exported.
-awk -F'\t' 'FNR == NR {seqs[$1]=$0; next} {if ($1 in seqs) {print $0}}' export/$DT/tmp_notexported.txt $MAP_ID > export/$DT/tmp_toexport.txt
+awk -F'\t' 'FNR == NR {seqs[$1]=$0; next} {if ($1 in seqs) {print $0}}' genomes/$DT/tmp_notexported.txt $MAP_ID > genomes/$DT/tmp_toexport.txt
 
 # Add new name to "tmp_toexport.txt".
-awk -F'\t' -v nmstring=$NAMESTRING '{newID=nmstring; sub(/@/,$2,newID); print $0"\t"newID }' export/$DT/tmp_toexport.txt > tmp && mv tmp export/$DT/tmp_toexport.txt
+awk -F'\t' -v nmstring=$NAMESTRING '{newID=nmstring; sub(/@/,$2,newID); print $0"\t"newID }' genomes/$DT/tmp_toexport.txt > tmp && mv tmp genomes/$DT/tmp_toexport.txt
 
 # Subset to sequences that should be exported and rename according to the new name.
-awk '{ if ((NR>1)&&($0~/^>/)) { printf("\n%s", $0); } else if (NR==1) { printf("%s", $0); } else { printf("\t%s", $0); } }' export/$DT/tmp_raw.fasta | # tabularize.
-awk -F'\t' 'FNR == NR {seqs[$1]=$2; next} {if (">"$1 in seqs) {print ">"$3"\t"seqs[">"$1]} else {print $0" had no matching sequence, excluding." > "/dev/stderr"}}' - export/$DT/tmp_toexport.txt | # Subset to ones to export.
-tr "\t" "\n" > export/$DT/sequences.fasta # de-tabularize.
+awk '{ if ((NR>1)&&($0~/^>/)) { printf("\n%s", $0); } else if (NR==1) { printf("%s", $0); } else { printf("\t%s", $0); } }' genomes/$DT/tmp_raw.fasta | # tabularize.
+awk -F'\t' 'FNR == NR {seqs[$1]=$2; next} {if (">"$1 in seqs) {print ">"$3"\t"seqs[">"$1]} else {print $0" had no matching sequence, excluding." > "/dev/stderr"}}' - genomes/$DT/tmp_toexport.txt > genomes/$DT/sequences.fasta # Subset to ones to export.
+
+# Check for duplicates and remove with warning.
+cut -f1 genomes/$DT/sequences.fasta | sort | uniq -c | awk '$1 > 1 {print $2}' > genomes/$DT/tmp_dups.txt
+
+while read i; do
+  echo "$i appears more than once, removing."
+done < genomes/$DT/tmp_dups.txt
+
+grep -Fv -f genomes/$DT/tmp_dups.txt genomes/$DT/sequences.fasta | # remove.
+tr "\t" "\n" > tmp && mv tmp genomes/$DT/sequences.fasta # de-tabularize.
 
 ###############################################################################
 # Dump metadata.
 ###############################################################################
 
-echo -e "library_id\tssi_id\tnew_id" > export/$DT/metadata.tsv
-cat export/$DT/tmp_toexport.txt >> export/$DT/metadata.tsv
+echo -e "library_id\tssi_id\tnew_id" > genomes/$DT/idmapping.tsv
+cat genomes/$DT/tmp_toexport.txt >> genomes/$DT/idmapping.tsv
+
+# Clean-up folder.
+rm genomes/$DT/tmp_*
+
+exit 1
 
 ###############################################################################
 # Remove human reads.
 ###############################################################################
+
 if [ ! -z ${DUMPREADS+x} ]; then
   echo "Output .fastq file for each genome"
   
@@ -132,12 +146,10 @@ if [ ! -z ${DUMPREADS+x} ]; then
   awk -F '\t' '{$3=$2; sub(/.fastq.gz/,"",$3); print $3"\t"$1"\t"$2}' - > export/$DT/tmp_md5sums.tsv # make ID column.  
   
   # Add to metadata.
-  join <(sort export/$DT/tmp_toexport.txt) <(sort export/$DT/tmp_md5sums.tsv) -t $'\t' >> export/$DT/metadata.tsv
+  join <(sort genomes/$DT/tmp_toexport.txt) <(sort genomes/$DT/tmp_md5sums.tsv) -t $'\t' >> export/$DT/metadata.tsv
 fi
 
 # Write the parsed LIB-IDs to "exported.txt".
-cut -f 1 export/$DT/metadata.tsv | sed 1d - >> export/exported.txt
+#cut -f 1 genomes/$DT/metadata.tsv | sed 1d - >> genomes/exported.txt
 
-# Clean-up folder.
-mkdir -p export/$DT/tmpdir
-mv export/$DT/tmp_* export/$DT/tmpdir
+
