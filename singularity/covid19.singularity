@@ -83,3 +83,6 @@ From: covid19_1.5.sif
   conda run -n nextstrain npm install 
   conda run -n nextstrain npm run build 
   conda run -n nextstrain npm link
+
+  # Seqtk: lightweight and inspired by AWK for fastX sequence manipulation
+  conda install -c bioconda seqtk
