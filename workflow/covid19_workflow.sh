@@ -10,32 +10,17 @@ THREADS=${6:-100}
 
 # Preparation -----------------------------------------------------------------
 
+echo ""
+echo "[$(date +"%T")] Performing pre-run preparation and checks"
+echo ""
+
 # Script paths
 WORKFLOW_PATH="$(dirname "$(readlink -f "$0")")"
 COVID19_PATH=${WORKFLOW_PATH%/*}
 SINGIMG="${COVID19_PATH}/singularity/covid19*.sif"
 
-# Define input and output paths
+# Determien absolute path to output
 OUT_DIR=$(readlink -f $OUT_DIR)
-
-echo "[$(date +"%T")] Preparing input and output directories"
-if [ -d "${INPUT_DIR}/fastq" ]; then
-  echo ""
-  echo "Processing fastq files from ${INPUT_DIR}/fastq directory..."
-  FASTQ_DIR="${INPUT_DIR}/fastq"
-  echo ""
-elif [ -d "$INPUT_DIR" ]; then
-  echo ""
-  echo "Processing fastq files from ${INPUT_DIR} directory..."
-  FASTQ_DIR="${INPUT_DIR}"
-  echo ""
-else
-  echo ""
-  echo "$INPUT_DIR or ${INPUT_DIR}/fastq does not exist"
-  echo "Aborting covid19_workflow..."
-  echo ""
-  return
-fi
 
 # Create output folder
 mkdir -p $OUT_DIR
@@ -50,7 +35,7 @@ fi
 # Check references 
 if [ ! -f "${WORKFLOW_PATH}/dependencies/ref/human_g1k_v37.fasta" ]; then
   echo ""
-  echo "Downloading humen reference genome to ${WORKFLOW_PATH}/dependencies/ref/human_g1k_v37.fasta"
+  echo "Downloading human reference genome to ${WORKFLOW_PATH}/dependencies/ref/human_g1k_v37.fasta"
   echo ""
   
   wget \
@@ -64,12 +49,36 @@ fi
 # Make final_output to dump important stuff.
 
 ###############################################################################
-# Run demultiplexing.
+# Demultiplexing
 ###############################################################################
 
+echo ""
+echo "[$(date +"%T")] Demultiplexing and trimming of fastq data"
+echo ""
+
 if [ -d $OUT_DIR/demultiplexed ]; then 
-  echo "demultiplexed data exists, skipping this part."
+  echo "$OUT_DIR/demultiplexed directory exists. Demultiplexing is skipped..."
 else 
+  # Check if default folder structure is present
+  if [ -d "${INPUT_DIR}/fastq" ]; then
+    echo ""
+    echo "Processing fastq files from ${INPUT_DIR}/fastq directory..."
+    FASTQ_DIR="${INPUT_DIR}/fastq"
+    echo ""
+  elif [ -d "$INPUT_DIR" ]; then
+    echo ""
+    echo "Processing fastq files from ${INPUT_DIR} directory..."
+    FASTQ_DIR="${INPUT_DIR}"
+    echo ""
+  else
+    echo ""
+    echo "$INPUT_DIR or ${INPUT_DIR}/fastq does not exist"
+    echo "Aborting covid19_workflow..."
+    echo ""
+    return
+  fi
+  
+  # Demultiplexing
   singularity \
     exec \
     -B $WORKFLOW_PATH:$WORKFLOW_PATH \
@@ -90,8 +99,12 @@ fi
 
 
 ###############################################################################
-# Run processing
+# Generate genomes
 ###############################################################################
+
+echo ""
+echo "[$(date +"%T")] Generating genomes with ARTIC medaka pipeline"
+echo ""
 
 singularity \
   exec \
@@ -120,6 +133,10 @@ singularity \
 ###############################################################################
 # Run QC
 ###############################################################################
+
+echo ""
+echo "[$(date +"%T")] Generating genomes with ARTIC medaka pipeline"
+echo ""
 
 singularity \
   exec \
