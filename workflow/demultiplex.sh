@@ -100,7 +100,7 @@ gawk \
     }
   ' \
   $METADATA \
-  $AAU_COVID19_PATH/barcodes.csv \
+  $AAU_COVID19_PATH/dependencies/demultiplex/barcodes.csv \
   > $OUT_DIR/barcodes_used.fasta
 
 # Demultiplex based
@@ -229,7 +229,7 @@ parallel \
 echo ""
 echo "[$(date +"%T")] Cleaning up temp files"
 echo ""
-rm -rf $OUT_DIR/reads_trim.fq $OUT_DIR/*tmp
+rm -rf $OUT_DIR/reads_trim.fq $OUT_DIR/demux*
 
 echo ""
 echo "[$(date +"%T")] Demultiplexing done..."

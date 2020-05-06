@@ -20,17 +20,21 @@ OUT_DIR=$(readlink -f $OUT_DIR)
 
 echo "[$(date +"%T")] Preparing input and output directories"
 if [ -d "${INPUT_DIR}/fastq" ]; then
+  echo ""
   echo "Processing fastq files from ${INPUT_DIR}/fastq directory..."
   FASTQ_DIR="${INPUT_DIR}/fastq"
+  echo ""
 elif [ -d "$INPUT_DIR" ]; then
+  echo ""
   echo "Processing fastq files from ${INPUT_DIR} directory..."
   FASTQ_DIR="${INPUT_DIR}"
+  echo ""
 else
-   echo ""
-   echo "$INPUT_DIR or ${INPUT_DIR}/fastq does not exist"
-   echo "Aborting covid19_workflow..."
-   echo ""
-   return
+  echo ""
+  echo "$INPUT_DIR or ${INPUT_DIR}/fastq does not exist"
+  echo "Aborting covid19_workflow..."
+  echo ""
+  return
 fi
 
 # Create output folder
@@ -83,6 +87,7 @@ else
         $SCHEME
       "
 fi
+
 
 ###############################################################################
 # Run processing
