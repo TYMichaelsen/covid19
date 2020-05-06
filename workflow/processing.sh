@@ -57,9 +57,9 @@ exec &> >(tee -a "$LOG_NAME")
 exec 2>&1
 
 # Dependencies.
-SCHEMEDIR=$AAU_COVID19_PATH/primer_schemes                
-REF=$AAU_COVID19_PATH/MN908947.3.fasta
-HUMANREF=$AAU_COVID19_PATH/human_g1k_v37.fasta
+SCHEMEDIR=$AAU_COVID19_PATH/dependencies/primer_schemes                
+REF=$AAU_COVID19_PATH/dependencies/ref/MN908947.3.fasta
+HUMANREF=$AAU_COVID19_PATH/dependencies/ref/human_g1k_v37.fasta
 
 # setup output folders.
 rm -rf $OUTDIR/TMPDIR; mkdir $OUTDIR/TMPDIR/
