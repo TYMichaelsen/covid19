@@ -2,4 +2,4 @@
 build
 
 singularity/.Rhistory
-workflow/dependencies/human_g1k_v37.fasta
+workflow/dependencies/ref/human_g1k_v37.fasta
