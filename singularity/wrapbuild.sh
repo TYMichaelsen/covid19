@@ -1,29 +1,52 @@
 #!/usr/bin/env bash
-# Usage: $0 <image_file_name.sif> <Singularity_defition_file>
 
-if [ $# -lt 2 ]; then
- echo "Usage: $0 <image_file_name.sif> <Singularity_defition_file>"
- exit 1
-fi
+echo "Usage: $0 [install]"
 
 BUILDDIR=/tmp/$UID
 mkdir -p $BUILDDIR
 
+BASEIMG="covid19_1.5.sif"
+FINALIMG="covid19_latest.sif"
+
+TimeStamp=$(date +%Y%m%d)
 THISDIR=$PWD
+REPONAME=${THISDIR##*/}
+REPODIR=$(dirname ${THISDIR})
 
-DEFFILE="$2"
-IMGFILE="$1"
+buildImage(){
+    # Handle build under /srv/rbd
+    if [[ "$THISDIR" == "/srv/rbd"* ]]; then
+        echo Cleaning up $BUILDDIR ...
+        rm -rf ${BUILDDIR}
+        echo Copying files to $BUILDDIR ...
+        cp -a ${REPODIR} ${BUILDDIR}/ 
+        cd ${BUILDDIR}/${REPONAME}
+        echo Working under $PWD ...
+        make
+        if [ $? -eq 0 ]; then
+            mv $BASEIMG $FINALIMG  ${THISDIR}/
+            rm -rf ${BUILDDIR}
+        else
+            echo "Build failed. Check your defition file or build command"
+        fi
 
-cp "$DEFFILE" $BUILDDIR/
+    else # build under $HOME
+        make
+    fi
+}
 
-cd $BUILDDIR
+installImage(){
+    INSTDIR="/srv/rbd/thecontainer" 
+    if [[ ! -f ${THISDIR}/${FINALIMG} ]]; then
+        buildImage
+    else
+        cp ${THISDIR}/${FINALIMG} ${INSTDIR}/covid19_${TimeStamp}.sif
+        cd ${INSTDIR}
+        ln -snf covid19_${TimeStamp}.sif covid19_latest.sif
+        echo Image installed and linked:
+        ls -lah ${INSTDIR}/covid19_latest.sif
+    fi
+}
 
-echo -e "command: singularity build --fakeroot $IMGFILE ${DEFFILE} "
-singularity build --fakeroot "$IMGFILE" ${DEFFILE} 
-
-if [ $? -eq 0 ]; then
-  mv $IMGFILE $THISDIR/
-  rm ${BUILDDIR}/${DEFFILE}
-else
- echo "Build failed. Check your defition file or build command"
-fi
+if [ "$1" == 'build' ]; then buildImage; fi
+if [ "$1" == 'install' ]; then installImage; fi
