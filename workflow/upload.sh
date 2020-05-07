@@ -13,8 +13,15 @@ Arguments:
     -s  Sequences.
     -t  Number of threads.
 
-Output:
-    Dumps timestamped folder in upload/ containing sequences, fastq reads, and metadata.
+Description:
+  Dumps timestamped folder in upload/ containing sequences, fastq reads, and metadata.
+  Depends on finding the columns 'ssi_id', 'library_id','curate_exclude', and 'SampleDate' in the metadata. 
+  These should be formatted as:
+    ssi_id         = id associated with the sample.
+    library_id     = id associated with the library.
+    curate_exclude = column indicating if the sample should be excluded. Empty entries means inclusion. 
+    SampleDate     = column with sample date in YYYY-MM-DD format.
+
 "
 ### Terminal Arguments ---------------------------------------------------------
 
