@@ -308,22 +308,24 @@ cladedump %>%
 ```{r}
 meta_sub <- filter(d,sample_type == "sample" & genome_qc == "HQ") %>%
   head(n = 10) 
+if (nrow(meta_sub) > 0){
+  # Subset.
+  cov_sub  <- filter(cov, library_id %in% meta_sub$library_id)
+  #asnv_sub <- filter(asnv, library_id %in% meta_sub$library_id)
+  snv_sub <-  filter(snv, library_id %in% meta_sub$library_id)
 
-# Subset.
-cov_sub  <- filter(cov, library_id %in% meta_sub$library_id)
-#asnv_sub <- filter(asnv, library_id %in% meta_sub$library_id)
-snv_sub <-  filter(snv, library_id %in% meta_sub$library_id)
+  ggplot(cov_sub, aes(x = pos_mean, y = coverage+1, color = coverage+1)) +
+    geom_segment(aes(x = start, xend = end, y = coverage + 1, yend = coverage +1), size = 1) +
+    scale_colour_viridis_c(trans = "log10", direction = -1, breaks = c(1, 10, 100, 1000, 10000),limits = c(1, NA)) +
+    facet_wrap(~library_id, ncol = 2) +
+    scale_y_log10(limits=c(1,100000), breaks = c(1, 10 ,100 ,1000, 10000)) +
+    labs(x = "Genome position [bp]", y = "Coverage [fold]") +
+    theme(legend.position = "none") +
+   geom_text(data = meta_sub, aes(x = 15000, y = 100000, label = paste0("Library conc.: ", round(library_conc, 0), " ng/ul, Coverage: ", coverage)), color = "black", size = 3) +
+    #geom_text(data = asnv_sub, aes(x = position, y = 100, label = paste0(snv_type, "\n", alt_frac, "\n", het)), color = "red", size = 2) +
+    geom_text(data = snv_sub, aes(x = position, y = 1, label = alt), color = "black", size = 2)
+}
 
-ggplot(cov_sub, aes(x = pos_mean, y = coverage+1, color = coverage+1)) +
-  geom_segment(aes(x = start, xend = end, y = coverage + 1, yend = coverage +1), size = 1) +
-  scale_colour_viridis_c(trans = "log10", direction = -1, breaks = c(1, 10, 100, 1000, 10000),limits = c(1, NA)) +
-  facet_wrap(~library_id, ncol = 2) +
-  scale_y_log10(limits=c(1,100000), breaks = c(1, 10 ,100 ,1000, 10000)) +
-  labs(x = "Genome position [bp]", y = "Coverage [fold]") +
-  theme(legend.position = "none") +
-  geom_text(data = meta_sub, aes(x = 15000, y = 100000, label = paste0("Library conc.: ", round(library_conc, 0), " ng/ul, Coverage: ", coverage)), color = "black", size = 3) +
-  #geom_text(data = asnv_sub, aes(x = position, y = 100, label = paste0(snv_type, "\n", alt_frac, "\n", het)), color = "red", size = 2) +
-  geom_text(data = snv_sub, aes(x = position, y = 1, label = alt), color = "black", size = 2)
 ```
 
 ## Coverage (MQ)
@@ -332,21 +334,23 @@ ggplot(cov_sub, aes(x = pos_mean, y = coverage+1, color = coverage+1)) +
 meta_sub <- filter(d,sample_type == "sample" & genome_qc == "MQ") %>%
   head(n = 10) 
 
-# Subset.
-cov_sub  <- filter(cov, library_id %in% meta_sub$library_id)
-#asnv_sub <- filter(asnv, library_id %in% meta_sub$library_id)
-snv_sub <-  filter(snv, library_id %in% meta_sub$library_id)
+if (nrow(meta_sub) > 0){
+  # Subset.
+  cov_sub  <- filter(cov, library_id %in% meta_sub$library_id)
+  #asnv_sub <- filter(asnv, library_id %in% meta_sub$library_id)
+  snv_sub <-  filter(snv, library_id %in% meta_sub$library_id)
 
-ggplot(cov_sub, aes(x = pos_mean, y = coverage+1, color = coverage+1)) +
-  geom_segment(aes(x = start, xend = end, y = coverage + 1, yend = coverage +1), size = 1) +
-  scale_colour_viridis_c(trans = "log10", direction = -1, breaks = c(1, 10, 100, 1000, 10000),limits = c(1, NA)) +
-  facet_wrap(~library_id, ncol = 2) +
-  scale_y_log10(limits=c(1,100000), breaks = c(1, 10 ,100 ,1000, 10000)) +
-  labs(x = "Genome position [bp]", y = "Coverage [fold]") +
-  theme(legend.position = "none") +
-  geom_text(data = meta_sub, aes(x = 15000, y = 100000, label = paste0("Library conc.: ", round(library_conc, 0), " ng/ul, Coverage: ", coverage)), color = "black", size = 3) +
-  #geom_text(data = asnv_sub, aes(x = position, y = 10, label = paste0(snv_type, "\n", alt_frac, "\n", het)), color = "black", size = 2) +
-  geom_text(data = snv_sub, aes(x = position, y = 1, label = alt), color = "black", size = 2)
+  ggplot(cov_sub, aes(x = pos_mean, y = coverage+1, color = coverage+1)) +
+    geom_segment(aes(x = start, xend = end, y = coverage + 1, yend = coverage +1), size = 1) +
+    scale_colour_viridis_c(trans = "log10", direction = -1, breaks = c(1, 10, 100, 1000, 10000),limits = c(1, NA)) +
+    facet_wrap(~library_id, ncol = 2) +
+    scale_y_log10(limits=c(1,100000), breaks = c(1, 10 ,100 ,1000, 10000)) +
+    labs(x = "Genome position [bp]", y = "Coverage [fold]") +
+    theme(legend.position = "none") +
+    geom_text(data = meta_sub, aes(x = 15000, y = 100000, label = paste0("Library conc.: ", round(library_conc, 0), " ng/ul, Coverage: ", coverage)), color = "black", size = 3) +
+    #geom_text(data = asnv_sub, aes(x = position, y = 10, label = paste0(snv_type, "\n", alt_frac, "\n", het)), color = "black", size = 2) +
+    geom_text(data = snv_sub, aes(x = position, y = 1, label = alt), color = "black", size = 2)
+}
 ```
 
 ## Identify mixed-virus samples (SNV artic)
@@ -367,11 +371,14 @@ p1 <- p + geom_treescale() +
 
 hq <- filter(d, genome_qc == "HQ")
 
+
 #Take SNV's seen in at least 2 genomes in the HQ subset ()
 snv_filter <- filter(snv, library_id %in% hq$library_id) %>%
               group_by(position) %>%
               summarise(count = n()) %>%
               filter(count >1)
+
+if (nrow(snv_filter) > 0){
 
 snv_heat <- filter(snv, position %in% snv_filter$position & library_id %in% ntree_trim$tip.label) %>%
             select(library_id, position, alt) %>%
@@ -386,11 +393,13 @@ gheatmap(p1, snv_heat2, colnames_angle = 90, hjust = 1, font.size = 2, offset = 
   scale_fill_manual(values = c("#33a02c", "#1f78b4", "grey30", "#de2d26", "grey80", "orange"),  
                     name = "Variant", breaks = c("A", "C", "G", "T", "N", "-")) +
   theme(legend.position = c(0.1,0.65))
+}
 ```
 
 ## Identify mixed-virus samples (SNV freq)
 
 ```{r, fig.height = 14}
+if (nrow(snv_filter) > 0){
 freq_heat <- filter(nsnv, position %in% snv_filter$position & library_id %in% ntree_trim$tip.label) %>%
              select(library_id, position, frac_ALT) %>%
              pivot_wider(names_from = "position", values_from = "frac_ALT") 
@@ -414,4 +423,5 @@ p1 <- p + geom_treescale() +
 gheatmap(p1, freq_heat2, colnames_angle = 90, hjust = 1, font.size = 2, offset = 0.00004, width = 0.35) +
   scale_fill_viridis_c(name = "Alternative variant (SNV)", limits = c(0,1), na.value = "white", direction = -1) +
   theme(legend.position = c(0.1,0.65))
+}
 ```
