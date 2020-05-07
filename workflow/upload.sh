@@ -14,7 +14,7 @@ Arguments:
     -t  Number of threads.
 
 Output:
-    To come.
+    Dumps timestamped folder in upload/ containing sequences, fastq reads, and metadata.
 "
 ### Terminal Arguments ---------------------------------------------------------
 
