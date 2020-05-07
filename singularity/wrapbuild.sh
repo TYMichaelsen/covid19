@@ -42,7 +42,7 @@ installImage(){
     if [[ ! -f ${THISDIR}/${FINALIMG} ]]; then
         buildImage
     else
-    	local TimeStamp=$(date +%Y%m%d)
+    	local TimeStamp=$(date +%y%m%d_%H%M)
         cp ${THISDIR}/${FINALIMG} ${INSTDIR}/covid19_${TimeStamp}.sif
         cd ${INSTDIR}
         ln -snf covid19_${TimeStamp}.sif covid19_latest.sif
