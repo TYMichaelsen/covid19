@@ -11,7 +11,6 @@ mkdir -p $BUILDDIR
 BASEIMG="covid19_1.5.sif"
 FINALIMG="covid19_latest.sif"
 
-TimeStamp=$(date +%Y%m%d)
 THISDIR=$PWD
 REPONAME=${THISDIR##*/}
 REPODIR=$(dirname ${THISDIR})
@@ -43,6 +42,7 @@ installImage(){
     if [[ ! -f ${THISDIR}/${FINALIMG} ]]; then
         buildImage
     else
+    	local TimeStamp=$(date +%Y%m%d)
         cp ${THISDIR}/${FINALIMG} ${INSTDIR}/covid19_${TimeStamp}.sif
         cd ${INSTDIR}
         ln -snf covid19_${TimeStamp}.sif covid19_latest.sif
