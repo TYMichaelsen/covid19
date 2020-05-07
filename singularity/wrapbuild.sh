@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-if [ "$1" != 'install' ] || [ "$1" != 'build' ]
+if [ "$1" != "install" ] && [ "$1" != "build" ]
 then
 	echo "Usage: $0 [install|build]"
 	exit 1
