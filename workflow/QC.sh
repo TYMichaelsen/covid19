@@ -54,8 +54,8 @@ echo "Command: $0 $*" >> $LOG_NAME
 exec &> >(tee -a "$LOG_NAME")
 exec 2>&1
 
-REF=$AAU_COVID19_PATH/MN908947.3.gb
-CLADES=$AAU_COVID19_PATH/pangolin_clades.tsv
+REF=$AAU_COVID19_PATH/dependencies/ref/MN908947.3.gb
+CLADES=$AAU_COVID19_PATH/dependencies/nextstrain/pangolin_clades.tsv
 
 ###############################################################################
 # Setup data to be used in QC.
@@ -118,7 +118,7 @@ augur clades \
 # Generate the QC report.
 ###############################################################################
 
-# Fetch path lab metadata.
+# Fetch path lab metadata.            
 pth=$(grep "\-d" $INPUT_DIR/processing/log.out | sed 's/-d: //')
 
 if [ ! -f $pth/sample_sheet.csv ]; then 
