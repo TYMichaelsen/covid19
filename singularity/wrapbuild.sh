@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
-
-echo "Usage: $0 [install]"
+if [ "$1" != 'install' ] || [ "$1" != 'build' ]
+then
+	echo "Usage: $0 [install|build]"
+	exit 1
+fi
 
 BUILDDIR=/tmp/$UID
 mkdir -p $BUILDDIR
