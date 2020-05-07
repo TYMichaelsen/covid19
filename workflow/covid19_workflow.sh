@@ -47,6 +47,7 @@ fi
 # This is the full workflow script.
 # Make final_output to dump important stuff.
 
+
 ###############################################################################
 # Demultiplexing
 ###############################################################################
@@ -79,6 +80,7 @@ else
   
   # Demultiplexing
   singularity \
+    --silent \
     exec \
     -B $WORKFLOW_PATH:$WORKFLOW_PATH \
     -B $FASTQ_DIR:$FASTQ_DIR \
@@ -106,6 +108,7 @@ echo "[$(date +"%T")] Generating genomes with ARTIC medaka pipeline"
 echo ""
 
 singularity \
+  --silent \
   exec \
   -B $WORKFLOW_PATH:$WORKFLOW_PATH \
   -B $INPUT_DIR:$INPUT_DIR \
@@ -138,6 +141,7 @@ echo "[$(date +"%T")] Quality control of genomes"
 echo ""
 
 singularity \
+  --silent \
   exec \
   -B $WORKFLOW_PATH:$WORKFLOW_PATH \
   -B $INPUT_DIR:$INPUT_DIR \
