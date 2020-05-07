@@ -27,8 +27,7 @@ mkdir -p $OUT_DIR
 mkdir -p $OUT_DIR/final_output
 
 # Copy sample_sheet.csv to output folder
-echo $SAMPLE_SHEET
-if [ ! -d "${OUT_DIR}/sample_sheet.csv" ]; then
+if [ ! -f "${OUT_DIR}/sample_sheet.csv" ]; then
   cp $SAMPLE_SHEET ${OUT_DIR}/
 fi
 
@@ -135,7 +134,7 @@ singularity \
 ###############################################################################
 
 echo ""
-echo "[$(date +"%T")] Generating genomes with ARTIC medaka pipeline"
+echo "[$(date +"%T")] Quality control of genomes"
 echo ""
 
 singularity \
