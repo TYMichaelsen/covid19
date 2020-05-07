@@ -4,7 +4,7 @@ From: nvidia/cuda:10.2-base-ubuntu18.04
 %labels
   Maintainer Vang Le-Quy
   Maintainer Kasper Skytte Andersen
-  Version 1.5
+  Version 1.5.1
 
 %help
   Tools and scripts for COVID19 nanopore genome assembly and analysis.
@@ -48,6 +48,9 @@ From: nvidia/cuda:10.2-base-ubuntu18.04
   #install R, R packages, and system dependencies
   #specific version of R to be installed
   export R_BASE_VERSION=3.6.3
+  #multithreaded compilation
+  mkdir -p ~/.R/
+  echo "MAKE=make -j100" >> ~/.R/Makevars
   #add R CRAN mirror to apt sources to install R using APT
   apt-key adv --keyserver keyserver.ubuntu.com \
   --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9 && \
@@ -66,7 +69,7 @@ From: nvidia/cuda:10.2-base-ubuntu18.04
     r-base-dev=${R_BASE_VERSION}* \
     r-base-html=${R_BASE_VERSION}* \
     r-recommended=${R_BASE_VERSION}*
-   R -e "install.packages(c('data.table', 'tidyverse', 'rmarkdown'), Ncpus = 7)"
+  R -e "install.packages('BiocManager', Ncpus = 100); BiocManager::install(c('data.table', 'tidyverse', 'rmarkdown', 'httr', 'knitr', 'ggtree', 'kableExtra', 'rjson', 'ape'), ask = FALSE, version = '3.10', Ncpus = 100)"
   conda install -y pandoc==2.2.3.2 #pandoc from conda is more up to date
 
   #install GUPPY (3.6.0) (with GPU support)
