@@ -129,4 +129,19 @@ else
 fi
 
 # Run .rmd script.
-Rscript -e "rmarkdown::render(input='$RMD',output_file='$INPUT_DIR/QC/$BATCH.html',knit_root_dir='$INPUT_DIR',params=list(batch='$BATCH',labmeta='$labmeta'))"
+REF_PATH=$AAU_COVID19_PATH/dependencies/ref/MN908947.3.fasta
+Rscript \
+  -e \
+  "
+  rmarkdown::render(
+    input='$RMD',
+    output_file='$INPUT_DIR/QC/$BATCH.html',
+    knit_root_dir='$INPUT_DIR',
+    params=list(
+      batch='$BATCH',
+      labmeta='$labmeta',
+      input_dir='$INPUT_DIR',
+      ref='$REF_PATH'
+    )
+  )
+  "
