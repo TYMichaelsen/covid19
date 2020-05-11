@@ -66,7 +66,7 @@ From: covid19_1.5.sif
   #apt install -y byobu vim emacs
   . /opt/miniconda/etc/profile.d/conda.sh
   export PATH="/opt/miniconda/bin:${PATH}"
-  git clone --depth 1 -b v1.1.6 https://github.com/hCoV-2019/pangolin.git
+  git clone --depth 1 -b v1.1.11 https://github.com/hCoV-2019/pangolin.git
   cd pangolin
   conda env create -f environment.yml
   conda run -n pangolin python setup.py install
