@@ -5,7 +5,7 @@
 set -e
 # set -x
 
-VERSION=0.1.0
+VERSION=0.2.0
 
 ### Description ----------------------------------------------------------------
 
@@ -72,12 +72,14 @@ if [ ! -d "$OUTDIR" ]; then  mkdir $OUTDIR; fi
 
 # Settings
 # Distribution directory, the root of all input and final output
-DISTDIR="/srv/rbd/covid19/current"
+THISDIR=$(dirname $(readlink -f $0))
+DEFDIR="${THISDIR}/dependencies"
+DISTDIR="/srv/rbd/covid19"
 
-REF="${DISTDIR}/auxdata/reference/"
-METADIR="${DISTDIR}/metadata/metadata_SSI"
-NCOVDIR="${DISTDIR}/auxdata/ncov"
-ROOTSEQSDIR="${DISTDIR}/auxdata/root_seqs"
+REF="${DEFDIR}"
+METADIR="${DISTDIR}/metadata"
+NCOVDIR="${DEFDIR}/nextstrain" # Keep this for flexibility
+ROOTSEQSDIR="${DEFDIR}/nextstrain"
 ROOT_SEQS=${ROOTSEQSDIR}/root.fasta
 ROOT_META=${ROOTSEQSDIR}/root.tsv
 
@@ -140,7 +142,7 @@ fi
 ### Mask bases ###
 mask_sites="18529 29849 29851 29853"
 
-python3 ${NCOVDIR}/scripts/mask-alignment.py \
+python3 ${DEFDIR}/mask-alignment.py \
     --alignment $OUTDIR/aligned.fasta \
     --mask-from-beginning 130 \
     --mask-from-end 50 \
@@ -198,12 +200,15 @@ augur traits \
  --columns country_exposure \
  --confidence \
  --sampling-bias-correction 2.5 
+
+### Make clades.tsv from data of Lineage repo 
+bash -c "conda run -n pangolin python3 ${DEFDIR}/make_clade_tsv.py --out-clade=${OUTDIR}/clades.tsv"
             
 ### add clades.
 augur clades \
   --tree $OUTDIR/tree.nwk \
   --mutations $OUTDIR/nt_muts.json $OUTDIR/aa_muts.json \
-  --clades ${ROOTSEQSDIR}/pangolin_clades.tsv \
+  --clades ${OUTDIR}/clades.tsv \
   --output-node-data $OUTDIR/clades.json
   
 ### construct colouring.
@@ -234,7 +239,7 @@ augur export v2 \
   --tree $OUTDIR/tree.nwk \
   --metadata $OUTDIR/metadata.tsv \
   --node-data $OUTDIR/branch_lengths.json $OUTDIR/nt_muts.json $OUTDIR/aa_muts.json $OUTDIR/clades.json \
-  --auspice-config ${NCOVDIR}/config/auspice_config.json \
+  --auspice-config ${NCOVDIR}/auspice_config_AAU.json \
   --color-by-metadata $cols \
   --lat-longs $OUTDIR/latlongs.tsv \
   --output $OUTDIR/auspice/ncov_custom.json
