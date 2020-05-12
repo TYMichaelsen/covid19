@@ -12,12 +12,13 @@ Arguments:
     -m  Metadata .tsv file.
     -s  Sequences.
     -t  Number of threads.
+    -x  Optional: if set, the name of output dir.
 
 Description:
   Dumps timestamped folder in upload/ containing sequences, fastq reads, and metadata.
-  Depends on finding the columns 'ssi_id', 'library_id','curate_exclude', and 'SampleDate' in the metadata. 
+  Depends on finding the columns 'gisaid_id', 'library_id','curate_exclude', and 'SampleDate' in the metadata. 
   These should be formatted as:
-    ssi_id         = id associated with the sample.
+    gisaid_id      = id associated with the sample.
     library_id     = id associated with the library.
     curate_exclude = column indicating if the sample should be excluded. Empty entries means inclusion. 
     SampleDate     = column with sample date in YYYY-MM-DD format.
@@ -26,12 +27,13 @@ Description:
 ### Terminal Arguments ---------------------------------------------------------
 
 # Import user arguments
-while getopts ':hm:s:t:' OPTION; do
+while getopts ':hm:s:t:x:' OPTION; do
   case $OPTION in
     h) echo "$USAGE"; exit 1;;
     m) META=$OPTARG;;
     s) SEQS=$OPTARG;;
     t) THREADS=$OPTARG;;
+    x) DT=$OPTARG;;
     :) printf "missing argument for -$OPTARG\n" >&2; exit 1;;
     \?) printf "invalid option for -$OPTARG\n" >&2; exit 1;;
   esac
@@ -42,20 +44,20 @@ MISSING="is missing but required. Exiting."
 if [ -z ${META+x} ]; then echo "-m $MISSING"; exit 1; fi;
 if [ -z ${SEQS+x} ]; then echo "-s $MISSING"; exit 1; fi;
 if [ -z ${THREADS+x} ]; then THREADS=50; fi;
+if [ -z ${DT+x} ]; then DT=$(date +%Y-%m-%d-%H-%M)"_upload"; fi;
 
 if [ ! -f $META ]; then echo "-m does not exist. It has likely been updated, check again."; exit 1; fi
 if [ ! -f $SEQS ]; then echo "-s does not exist."; exit 1; fi
 
 ### Code.----------------------------------------------------------------------
 
-GITDIR="$(dirname "$(readlink -f "$0")")"
+WORKFLOW_PATH="$(dirname "$(readlink -f "$0")")"
 
 # Set dependent directories/data.
 ARTICDIR=( processing/CJ*/processing )
-HUMANREF=$GITDIR/dependencies/human_g1k_v37.fasta
+HUMANREF=$WORKFLOW_PATH/dependencies/human_g1k_v37.fasta
 
 # Make time-stamped export subfolder.
-DT=$(date +%Y_%m_%d_%H-%M)"_upload"
 mkdir -p upload/$DT
 mkdir -p upload/$DT/mapped_fastq
 
@@ -103,24 +105,12 @@ for i in "${ARTICDIR[@]}"; do
   for j in $i/articminion/*.consensus.fasta; do echo $j; done
 done | sed 's/.consensus.fasta/.sorted.bam/' - > upload/$DT/tmp_bamfiles
 
-source activate artic-ncov2019-medaka
+# Make input file to parallel.
+awk -F'\t' -v outdir=upload/$DT -v human=$HUMANREF '{print $1":"$2":"outdir":"human}' upload/$DT/tmp_toexport.txt > upload/$DT/tmp_toparallel.txt
 
-# for each mapping, run sanitizeme.
-awk -F'\t' -v outdir=upload/$DT -v human=$HUMANREF '{print $1":"$2":"outdir":"human}' upload/$DT/tmp_toexport.txt | parallel -j $THREADS --colsep ':' --bar \
-'
-# Get the corresponding .bam file.
-BAMFILE=$(grep {2}_ {3}/tmp_bamfiles)
-
-if [ -z "$BAMFILE" ]; then
-  >&2 echo "warning: .bam file for {1} (LIB-ID: {2}) was not in the artic output." 
-else
-  # Extract mapped reads and remove human reads with the CDC protocol: https://github.com/CDCgov/SanitizeMe
-  samtools fastq --threads 1 -F 4 $BAMFILE 2> /dev/null |\
-  minimap2 -ax map-ont {4} - -t 1 2> /dev/null |\
-  samtools view --threads 1 -u -f 4 - 2> /dev/null |\
-  samtools bam2fq --threads 1 - 2> /dev/null |\
-  gzip -c - > {3}/mapped_fastq/"$(sed s/\\//_/g <<< {1})".fastq.gz 2> /dev/null
-fi' 
+# Run in singularity.
+SINGIMG="/srv/rbd/thecontainer/covid19_latest.sif"
+singularity --silent exec -B /srv/rbd:/srv/rbd $SINGIMG bash -c "DT=$DT; THREADS=$THREADS; . $WORKFLOW_PATH/parallel.snipet.sh"
 
 echo "md5 checksum"
 
