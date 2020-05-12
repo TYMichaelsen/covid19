@@ -19,6 +19,7 @@ Arguments:
     -o  Output directory.
     -t  Number of threads.
     -f  Force remove existing data (Be careful!)
+    -c  Clades table. Will calculate if missing
 
 Output:
     To come.
@@ -29,17 +30,18 @@ This is beta software!
 ### Terminal Arguments ---------------------------------------------------------
 
 # Import user arguments
-while getopts ':hfm:s:o:t:' OPTION; do
-  case $OPTION in
-    h) echo "$USAGE"; exit 1;;
-    m) META=$OPTARG;;
-    s) SEQS=$OPTARG;;
-    o) OUTDIR=$OPTARG;;
-    t) THREADS=$OPTARG;;
-    f) FORCE=1 ;;
-    :) printf "missing argument for -$OPTARG\n" >&2; exit 1;;
-    \?) printf "invalid option for -$OPTARG\n" >&2; exit 1;;
-  esac
+while getopts ':hfm:s:o:t:c:' OPTION; do
+    case $OPTION in
+        h) echo "$USAGE"; exit 1;;
+        m) META=$OPTARG;;
+        s) SEQS=$OPTARG;;
+        o) OUTDIR=$OPTARG;;
+        t) THREADS=$OPTARG;;
+        c) CLADES=$OPTARG;;
+        f) FORCE=1;;
+        :) printf "missing argument for -$OPTARG\n" >&2; exit 1;;
+        \?) printf "invalid option for -$OPTARG\n" >&2; exit 1;;
+    esac
 done
 
 # Check missing arguments
@@ -58,17 +60,17 @@ if [ -d $OUTDIR -a  x$FORCE == x  ]; then
     exit 1
 fi
 
-if [ -d $OUTDIR -a x${FORCE} != x  ]; then
+if [ -d $OUTDIR -a x${FORCE} != x -a x$REUSE == x ]; then
     echo "Deleting $OUTDIR ..."
     rm -rf $OUTDIR
 fi
 
 if [ ! -d "$OUTDIR" ]; then  mkdir $OUTDIR; fi
 
-# Capture stdout to log file.
-#exec 3>&1 4>&2
-#trap 'exec 2>&4 1>&3' 0 1 2 3
-#exec 1>$OUTDIR/log.out 2>&1
+## Capture stdout to log file.
+# exec 3>&1 4>&2
+# trap 'exec 2>&4 1>&3' 0 1 2 3
+# exec 1>$OUTDIR/log.out 2>&1
 
 # Settings
 # Distribution directory, the root of all input and final output
@@ -92,6 +94,7 @@ cat $META <(awk -F'\t' -v Nroot=$rootcols 'BEGIN {OFS="\t"} { for(i=NF+1; i<=Nro
 #cat $META $ROOT_META > $OUTDIR/metadata.tsv
 
 ### Alignment ###
+
 # Do alignment in chunks.
 rm -rf $OUTDIR/split_fasta; mkdir $OUTDIR/split_fasta
 rm -rf $OUTDIR/split_align; mkdir $OUTDIR/split_align
@@ -100,7 +103,7 @@ split -d -l 40 --additional-suffix=.fasta $OUTDIR/raw.fasta $OUTDIR/split_fasta/
 FASTAFILES=`ls $OUTDIR/split_fasta` 
 
 parallel -j$THREADS \
-'
+         '
 augur align \
 --sequences {2}/split_fasta/{1} \
 --reference-sequence {3} \
@@ -136,87 +139,91 @@ else
     #         {$0=">"lib2id[hdr]; }
     #  }
     #  print $0} ' \
-    # ${METADIR}/2020-04-28-19-57_metadata.tsv $OUTDIR/aligned.fasta > ${OUTDIR}/aligned.fixheader.fasta
+        # ${METADIR}/2020-04-28-19-57_metadata.tsv $OUTDIR/aligned.fasta > ${OUTDIR}/aligned.fixheader.fasta
 fi
 
 ### Mask bases ###
 mask_sites="18529 29849 29851 29853"
 
 python3 ${DEFDIR}/mask-alignment.py \
-    --alignment $OUTDIR/aligned.fasta \
-    --mask-from-beginning 130 \
-    --mask-from-end 50 \
-    --mask-sites $mask_sites \
-    --output $OUTDIR/masked.fasta
+        --alignment $OUTDIR/aligned.fasta \
+        --mask-from-beginning 130 \
+        --mask-from-end 50 \
+        --mask-sites $mask_sites \
+        --output $OUTDIR/masked.fasta
 
 ### Haplotyping. ### 
 #Rscipt haplotyping.R $OUTDIR/masked.fasta
-    
+
 ### build tree. ###
 augur tree \
-    --alignment $OUTDIR/masked.fasta \
-    --output $OUTDIR/tree_raw.nwk \
-    --nthreads $THREADS
+      --alignment $OUTDIR/masked.fasta \
+      --output $OUTDIR/tree_raw.nwk \
+      --nthreads $THREADS
 
 ### build time-adjusted tree (THE TIME KILLER!).
 augur refine \
---tree $OUTDIR/tree_raw.nwk \
---alignment $OUTDIR/masked.fasta \
---metadata $OUTDIR/metadata.tsv \
---output-tree $OUTDIR/tree.nwk \
---output-node-data $OUTDIR/branch_lengths.json \
---timetree \
---root Wuhan-Hu-1/2019 Wuhan/WH01/2019 \
---clock-rate 0.0008 \
---clock-std-dev 0.0004 \
---coalescent skyline \
---date-inference marginal \
---divergence-unit mutations \
---date-confidence \
---no-covariance \
---clock-filter-iqd 4
+      --tree $OUTDIR/tree_raw.nwk \
+      --alignment $OUTDIR/masked.fasta \
+      --metadata $OUTDIR/metadata.tsv \
+      --output-tree $OUTDIR/tree.nwk \
+      --output-node-data $OUTDIR/branch_lengths.json \
+      --timetree \
+      --root Wuhan-Hu-1/2019 Wuhan/WH01/2019 \
+      --clock-rate 0.0008 \
+      --clock-std-dev 0.0004 \
+      --coalescent skyline \
+      --date-inference marginal \
+      --divergence-unit mutations \
+      --date-confidence \
+      --no-covariance \
+      --clock-filter-iqd 4
 
 ### ancestral tree.
 augur ancestral \
-  --tree $OUTDIR/tree.nwk \
-  --alignment $OUTDIR/masked.fasta \
-  --output-node-data $OUTDIR/nt_muts.json \
-  --output-sequences $OUTDIR/ancestral.fasta \
-  --inference joint \
-  --infer-ambiguous
+      --tree $OUTDIR/tree.nwk \
+      --alignment $OUTDIR/masked.fasta \
+      --output-node-data $OUTDIR/nt_muts.json \
+      --output-sequences $OUTDIR/ancestral.fasta \
+      --inference joint \
+      --infer-ambiguous
 
 ### Translate NT ot AA.
 augur translate \
-  --tree $OUTDIR/tree.nwk \
-  --ancestral-sequences $OUTDIR/nt_muts.json \
-  --reference-sequence $REF/MN908947.3.gb \
-  --output-node-data $OUTDIR/aa_muts.json
-            
+      --tree $OUTDIR/tree.nwk \
+      --ancestral-sequences $OUTDIR/nt_muts.json \
+      --reference-sequence $REF/MN908947.3.gb \
+      --output-node-data $OUTDIR/aa_muts.json
+
 ### traits.
 augur traits \
- --tree ${OUTDIR}/tree.nwk \
- --metadata ${OUTDIR}/metadata.tsv \
- --output ${OUTDIR}/traits.json \
- --columns country_exposure \
- --confidence \
- --sampling-bias-correction 2.5 
+      --tree ${OUTDIR}/tree.nwk \
+      --metadata ${OUTDIR}/metadata.tsv \
+      --output ${OUTDIR}/traits.json \
+      --columns country_exposure \
+      --confidence \
+      --sampling-bias-correction 2.5 
 
 ### Make clades.tsv from data of Lineage repo 
-bash -c "conda run -n pangolin python3 ${DEFDIR}/make_clade_tsv.py --out-clade=${OUTDIR}/clades.tsv"
-            
+if [[ x${CLADES} == x ]]; then
+    bash -c "source activate pangolin; python3 ${DEFDIR}/make_clade_tsv.py --clade-out=${OUTDIR}/clades.tsv"
+else
+    cp ${CLADES} ${OUTDIR}/clades.tsv
+fi
+
 ### add clades.
 augur clades \
-  --tree $OUTDIR/tree.nwk \
-  --mutations $OUTDIR/nt_muts.json $OUTDIR/aa_muts.json \
-  --clades ${OUTDIR}/clades.tsv \
-  --output-node-data $OUTDIR/clades.json
-  
+      --tree $OUTDIR/tree.nwk \
+      --mutations $OUTDIR/nt_muts.json $OUTDIR/aa_muts.json \
+      --clades ${OUTDIR}/clades.tsv \
+      --output-node-data $OUTDIR/clades.json
+
 ### construct colouring.
-python3 ${NCOVDIR}/scripts/assign-colors.py \
-  --ordering ${NCOVDIR}/config/ordering.tsv \
-  --color-schemes ${NCOVDIR}/config/color_schemes.tsv \
-  --output $OUTDIR/colors.tsv \
-  --metadata ${OUTDIR}/metadata.tsv
+python3 ${NCOVDIR}/assign-colors.py \
+        --ordering ${NCOVDIR}/ordering.tsv \
+        --color-schemes ${NCOVDIR}/color_schemes.tsv \
+        --output $OUTDIR/colors.tsv \
+        --metadata ${OUTDIR}/metadata.tsv
 
 ### Construct frequency tables.
 augur frequencies \
@@ -226,27 +233,27 @@ augur frequencies \
       --alignments $OUTDIR/masked.fasta \
       --output $OUTDIR/tip-frequencies.json
 
-### Construct output for auspice.
+### Export data for auspice
+# Construct output for auspice.
 mkdir -p $OUTDIR/auspice
 
 # Cat DK lat long with auspice.
-cat ${METADIR}/latlong_nextstrain.tsv ${NCOVDIR}/config/lat_longs.tsv > $OUTDIR/latlongs.tsv
+cat ${METADIR}/latlong_nextstrain.tsv ${NCOVDIR}/lat_longs.tsv > $OUTDIR/latlongs.tsv
 
 # Get all metadata columns except strain, virus and date to display in auspice.
 cols=$(awk -F'\t' 'NR == 1 {$1=$2=$3=""; print $0}' $OUTDIR/metadata.tsv)
 
 augur export v2 \
-  --tree $OUTDIR/tree.nwk \
-  --metadata $OUTDIR/metadata.tsv \
-  --node-data $OUTDIR/branch_lengths.json $OUTDIR/nt_muts.json $OUTDIR/aa_muts.json $OUTDIR/clades.json \
-  --auspice-config ${NCOVDIR}/auspice_config_AAU.json \
-  --color-by-metadata $cols \
-  --lat-longs $OUTDIR/latlongs.tsv \
-  --output $OUTDIR/auspice/ncov_custom.json
-  
-#  --colors $OUTDIR/colors.tsv \
-#--auspice-config ${NCOVDIR}/config/auspice_config.json \
+      --tree $OUTDIR/tree.nwk \
+      --metadata $OUTDIR/metadata.tsv \
+      --node-data $OUTDIR/branch_lengths.json $OUTDIR/nt_muts.json $OUTDIR/aa_muts.json $OUTDIR/clades.json \
+      --auspice-config ${NCOVDIR}/auspice_config_AAU.json \
+      --color-by-metadata $cols \
+      --lat-longs $OUTDIR/latlongs.tsv \
+      --output $OUTDIR/auspice/ncov_custom.json
 #--description {input.description} \
+
+cp $OUTDIR/tip-frequencies.json $OUTDIR/auspice/ncov_custom_tip-frequencies.json
 
 ### Running pangolin
 # Pangolin itself has a conda environment.
@@ -264,4 +271,3 @@ pangolin $OUTDIR/masked.fasta -t $THREADS \
     --outdir $OUTDIR
     rm -rf ./pangtmp
 "
-
