@@ -9,6 +9,7 @@ from Bio import SeqIO
 import lineages
 cwd = os.getcwd()
 import codecs
+from packaging import version 
 
 
 """
@@ -279,18 +280,21 @@ def make_clade_table(lineage_defining_snps, outfile="clades.tsv", verbose = Fals
         fhw.write("clade\tgene\tsite\talt\n")
         gene="nuc"
         c=0
+        snp_dict = {}
         for defining_snps in lineage_defining_snps:
             lineage,lineage_str = defining_snps
             # Example of row: B.4,1397GA;8782TC;11083GT;28144CT;28688TC
-            pos_dict = {}
             snps = lineage_str.split(';')
             for snp in snps:
                 if verbose: print(f"SNP: {snp}")
                 if not snp.strip(): continue
-                pos = snp[:-2]
-                if pos in pos_dict: continue
-                pos_dict[pos] = 1
+                if (snp in snp_dict and
+                    version.parse(snp_dict[snp]) < version.parse(lineage)
+                    # and #  "B.1" < "B.1.1" snp_dict[snp][1] == lineage[1] # same lineage type, either 'A' or 'B'
+                ): continue
+                snp_dict[snp] = lineage
                 alt = snp[-1]
+                pos = snp[:-2]
                 fhw.write(f"{lineage}\t{gene}\t{pos}\t{alt}\n")
                 c += 1
         fhw.close()
