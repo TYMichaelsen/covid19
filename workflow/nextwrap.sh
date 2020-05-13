@@ -93,7 +93,7 @@ echo "singularity exec  -B $DISTDIR:$DISTDIR
 -B $HOME:$HOME
 -B $METADIR:$METADIR
 -B $GENOMEDIR:$GENOMEDIR
-$SINGIMG bash -c \"source activate nextstrain; $NEXTSTRAIN_SCRIPT -s $GENOMEFASTA -m $METAFILE -o $OUTDIR -t $THREADS\""
+$SINGIMG bash -c \"source activate nextstrain; $NEXTSTRAIN_SCRIPT -s $GENOMEFASTA -m $METAFILE -c $CLADES -o $OUTDIR -t $THREADS\""
 echo "---"
 
 
@@ -101,4 +101,4 @@ singularity exec  -B $DISTDIR:$DISTDIR \
             -B $HOME:$HOME \
             -B $METADIR:$METADIR \
             -B $GENOMEDIR:$GENOMEDIR \
-            $SINGIMG bash -c "source activate nextstrain; $NEXTSTRAIN_SCRIPT -s $GENOMEFASTA -m $METAFILE -o $OUTDIR -t $THREADS"
+            $SINGIMG bash -c "source activate nextstrain; $NEXTSTRAIN_SCRIPT -s $GENOMEFASTA -m $METAFILE -c $CLADES -o $OUTDIR -t $THREADS"
