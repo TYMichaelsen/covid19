@@ -206,7 +206,7 @@ augur traits \
 
 ### Make clades.tsv from data of Lineage repo 
 if [ ! -f "${CLADES}" ]; then
-    bash -c "source activate pangolin; pip install packaging; python3 ${DEFDIR}/make_clade_tsv.py --clade-out=${OUTDIR}/clades.tsv"
+    bash -c "source activate pangolin; python3 ${DEFDIR}/make_clade_tsv.py --clade-out=${OUTDIR}/clades.tsv"
 else
     cp ${CLADES} ${OUTDIR}/clades.tsv
 fi
