@@ -60,7 +60,7 @@ if [ -d $OUTDIR -a  x$FORCE == x  ]; then
     exit 1
 fi
 
-if [ -d $OUTDIR -a x${FORCE} != x -a x$REUSE == x ]; then
+if [ -d $OUTDIR -a x${FORCE} != x ]; then
     echo "Deleting $OUTDIR ..."
     rm -rf $OUTDIR
 fi
@@ -205,8 +205,8 @@ augur traits \
       --sampling-bias-correction 2.5 
 
 ### Make clades.tsv from data of Lineage repo 
-if [[ x${CLADES} == x ]]; then
-    bash -c "source activate pangolin; python3 ${DEFDIR}/make_clade_tsv.py --clade-out=${OUTDIR}/clades.tsv"
+if [ ! -f "${CLADES}" ]; then
+    bash -c "source activate pangolin; pip install packaging; python3 ${DEFDIR}/make_clade_tsv.py --clade-out=${OUTDIR}/clades.tsv"
 else
     cp ${CLADES} ${OUTDIR}/clades.tsv
 fi
