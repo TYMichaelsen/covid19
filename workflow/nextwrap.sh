@@ -84,8 +84,15 @@ GENOMEDIR=$(dirname $GENOMEFASTA)
 METADIR=$(dirname $METAFILE)
 NEXTSTRAIN_SCRIPT=${THISDIR}/nextstrain.sh
 
+ARGSTR=""
+if [ -f "${CLADES}" ]; then
+    ARGSTR="-s $GENOMEFASTA -m $METAFILE -c $CLADES -o $OUTDIR -t $THREADS"
+else
+    ARGSTR="-s $GENOMEFASTA -m $METAFILE -o $OUTDIR -t $THREADS"
+fi
+
 # Uncomment command below to run under augur conda envrinment for testing
-# $NEXTSTRAIN_SCRIPT -s $GENOMEFASTA -m $METAFILE -o $OUTDIR -t $THREADS
+# $NEXTSTRAIN_SCRIPT ${ARGSTR} 
 # exit 1
 
 echo -e "Running comand:\n---"
@@ -93,7 +100,7 @@ echo "singularity exec  -B $DISTDIR:$DISTDIR
 -B $HOME:$HOME
 -B $METADIR:$METADIR
 -B $GENOMEDIR:$GENOMEDIR
-$SINGIMG bash -c \"source activate nextstrain; $NEXTSTRAIN_SCRIPT -s $GENOMEFASTA -m $METAFILE -c $CLADES -o $OUTDIR -t $THREADS\""
+$SINGIMG bash -c \"source activate nextstrain; $NEXTSTRAIN_SCRIPT ${ARGSTR}\""
 echo "---"
 
 
@@ -101,4 +108,4 @@ singularity exec  -B $DISTDIR:$DISTDIR \
             -B $HOME:$HOME \
             -B $METADIR:$METADIR \
             -B $GENOMEDIR:$GENOMEDIR \
-            $SINGIMG bash -c "source activate nextstrain; $NEXTSTRAIN_SCRIPT -s $GENOMEFASTA -m $METAFILE -c $CLADES -o $OUTDIR -t $THREADS"
+            $SINGIMG bash -c "source activate nextstrain; $NEXTSTRAIN_SCRIPT ${ARGSTR}"
