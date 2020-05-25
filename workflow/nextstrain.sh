@@ -268,6 +268,7 @@ bash -c "
 source activate pangolin
 pangolin $OUTDIR/masked.fasta -t $THREADS \
     --tempdir pangtmp \
-    --outdir $OUTDIR
+    --outdir $OUTDIR \
+    --include-putative
     rm -rf ./pangtmp
 "
