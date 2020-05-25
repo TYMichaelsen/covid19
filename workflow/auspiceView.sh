@@ -26,7 +26,7 @@ LATESTOUTPUT=$(findTheLatest "/srv/rbd/covid19/nextstrain/*nextstrain")
 DATDIR="${1:-${LATESTOUTPUT}/auspice}"
 
 if [ "x${1}" == "xdefault" ]; then
-    DATDIR="${LATESTOUTPUT}"
+    DATDIR="${LATESTOUTPUT/auspice}"
 fi
 
 DATDIR=$(readlink -f $DATDIR)
