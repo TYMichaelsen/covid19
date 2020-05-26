@@ -17,7 +17,7 @@ echo ""
 # Script paths
 WORKFLOW_PATH="$(dirname "$(readlink -f "$0")")"
 COVID19_PATH=${WORKFLOW_PATH%/*}
-SINGIMG="${COVID19_PATH}/singularity/covid19*.sif"
+SINGIMG="${COVID19_PATH}/singularity/covid19_latest.sif"
 
 # Determine absolute path to input/output
 INPUT_DIR=$(readlink -f "$INPUT_DIR")
