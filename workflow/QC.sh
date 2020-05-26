@@ -19,9 +19,10 @@ Output:
 ### Terminal Arguments ---------------------------------------------------------
 
 # Import user arguments
-while getopts ':hb:r:t:' OPTION; do
+while getopts ':hi:b:r:t:' OPTION; do
   case $OPTION in
     h) echo "$USAGE"; exit 1;;
+    i) INPUT_DIR=$OPTARG;;
     b) BATCH=$OPTARG;;
     r) RMD=$OPTARG;;
     t) THREADS=$OPTARG;;
@@ -32,6 +33,7 @@ done
 
 # Check missing arguments
 MISSING="is missing but required. Exiting."
+if [ -z ${INPUT_DIR+x} ]; then echo "-i $MISSING"; exit 1; fi;
 if [ -z ${BATCH+x} ]; then echo "-b $MISSING"; exit 1; fi;
 if [ -z ${RMD+x} ]; then echo "-r $MISSING"; exit 1; fi;
 if [ -z ${THREADS+x} ]; then THREADS=50; fi;
@@ -41,90 +43,105 @@ if [ -z ${THREADS+x} ]; then THREADS=50; fi;
 AAU_COVID19_PATH="$(dirname "$(readlink -f "$0")")"
 
 # Setup dirs.
-mkdir -p $BATCH/QC
-mkdir -p $BATCH/QC/aligntree
+mkdir -p $INPUT_DIR/QC
+mkdir -p $INPUT_DIR/QC/aligntree
 
 # Logging
-LOG_NAME="$BATCH/QC/QC_log_$(date +"%Y-%m-%d-%T").txt"
+LOG_NAME="$INPUT_DIR/QC/QC_log_$(date +"%Y-%m-%d-%T").txt"
 echo "QC log" >> $LOG_NAME
-echo "AAU COVID-19 revision - $(git -C $AAU_COVID19_PATH rev-parse --short HEAD)" >> $LOG_NAME
+#echo "AAU COVID-19 revision - $(git -C $AAU_COVID19_PATH rev-parse --short HEAD)" >> $LOG_NAME
 echo "Command: $0 $*" >> $LOG_NAME
 exec &> >(tee -a "$LOG_NAME")
 exec 2>&1
 
-REF=$AAU_COVID19_PATH/MN908947.3.gb
-CLADES=/srv/rbd/covid19/current/auxdata/root_seqs/pangolin_clades.tsv
+REF=$AAU_COVID19_PATH/dependencies/ref/MN908947.3.gb
+CLADES=$AAU_COVID19_PATH/dependencies/nextstrain/pangolin_clades.tsv
 
 ###############################################################################
 # Setup data to be used in QC.
 ###############################################################################
 
 # Copy over sequences.
-cp $BATCH/processing/results/consensus.fasta $BATCH/QC/aligntree/sequences.fasta
+cp $INPUT_DIR/processing/results/consensus.fasta $INPUT_DIR/QC/aligntree/sequences.fasta
 #cat export/*_export/sequences.fasta > QC/aligntree/sequences.fasta
 
 ### Alignment ###
 augur align \
---sequences $BATCH/QC/aligntree/sequences.fasta \
+--sequences $INPUT_DIR/QC/aligntree/sequences.fasta \
 --reference-sequence $REF \
---output $BATCH/QC/aligntree/aligned.fasta \
---nthreads $THREADS &> $BATCH/QC/aligntree/log.out
+--output $INPUT_DIR/QC/aligntree/aligned.fasta \
+--nthreads $THREADS &> $INPUT_DIR/QC/aligntree/log.out
 
 ### Mask bases ###
 mask_sites="18529 29849 29851 29853"
 
 python3 $AAU_COVID19_PATH/mask-alignment.py \
---alignment $BATCH/QC/aligntree/aligned.fasta \
+--alignment $INPUT_DIR/QC/aligntree/aligned.fasta \
 --mask-from-beginning 130 \
 --mask-from-end 50 \
 --mask-sites $mask_sites \
---output $BATCH/QC/aligntree/masked.fasta
+--output $INPUT_DIR/QC/aligntree/masked.fasta
     
 ### Tree ###
 augur tree \
---alignment $BATCH/QC/aligntree/masked.fasta \
---output $BATCH/QC/aligntree/tree_raw.nwk \
+--alignment $INPUT_DIR/QC/aligntree/masked.fasta \
+--output $INPUT_DIR/QC/aligntree/tree_raw.nwk \
 --nthreads $THREADS
   
 augur refine \
---tree $BATCH/QC/aligntree/tree_raw.nwk \
---output-tree $BATCH/QC/aligntree/tree.nwk
+--tree $INPUT_DIR/QC/aligntree/tree_raw.nwk \
+--output-tree $INPUT_DIR/QC/aligntree/tree.nwk
 
 ### ancestral tree.
 augur ancestral \
-  --tree $BATCH/QC/aligntree/tree.nwk \
-  --alignment $BATCH/QC/aligntree/masked.fasta \
-  --output-node-data $BATCH/QC/aligntree/nt_muts.json \
+  --tree $INPUT_DIR/QC/aligntree/tree.nwk \
+  --alignment $INPUT_DIR/QC/aligntree/masked.fasta \
+  --output-node-data $INPUT_DIR/QC/aligntree/nt_muts.json \
   --inference joint \
   --infer-ambiguous
   
 ### Translate NT ot AA.
 augur translate \
-  --tree $BATCH/QC/aligntree/tree.nwk \
-  --ancestral-sequences $BATCH/QC/aligntree/nt_muts.json \
+  --tree $INPUT_DIR/QC/aligntree/tree.nwk \
+  --ancestral-sequences $INPUT_DIR/QC/aligntree/nt_muts.json \
   --reference-sequence $REF \
-  --output-node-data $BATCH/QC/aligntree/aa_muts.json
+  --output-node-data $INPUT_DIR/QC/aligntree/aa_muts.json
                        
 ### add clades.
 augur clades \
-  --tree $BATCH/QC/aligntree/tree.nwk \
-  --mutations $BATCH/QC/aligntree/nt_muts.json $BATCH/QC/aligntree/aa_muts.json \
+  --tree $INPUT_DIR/QC/aligntree/tree.nwk \
+  --mutations $INPUT_DIR/QC/aligntree/nt_muts.json $INPUT_DIR/QC/aligntree/aa_muts.json \
   --clades $CLADES \
-  --output-node-data $BATCH/QC/aligntree/clades.json
+  --output-node-data $INPUT_DIR/QC/aligntree/clades.json
   
 ###############################################################################
 # Generate the QC report.
 ###############################################################################
 
-# Fetch path lab metadata.
-pth=$(grep "\-d" $BATCH/processing/log.out | sed 's/-d: //')
+# Fetch path lab metadata.            
+pth=$(grep "\-d" $INPUT_DIR/processing/log.out | sed 's/-d: //')
 
-if [ ! -f $pth/*sequencing.csv ]; then 
+if [ ! -f $pth/sample_sheet.csv ]; then 
   echo "ERROR: could not find lab metadata. Searched for '$pth/*sequencing.csv', but found nothing."
   exit 1
 else
-  labmeta=$(find $pth/*sequencing.csv)
+  labmeta=$(find $pth/sample_sheet.csv)
 fi
 
 # Run .rmd script.
-Rscript -e "rmarkdown::render(input='$RMD',output_file='$PWD/$BATCH/QC/$BATCH.html',knit_root_dir='$PWD',params=list(batch='$BATCH',labmeta='$labmeta'))"
+REF_PATH=$AAU_COVID19_PATH/dependencies/ref/MN908947.3.fasta
+Rscript \
+  -e \
+  "
+  rmarkdown::render(
+    input='$RMD',
+    output_file='$INPUT_DIR/QC/$BATCH.html',
+    knit_root_dir='$INPUT_DIR',
+    params=list(
+      batch='$BATCH',
+      labmeta='$labmeta',
+      input_dir='$INPUT_DIR',
+      ref='$REF_PATH'
+    )
+  )
+  "
