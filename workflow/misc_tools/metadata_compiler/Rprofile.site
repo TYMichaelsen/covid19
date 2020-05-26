@@ -1,0 +1,3 @@
+.First <- function(){
+  source("metadata_compiler.R")
+}
