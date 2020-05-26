@@ -233,28 +233,6 @@ augur frequencies \
       --alignments $OUTDIR/masked.fasta \
       --output $OUTDIR/tip-frequencies.json
 
-### Export data for auspice
-# Construct output for auspice.
-mkdir -p $OUTDIR/auspice
-
-# Cat DK lat long with auspice.
-cat ${METADIR}/latlong_nextstrain.tsv ${NCOVDIR}/lat_longs.tsv > $OUTDIR/latlongs.tsv
-
-# Get all metadata columns except strain, virus and date to display in auspice.
-cols=$(awk -F'\t' 'NR == 1 {$1=$2=$3=""; print $0}' $OUTDIR/metadata.tsv)
-
-augur export v2 \
-      --tree $OUTDIR/tree.nwk \
-      --metadata $OUTDIR/metadata.tsv \
-      --node-data $OUTDIR/branch_lengths.json $OUTDIR/nt_muts.json $OUTDIR/aa_muts.json $OUTDIR/clades.json \
-      --auspice-config ${NCOVDIR}/auspice_config_AAU.json \
-      --color-by-metadata $cols \
-      --lat-longs $OUTDIR/latlongs.tsv \
-      --output $OUTDIR/auspice/ncov_custom.json
-#--description {input.description} \
-
-cp $OUTDIR/tip-frequencies.json $OUTDIR/auspice/ncov_custom_tip-frequencies.json
-
 ### Running pangolin
 # Pangolin itself has a conda environment.
 # And we are running inside augur conda one.
@@ -272,3 +250,31 @@ pangolin $OUTDIR/masked.fasta -t $THREADS \
     --include-putative
     rm -rf ./pangtmp
 "
+
+# Add pangolin lineages and lineage version to metadata.
+join -1 1 -2 1 -t $'\t' <(tail -n +2 $OUTDIR/metadata.tsv | sort) <(awk -F',' '{print $1"\t"$2"\t"$5}' $OUTDIR/lineage_report.csv | tail -n +2 | sort) > $OUTDIR/metadata_w_linage.tsv
+
+cat <(awk 'NR == 1 {print $0"\tlineage\tlineage_version"}' $OUTDIR/metadata.tsv) $OUTDIR/metadata_w_linage.tsv > tmp && mv tmp $OUTDIR/metadata_w_linage.tsv
+
+### Export data for auspice
+# Construct output for auspice.
+mkdir -p $OUTDIR/auspice
+
+# Cat DK lat long with auspice.
+cat ${METADIR}/latlong_nextstrain.tsv ${NCOVDIR}/lat_longs.tsv > $OUTDIR/latlongs.tsv
+
+# Get all metadata columns except strain, virus and date to display in auspice.
+cols=$(awk -F'\t' 'NR == 1 {$1=$2=$3=""; print $0}' $OUTDIR/metadata_w_linage.tsv)
+
+augur export v2 \
+      --tree $OUTDIR/tree.nwk \
+      --metadata $OUTDIR/metadata_w_linage.tsv \
+      --node-data $OUTDIR/branch_lengths.json $OUTDIR/nt_muts.json $OUTDIR/aa_muts.json $OUTDIR/clades.json \
+      --auspice-config ${NCOVDIR}/auspice_config_AAU.json \
+      --color-by-metadata $cols \
+      --lat-longs $OUTDIR/latlongs.tsv \
+      --output $OUTDIR/auspice/ncov_custom.json
+#--description {input.description} \
+
+cp $OUTDIR/tip-frequencies.json $OUTDIR/auspice/ncov_custom_tip-frequencies.json
+
