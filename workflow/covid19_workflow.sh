@@ -19,8 +19,9 @@ WORKFLOW_PATH="$(dirname "$(readlink -f "$0")")"
 COVID19_PATH=${WORKFLOW_PATH%/*}
 SINGIMG="${COVID19_PATH}/singularity/covid19*.sif"
 
-# Determien absolute path to output
-OUT_DIR=$(readlink -f $OUT_DIR)
+# Determine absolute path to input/output
+INPUT_DIR=$(readlink -f "$INPUT_DIR")
+OUT_DIR=$(readlink -f "$OUT_DIR")
 
 # Create output folder
 mkdir -p $OUT_DIR
