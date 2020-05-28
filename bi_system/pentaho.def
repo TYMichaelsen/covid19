@@ -2,6 +2,7 @@ BootStrap: library
 From: ubuntu:16.04
 
 %post
+## MariaDB instructions from https://www.itzgeek.com/how-tos/linux/ubuntu-how-tos/install-mariadb-on-ubuntu-16-04.html
     sudo apt-key adv --fetch-keys 'http://mariadb.org/mariadb_release_signing_key.asc'
     add-apt-repository 'deb [arch=amd64,arm64,i386,ppc64el] http://sfo1.mirrors.digitalocean.com/mariadb/repo/10.4/ubuntu xenial main'
     apt -y update
@@ -9,15 +10,15 @@ From: ubuntu:16.04
     apt -y install openjdk-8-jdk
     apt-get install -y mariadb-server mariadb-client
 
-## MariaDB instructions from https://www.itzgeek.com/how-tos/linux/ubuntu-how-tos/install-mariadb-on-ubuntu-16-04.html
-
+## Pentaho installation
+    apt-get install -y libwebkitgtk-1.0
 
 %environment
     export LC_ALL=C
-    export PATH=/usr/games:$PATH
+    #export PATH=/usr/games:$PATH
 
 %runscript
-    fortune | cowsay | lolcat
+    #fortune | cowsay | lolcat
 
 %labels
     Author Tomer Sagi
