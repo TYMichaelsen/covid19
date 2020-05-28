@@ -1,0 +1,23 @@
+BootStrap: library
+From: ubuntu:16.04
+
+%post
+    sudo apt-key adv --fetch-keys 'http://mariadb.org/mariadb_release_signing_key.asc'
+    add-apt-repository 'deb [arch=amd64,arm64,i386,ppc64el] http://sfo1.mirrors.digitalocean.com/mariadb/repo/10.4/ubuntu xenial main'
+    apt -y update
+    apt install -y software-properties-common apt-transport-https ca-certificates
+    apt -y install openjdk-8-jdk
+    apt-get install -y mariadb-server mariadb-client
+
+## MariaDB instructions from https://www.itzgeek.com/how-tos/linux/ubuntu-how-tos/install-mariadb-on-ubuntu-16-04.html
+
+
+%environment
+    export LC_ALL=C
+    export PATH=/usr/games:$PATH
+
+%runscript
+    fortune | cowsay | lolcat
+
+%labels
+    Author Tomer Sagi
