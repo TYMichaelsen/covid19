@@ -3,14 +3,15 @@ From: ubuntu:16.04
 
 %post
 ## MariaDB instructions from https://www.itzgeek.com/how-tos/linux/ubuntu-how-tos/install-mariadb-on-ubuntu-16-04.html
-    echo 'Installing MariaDB and Java 8'
-    sudo apt-key adv --fetch-keys 'http://mariadb.org/mariadb_release_signing_key.asc'
-    add-apt-repository 'deb [arch=amd64,arm64,i386,ppc64el] http://sfo1.mirrors.digitalocean.com/mariadb/repo/10.4/ubuntu xenial main'
     apt -y update
     apt install -y software-properties-common apt-transport-https ca-certificates
+    echo 'Installing MariaDB and Java 8'
+    apt-key adv --fetch-keys 'http://mariadb.org/mariadb_release_signing_key.asc'
+    add-apt-repository 'deb [arch=amd64,arm64,i386,ppc64el] http://sfo1.mirrors.digitalocean.com/mariadb/repo/10.4/ubuntu xenial main'
+    apt -y update
     apt -y install openjdk-8-jdk
     echo 'Finished installing Java 8'
-    apt-get install -y mariadb-server mariadb-clienti
+    apt-get install -y mariadb-server mariadb-client
     # TODO figure out the user/password requirements of Pentaho and how to set them up here
     echo 'Finished installing MariaDB'
     apt-get install -y libmysql-java
@@ -28,7 +29,7 @@ From: ubuntu:16.04
     #export PATH=/usr/games:$PATH
 
 %runscript
-    #fortune | cowsay | lolcat
+    fortuo 'welcome to the pentaho BI image'
 
 %labels
     Author Tomer Sagi
