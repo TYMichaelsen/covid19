@@ -12,6 +12,7 @@ From: ubuntu:16.04
     apt -y install openjdk-8-jdk
     echo 'Finished installing Java 8'
     apt-get install -y mariadb-server mariadb-client
+    # TODO figure out the user/password requirements of Pentaho and how to set them up here
     echo 'Finished installing MariaDB'
     apt-get install -y libmysql-java
     echo 'Finished installing JDBC for MySQL/MariaDB'
@@ -19,29 +20,16 @@ From: ubuntu:16.04
     
 
 ## Pentaho installation
-#    apt-get install -y libwebkitgtk-1.0
-    adduser pentaho --disabled-password --gecos "" --ingroup sudo
-    mkdir -p /home/pentaho/pentaho/server/pentaho-server
-    mkdir /home/pentaho/.pentaho
-    chown -R pentaho /home/pentaho
-
+    apt-get install -y libwebkitgtk-1.0
+    # TODO create pentaho use
 
 %environment
     export LC_ALL=C
     export CLASSPATH=$CLASSPATH:/usr/share/java/mysql-connector-java.jar
-    export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
-    #export PATH=$JAVA_HOME/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH
-
-%test
-    echo off
-    echo 'Welcome to the pentaho BI image'
-    echo "java home => $JAVA_HOME"
-    echo "PATH      => $PATH"
-    java -version
-    echo 'Test complete'
+    #export PATH=/usr/games:$PATH
 
 %runscript
-    echo 'welcome to the pentaho BI image'
+    fortuo 'welcome to the pentaho BI image'
 
 %labels
     Author Tomer Sagi
