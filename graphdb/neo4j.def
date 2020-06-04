@@ -16,11 +16,15 @@ Stage: build
     export JAVA_HOME=/usr/local/openjdk-11
 
 %post
-    apt-get update && apt-get install -y netcat less
+    apt-get update && apt-get install -y netcat less curl
     NOW=`date`
     echo "export NOW=\"${NOW}\"" >> $SINGULARITY_ENVIRONMENT
-    echo "*    soft   nofile  40000" >> /etc/security/limits.conf
-    echo "*    hard    nofile  40000" >> /etc/security/limits.conf
+    rm /etc/security/limits.conf
+    echo "neo4j	soft	nofile	41000" >> /etc/security/limits.conf
+    echo "neo4j	hard	nofile	46000" >> /etc/security/limits.conf
+    echo "root	soft	nofile	40000" >> /etc/security/limits.conf
+    echo "root  hard    nofile  45000" >> /etc/security/limits.conf
+    echo "dbms.default_listen_address=0.0.0.0" >> /var/lib/neo4j/conf/neo4j.conf
 
 %runscript
     echo "Container was created $NOW"
@@ -34,7 +38,7 @@ Stage: build
 
 %labels
     Author Tomer Sagi @ CS AAU
-    Version v0.0.1
+    Version v0.0.2
 
 %help
     This is a basic neo4j container to be used in the COVID-19 genomics project at AAU.
