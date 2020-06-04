@@ -112,7 +112,7 @@ augur align \
 --remove-reference \
 --fill-gaps &> {2}/log.out
 
-' ::: $FASTAFILES ::: $OUTDIR ::: $REF/MN908947.3.gb
+' ::: $FASTAFILES ::: $OUTDIR ::: $REF/ref/MN908947.3.gb
 
 cat $OUTDIR/split_align/*.aligned > $OUTDIR/aligned.fasta
 cat $OUTDIR/split_align/*.log > $OUTDIR/aligned.log
@@ -192,7 +192,7 @@ augur ancestral \
 augur translate \
       --tree $OUTDIR/tree.nwk \
       --ancestral-sequences $OUTDIR/nt_muts.json \
-      --reference-sequence $REF/MN908947.3.gb \
+      --reference-sequence $REF/ref/MN908947.3.gb \
       --output-node-data $OUTDIR/aa_muts.json
 
 ### traits.
