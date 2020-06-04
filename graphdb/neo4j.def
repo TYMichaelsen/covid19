@@ -1,0 +1,40 @@
+Bootstrap: docker
+From: neo4j
+Stage: build
+
+%setup
+    # touch /file1
+    # touch ${SINGULARITY_ROOTFS}/file2
+
+%files
+    # /file1
+    # /file1 /opt
+
+%environment
+    # export LISTEN_PORT=12345
+    # export LC_ALL=C
+    export JAVA_HOME=/usr/local/openjdk-11
+
+%post
+    apt-get update && apt-get install -y netcat less
+    NOW=`date`
+    echo "export NOW=\"${NOW}\"" >> $SINGULARITY_ENVIRONMENT
+    echo "*    soft   nofile  40000" >> /etc/security/limits.conf
+    echo "*    hard    nofile  40000" >> /etc/security/limits.conf
+
+%runscript
+    echo "Container was created $NOW"
+    echo "Arguments received: $*"
+    exec echo "$@"
+
+%startscript
+    # nc -lp $LISTEN_PORT
+
+%test
+
+%labels
+    Author Tomer Sagi @ CS AAU
+    Version v0.0.1
+
+%help
+    This is a basic neo4j container to be used in the COVID-19 genomics project at AAU.
