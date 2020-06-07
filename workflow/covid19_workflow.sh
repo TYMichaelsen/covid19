@@ -1,13 +1,54 @@
 #!/usr/bin/env bash
+VERSION=0.1.0
 
-# Terminal input --------------------------------------------------------------
-INPUT_DIR=$1
-SCHEME=$2
-RUN_ID=${3:-${INPUT_DIR##*/}}
-OUT_DIR=${4:-$INPUT_DIR}
-SAMPLE_SHEET=${5:-$INPUT_DIR/sample_sheet.csv}
-THREADS=${6:-100}
+### Description ----------------------------------------------------------------
 
+USAGE="$(basename "$0") [-h] [-s file -m file -a string -o dir -t int] 
+-- COVID-19 pipeline for data generation and QC v. $VERSION:  
+
+Arguments:
+    -h  Show this help text.
+    -i  Input directory.
+    -s  Scheme, see below for which to choose.
+    -o  (Develop only) Specify output directory.
+    -r  (Develop only) Specify run-id.
+    -x  (Develop only) Specify sample-sheet file.
+    -t  (Develop only) Number of threads.
+
+Schemes:
+    aau_long_v3.1
+    aau_short_v3
+    v1
+    v2
+    v3
+"
+### Terminal Arguments ---------------------------------------------------------
+
+# Import user arguments
+while getopts ':hi:s:o:r:x:t:' OPTION; do
+  case $OPTION in
+    h) echo "$USAGE"; exit 1;;
+    i) INPUT_DIR=$OPTARG;;
+    s) SCHEME=$OPTARG;;
+    o) OUT_DIR=$OPTARG;;
+    r) RUN_ID=$OPTARG;;
+    x) SAMPLE_SHEET=$OPTARG;;
+    t) THREADS=$OPTARG;;
+    :) printf "missing argument for -$OPTARG\n" >&2; exit 1;;
+    \?) printf "invalid option for -$OPTARG\n" >&2; exit 1;;
+  esac
+done
+
+# Check missing arguments
+MISSING="is missing but required. Exiting."
+if [ -z ${INPUT_DIR+x} ]; then echo "-i $MISSING"; exit 1; fi;
+if [ -z ${SCHEME+x} ]; then echo "-s $MISSING"; exit 1; fi;
+if [ -z ${OUT_DIR+x} ]; then OUT_DIR=$INPUT_DIR; fi;
+if [ -z ${RUN_ID+x} ]; then RUN_ID=$INPUT_DIR; fi;
+if [ -z ${SAMPLE_SHEET+x} ]; then SAMPLE_SHEET=$INPUT_DIR/sample_sheet.csv; fi;
+if [ -z ${THREADS+x} ]; then THREADS=100; fi;
+
+### Code.----------------------------------------------------------------------
 # Preparation -----------------------------------------------------------------
 
 echo ""
@@ -33,16 +74,16 @@ if [ ! -f "${OUT_DIR}/sample_sheet.csv" ]; then
 fi
 
 # Check references 
-if [ ! -f "${WORKFLOW_PATH}/dependencies/ref/human_g1k_v37.fasta" ]; then
-  echo ""
-  echo "Downloading human reference genome to ${WORKFLOW_PATH}/dependencies/ref/human_g1k_v37.fasta"
-  echo ""
-  
-  wget \
-    -O- \
-    'ftp://ftp.ncbi.nlm.nih.gov/1000genomes/ftp/technical/reference/human_g1k_v37.fasta.gz' |\
-  gunzip > "${WORKFLOW_PATH}/dependencies/ref/human_g1k_v37.fasta"
-fi
+#if [ ! -f "${WORKFLOW_PATH}/dependencies/ref/human_g1k_v37.fasta" ]; then
+#  echo ""
+#  echo "Downloading human reference genome to ${WORKFLOW_PATH}/dependencies/ref/human_g1k_v37.fasta"
+#  echo ""
+#  
+#  wget \
+#    -O- \
+#    'ftp://ftp.ncbi.nlm.nih.gov/1000genomes/ftp/technical/reference/human_g1k_v37.fasta.gz' |\
+#  gunzip > "${WORKFLOW_PATH}/dependencies/ref/human_g1k_v37.fasta"
+#fi
 
 
 # This is the full workflow script.
