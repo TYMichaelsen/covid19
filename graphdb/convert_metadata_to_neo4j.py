@@ -48,10 +48,22 @@ with open('../bi_system/stable_dims/age_groups.txt') as csvfile:
 # CREATE (P1:Patient {ssi_id:'SSI-123', sex:'F', age: '42', pregnancy: 0})
 
 # Create data
-p = Node("Person", ssi_id="example_id")
-tx.create(Relationship(p,"ISA",sex_m))
-tx.create(Relationship(p,"ISA",age_groups['40-49']))
-p2 = Node("Person", ssi_id="example_id2")
-tx.create(Relationship(p,"ISA",sex_m))
-tx.create(Relationship(p2,"ISA",age_groups['40-49']))
+with open('/srv/rbd/covid19/metadata]') as csvfile:
+    reader = csv.reader(csvfile, delimiter='\t')
+    for row in reader:
+        p = Node("Person", ssi_id=row[16])
+        tx.create(p)
+        if row[16]=='F':
+            tx.create(Relationship(p,"ISA",sex_f))
+        elif row[16]=='M':
+            tx.create(Relationship(p,"ISA",sex_m))
+
+
+
+# p = Node("Person", ssi_id="example_id")
+# tx.create(Relationship(p,"ISA",sex_m))
+# tx.create(Relationship(p,"ISA",age_groups['40-49']))
+# p2 = Node("Person", ssi_id="example_id2")
+# tx.create(Relationship(p2,"ISA",sex_m))
+# tx.create(Relationship(p2,"ISA",age_groups['40-49']))
 tx.commit()
