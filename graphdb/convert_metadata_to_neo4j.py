@@ -55,7 +55,8 @@ print("Created graph schema")
 with open('/srv/rbd/covid19/metadata/2020-05-26-07-35_metadata.tsv') as csvfile:
     reader = csv.DictReader(csvfile, delimiter='\t')
     for row in reader:
-        p = Node("Person", ssi_id=row['ssi_id'], age=row['ReportAge'], COVID19_Status=row['COVID19_Status'], COVID19_EndDate=row['COVID19_EndDate'] )
+        cv_stat = row['COVID19_Status'] if len(row['COVID19_Status'])>0 else '0'
+        p = Node("Person", ssi_id=row['ssi_id'], age=row['ReportAge'], COVID19_Status=cv_stat, COVID19_EndDate=row['COVID19_EndDate'] )
         tx.create(p)
         if row['Sex'] == 'F':
             tx.create(Relationship(p,"ISA",sex_f))
