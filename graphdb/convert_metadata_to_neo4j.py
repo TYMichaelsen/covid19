@@ -50,14 +50,16 @@ print("Created graph schema")
 
 # Create data
 with open('/srv/rbd/covid19/metadata/2020-05-26-07-35_metadata.tsv') as csvfile:
-    reader = csv.reader(csvfile, delimiter='\t')
+    reader = csv.DictReader(csvfile, delimiter='\t')
     for row in reader:
-        p = Node("Person", ssi_id=row[16])
+        p = Node("Person", ssi_id=row['ssi_id'])
         tx.create(p)
-        if row[16]=='F':
+        if row['Sex']=='F':
             tx.create(Relationship(p,"ISA",sex_f))
-        elif row[16]=='M':
+        elif row['Sex']=='M':
             tx.create(Relationship(p,"ISA",sex_m))
+        else:
+            print('Unrecognized Sex value: {}'.format(row['Sex'])) # TODO replace with error log file
 
 # p = Node("Person", ssi_id="example_id")
 # tx.create(Relationship(p,"ISA",sex_m))
