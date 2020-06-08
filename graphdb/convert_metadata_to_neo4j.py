@@ -32,6 +32,12 @@ with open('../bi_system/stable_dims/age_groups.txt') as csvfile:
 ## Geodata
 parishes = {}
 municipalities = {}
+with open('../bi_system/stable_dims/municipalities.tsv') as csvfile:
+    reader = csv.reader(csvfile, delimiter='\t')
+    for row in reader:
+        n = Node("Municipality", code=row[0], name=row[1])
+        municipalities[row[0]] = n
+        tx.create(n)
 
 ## Virus Strains
 strains = {}
@@ -59,7 +65,7 @@ print("Created graph schema")
 # CREATE (P1:Patient {ssi_id:'SSI-123', sex:'F', age: '42', pregnancy: 0})
 
 
-def make_rel(with_node, code_field_name, lookup_dict, relation_name, rel_node_label, name_field_name):
+def make_rel(with_node, code_field_name, lookup_dict, relation_name, rel_node_label, name_field_name=None):
     rel_node = None
     rel_node_key = row[code_field_name]
     if len(rel_node_key) > 0:
@@ -100,7 +106,7 @@ with open('/srv/rbd/covid19/metadata/2020-05-26-07-35_metadata.tsv') as csvfile:
         # Municipality
         if parish is not None:
             make_rel(with_node=parish, code_field_name='MunicipalityCode', lookup_dict=municipalities, relation_name="PartOf",
-                 rel_node_label="Municipality", name_field_name="muncipal")
+                 rel_node_label="Municipality")
 
         # strains
         strain_name = row['lineage']
