@@ -52,15 +52,17 @@ print("Created graph schema")
 with open('/srv/rbd/covid19/metadata/2020-05-26-07-35_metadata.tsv') as csvfile:
     reader = csv.DictReader(csvfile, delimiter='\t')
     for row in reader:
-        p = Node("Person", ssi_id=row['ssi_id'])
+        p = Node("Person", ssi_id=row['ssi_id'], age=row['ReportAge'])
         tx.create(p)
-        if row['Sex']=='F':
+        if row['Sex'] == 'F':
             tx.create(Relationship(p,"ISA",sex_f))
-        elif row['Sex']=='M':
+        elif row['Sex'] == 'M':
             tx.create(Relationship(p,"ISA",sex_m))
-        else:
-            print('Unrecognized Sex value: {}'.format(row['Sex'])) # TODO replace with error log file
-
+        # else: # make error log file
+            #  print('Unrecognized Sex value: {}'.format(row['Sex']))
+        ag = row['ReportAgeGrp']
+        if ag in age_groups.keys():
+            tx.create(Relationship(p,"InGroup",age_groups[ag]))
 # p = Node("Person", ssi_id="example_id")
 # tx.create(Relationship(p,"ISA",sex_m))
 # tx.create(Relationship(p,"ISA",age_groups['40-49']))
