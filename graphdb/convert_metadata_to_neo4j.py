@@ -34,6 +34,7 @@ parishes = {}
 municipalities = {}
 with open('../bi_system/stable_dims/municipalities.tsv') as csvfile:
     reader = csv.reader(csvfile, delimiter='\t')
+    next(reader, None)
     for row in reader:
         n = Node("Municipality", code=row[0], name=row[1])
         municipalities[row[0]] = n
@@ -48,6 +49,7 @@ strains = {}
 risk_factors = {}
 with open('../bi_system/stable_dims/risk_factors.csv') as csvfile:
     reader = csv.reader(csvfile)
+    next(reader, None)
     for row in reader:
         n = Node("RiskFactor", code=row[0], name=row[1])
         risk_factors[row[0]] = n
