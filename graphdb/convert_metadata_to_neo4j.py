@@ -39,6 +39,8 @@ with open('../bi_system/stable_dims/municipalities.tsv') as csvfile:
         municipalities[row[0]] = n
         tx.create(n)
 
+nuts3_regions = {}
+
 ## Virus Strains
 strains = {}
 
@@ -105,8 +107,13 @@ with open('/srv/rbd/covid19/metadata/2020-05-26-07-35_metadata.tsv') as csvfile:
 
         # Municipality
         if parish is not None:
-            make_rel(with_node=parish, code_field_name='MunicipalityCode', lookup_dict=municipalities, relation_name="PartOf",
+            muni = make_rel(with_node=parish, code_field_name='MunicipalityCode', lookup_dict=municipalities, relation_name="PartOf",
                  rel_node_label="Municipality")
+
+        # NUTS3 Region
+        if muni is not None:
+            make_rel(with_node=muni, code_field_name='NUTS3Code', lookup_dict=nuts3_regions, relation_name="PartOf",
+                 rel_node_label="NUTS3_Region", name_field_name="NUTS3Text")
 
         # strains
         strain_name = row['lineage']
