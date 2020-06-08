@@ -28,6 +28,7 @@ with open('../bi_system/stable_dims/age_groups.txt') as csvfile:
         age_groups[row[0]] = n
         tx.create(n)
 
+print("Created graph schema")
 # CREATE (A0_9:AgeGroup {name: '0-9'})
 # CREATE (A10_19:AgeGroup {name: '10-19'})
 # CREATE (A20_29:AgeGroup {name: '20-29'})
@@ -58,8 +59,6 @@ with open('/srv/rbd/covid19/metadata/2020-05-26-07-35_metadata.tsv') as csvfile:
         elif row[16]=='M':
             tx.create(Relationship(p,"ISA",sex_m))
 
-
-
 # p = Node("Person", ssi_id="example_id")
 # tx.create(Relationship(p,"ISA",sex_m))
 # tx.create(Relationship(p,"ISA",age_groups['40-49']))
@@ -67,3 +66,5 @@ with open('/srv/rbd/covid19/metadata/2020-05-26-07-35_metadata.tsv') as csvfile:
 # tx.create(Relationship(p2,"ISA",sex_m))
 # tx.create(Relationship(p2,"ISA",age_groups['40-49']))
 tx.commit()
+
+print("Successfully created graph from metadata file.")
