@@ -1,5 +1,6 @@
 *.sif
 build
+.idea
 
 singularity/.Rhistory
 workflow/dependencies/ref/human_g1k_v37.fasta
