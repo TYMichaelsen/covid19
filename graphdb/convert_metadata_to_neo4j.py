@@ -44,6 +44,15 @@ nuts3_regions = {}
 ## Virus Strains
 strains = {}
 
+## Medical History
+risk_factors = {}
+with open('../bi_system/stable_dims/risk_factors.csv') as csvfile:
+    reader = csv.reader(csvfile)
+    for row in reader:
+        n = Node("RiskFactor", code=row[0], name=row[1])
+        risk_factors[row[0]] = n
+        tx.create(n)
+
 print("Created graph schema")
 
 
@@ -118,14 +127,14 @@ with open('/srv/rbd/covid19/metadata/2020-05-26-07-35_metadata.tsv') as csvfile:
         # strains
         strain_name = row['lineage']
         if len(strain_name) > 0:
-            if strain_name in strains.keys():
-                strain = strains[strain_name]
-            else:
-                strain = Node("Strain", name=strain_name)
-                strains[strain_name] = strain
-                tx.create(strain)
+            make_rel(with_node=p,code_field_name='lineage',lookup_dict=strains, relation_name="HasStrain",
+                     rel_node_label="Strain")
 
-            tx.create(Relationship(p, "HasStrain", strain))
+        # Risk factors
+        for field_name in risk_factors.keys():
+            if row[field_name] in ['SAND','TRUE']:
+                tx.create(Relationship(p, "HasRisk", risk_factors[field_name]))
+
 
 # p = Node("Person", ssi_id="example_id")
 # tx.create(Relationship(p,"ISA",sex_m))
