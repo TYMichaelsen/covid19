@@ -48,7 +48,7 @@ with open('../bi_system/stable_dims/age_groups.txt') as csvfile:
 # CREATE (P1:Patient {ssi_id:'SSI-123', sex:'F', age: '42', pregnancy: 0})
 
 # Create data
-with open('/srv/rbd/covid19/metadata]') as csvfile:
+with open('/srv/rbd/covid19/metadata/2020-05-26-07-35_metadata.tsv') as csvfile:
     reader = csv.reader(csvfile, delimiter='\t')
     for row in reader:
         p = Node("Person", ssi_id=row[16])
