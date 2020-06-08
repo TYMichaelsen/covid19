@@ -85,7 +85,10 @@ def make_rel(with_node, code_field_name, lookup_dict, relation_name, rel_node_la
         if rel_node_key in lookup_dict.keys():
             rel_node = lookup_dict[rel_node_key]
         else:
-            rel_node = Node(rel_node_label, code=rel_node_key, name=row[name_field_name])
+            if name_field_name is not None:
+                rel_node = Node(rel_node_label, code=rel_node_key, name=row[name_field_name])
+            else:
+                rel_node = Node(rel_node_label, name=rel_node_key)
             lookup_dict[rel_node_key] = rel_node
             tx.create(rel_node)
         tx.create(Relationship(with_node, relation_name, rel_node))
