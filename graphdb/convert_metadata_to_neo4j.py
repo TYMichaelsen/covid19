@@ -68,12 +68,15 @@ with open('/srv/rbd/covid19/metadata/2020-05-26-07-35_metadata.tsv') as csvfile:
             tx.create(Relationship(p,"InGroup",age_groups[ag]))
 
         strain_name = row['lineage']
-        if strain_name in strains.keys():
-            strain = strains[strain_name]
-        else:
-            strain = Node("Strain", name=strain_name)
-            tx.create(strain)
-        tx.create(Relationship(p,"HasStrain",strain))
+        if len(strain_name) > 0:
+            if strain_name in strains.keys():
+                strain = strains[strain_name]
+            else:
+                strain = Node("Strain", name=strain_name)
+                strains[strain_name] = strain
+                tx.create(strain)
+
+            tx.create(Relationship(p,"HasStrain",strain))
 
 
 # p = Node("Person", ssi_id="example_id")
