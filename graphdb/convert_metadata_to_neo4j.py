@@ -28,6 +28,9 @@ with open('../bi_system/stable_dims/age_groups.txt') as csvfile:
         age_groups[row[0]] = n
         tx.create(n)
 
+## Virus Strains
+strains = {}
+
 print("Created graph schema")
 # CREATE (A0_9:AgeGroup {name: '0-9'})
 # CREATE (A10_19:AgeGroup {name: '10-19'})
@@ -63,6 +66,16 @@ with open('/srv/rbd/covid19/metadata/2020-05-26-07-35_metadata.tsv') as csvfile:
         ag = row['ReportAgeGrp']
         if ag in age_groups.keys():
             tx.create(Relationship(p,"InGroup",age_groups[ag]))
+
+        strain_name = row['lineage']
+        if strain_name in strains.keys():
+            strain = strains[strain_name]
+        else:
+            strain = Node("Strain", name=strain_name)
+            tx.create(strain)
+        tx.create(Relationship(p,"HasStrain",strain))
+
+
 # p = Node("Person", ssi_id="example_id")
 # tx.create(Relationship(p,"ISA",sex_m))
 # tx.create(Relationship(p,"ISA",age_groups['40-49']))
