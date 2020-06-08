@@ -28,6 +28,9 @@ with open('../bi_system/stable_dims/age_groups.txt') as csvfile:
         age_groups[row[0]] = n
         tx.create(n)
 
+## Parishes
+parishes = {}
+
 ## Virus Strains
 strains = {}
 
@@ -55,8 +58,9 @@ print("Created graph schema")
 with open('/srv/rbd/covid19/metadata/2020-05-26-07-35_metadata.tsv') as csvfile:
     reader = csv.DictReader(csvfile, delimiter='\t')
     for row in reader:
-        cv_stat = row['COVID19_Status'] if len(row['COVID19_Status'])>0 else '0'
-        p = Node("Person", ssi_id=row['ssi_id'], age=row['ReportAge'], COVID19_Status=cv_stat, COVID19_EndDate=row['COVID19_EndDate'] )
+        cv_stat = row['COVID19_Status'] if len(row['COVID19_Status'])>0 else '0' # error correction
+        p = Node("Person", ssi_id=row['ssi_id'], age=row['ReportAge'], COVID19_Status=cv_stat,
+                 COVID19_EndDate=row['COVID19_EndDate'], IsPregnant=(row['Pregnancy']=='1')  )
         tx.create(p)
         if row['Sex'] == 'F':
             tx.create(Relationship(p,"ISA",sex_f))
@@ -67,7 +71,21 @@ with open('/srv/rbd/covid19/metadata/2020-05-26-07-35_metadata.tsv') as csvfile:
         ag = row['ReportAgeGrp']
         if ag in age_groups.keys():
             tx.create(Relationship(p,"InGroup",age_groups[ag]))
+        # TODO report missing ag
 
+        # Parish
+        parish_code = row['Parishcode']
+        if len(parish_code) > 0:
+            if parish_code in parishes.keys():
+                parish = parishes[parish_code]
+            else:
+                parish = Node("Parish", code=parish_code, name=row['ParishName'])
+                parishes[parish_code] = parish
+                tx.create(parish)
+
+            tx.create(Relationship(p,"LivesIn",parish))
+
+        # strains
         strain_name = row['lineage']
         if len(strain_name) > 0:
             if strain_name in strains.keys():
