@@ -105,10 +105,8 @@ with open('/srv/rbd/covid19/metadata/2020-05-26-07-35_metadata.tsv') as csvfile:
         p = Node("Person", ssi_id=row['ssi_id'], age=row['ReportAge'], COVID19_Status=cv_stat,
                  COVID19_EndDate=row['COVID19_EndDate'], isPregnant=(row['Pregnancy'] == '1'), sequenced=(row['sequenced'] == 'Yes'))
         if (row['Pregnancy'] == '1' and row['Sex'] == 'M'):
-            print('anomalous case data')
+            print('anomalous case data') # TODO extract all error checking code to a separate file
             print('SSI {}, Pregnancy {}, Sex {}'.format(row['ssi_id'],row['Pregnancy'],row['Sex']))
-            print(row)
-            exit(-1)
 
         tx.create(p)
         if row['Sex'] == 'F':
