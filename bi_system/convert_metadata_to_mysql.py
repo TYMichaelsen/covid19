@@ -89,13 +89,13 @@ if __name__ == '__main__':
         description='convert a metadata file to SQL relational format and inject to the MariaDB')
     parser.add_argument('file', type=str,
                         help='path to the file to be loaded')
-    parser.add_argument('--recreate_schema', dest='re_schema', type=bool, default=True,
-                        help='select False to avoid recreating the schema')
+    parser.add_argument('--recreate_schema', dest='re_schema', type=str, default='no',
+                        help='yes to recreate the schema')
 
     args = parser.parse_args()
     file = check_file(args.file)
     cnx = get_connection()
-    if args.re_schema:
+    if 'y' in args.re_schema.lower():
         create_schema(cnx)
 
     clear_data(cnx)
