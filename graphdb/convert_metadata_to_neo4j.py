@@ -103,7 +103,13 @@ with open('/srv/rbd/covid19/metadata/2020-05-26-07-35_metadata.tsv') as csvfile:
     for row in reader:
         cv_stat = row['COVID19_Status'] if len(row['COVID19_Status']) > 0 else '0'  # error correction
         p = Node("Person", ssi_id=row['ssi_id'], age=row['ReportAge'], COVID19_Status=cv_stat,
-                 COVID19_EndDate=row['COVID19_EndDate'], IsPregnant=(row['Pregnancy'] == '1'))
+                 COVID19_EndDate=row['COVID19_EndDate'], isPregnant=(row['Pregnancy'] == '1'), sequenced=(row['sequenced'] == 'Yes'))
+        if (row['Pregnancy'] == '1' and row['Sex'] == 'M'):
+            print('anomalous case data')
+            print('SSI {}, Pregnancy {}, Sex {}'.format(row['ssi_id'],row['Pregnancy'],row['Sex']))
+            print(row)
+            exit(-1)
+
         tx.create(p)
         if row['Sex'] == 'F':
             tx.create(Relationship(p, "ISA", sex_f))
