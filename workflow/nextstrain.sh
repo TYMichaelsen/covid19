@@ -261,7 +261,7 @@ cat <(awk 'NR == 1 {print $0"\tlineage\tlineage_version"}' $OUTDIR/metadata.tsv)
 mkdir -p $OUTDIR/auspice
 
 # Cat DK lat long with auspice.
-cat ${METADIR}/latlong_nextstrain.tsv ${NCOVDIR}/lat_longs.tsv > $OUTDIR/latlongs.tsv
+cat $NCOVDIR/latlong_nextstrain.tsv ${NCOVDIR}/lat_longs.tsv > $OUTDIR/latlongs.tsv
 
 # Get all metadata columns except strain, virus and date to display in auspice.
 cols=$(awk -F'\t' 'NR == 1 {$1=$2=$3=""; print $0}' $OUTDIR/metadata_w_linage.tsv)
