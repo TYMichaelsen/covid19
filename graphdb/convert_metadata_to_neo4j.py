@@ -41,6 +41,7 @@ with open('../bi_system/stable_dims/municipalities.tsv') as csvfile:
         tx.create(n)
 
 nuts3_regions = {}
+countries = {}
 
 ## Virus Strains
 strains = {}
@@ -129,6 +130,7 @@ with open('/srv/rbd/covid19/metadata/2020-05-26-07-35_metadata.tsv') as csvfile:
             make_rel(with_node=muni, code_field_name='NUTS3Code', lookup_dict=nuts3_regions, relation_name="PartOf",
                  rel_node_label="NUTS3_Region", name_field_name="NUTS3Text")
 
+
         # strains
         strain_name = row['lineage']
         if len(strain_name) > 0:
@@ -140,6 +142,12 @@ with open('/srv/rbd/covid19/metadata/2020-05-26-07-35_metadata.tsv') as csvfile:
             if row[field_name] in ['SAND','TRUE']:
                 tx.create(Relationship(p, "HasRisk", risk_factors[field_name]))
 
+
+        # Place of infection
+        country =  row['PlaceOfInfection_EN']
+        if len(country) > 0:
+            make_rel(with_node=p,code_field_name='PlaceOfInfection_EN',lookup_dict=countries, relation_name="PlaceOfInfection",
+                     rel_node_label="Country")
 
 # p = Node("Person", ssi_id="example_id")
 # tx.create(Relationship(p,"ISA",sex_m))
