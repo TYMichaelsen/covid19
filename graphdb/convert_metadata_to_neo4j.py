@@ -31,7 +31,7 @@ with open('../bi_system/stable_dims/age_groups.txt') as csvfile:
 
 ## Geodata
 parishes = {}
-with open('../bi_system/stable_dims/parishes_ses.tsv') as csvfile:
+with open('../bi_system/stable_dims/parish_ses.tsv') as csvfile:
     reader = csv.reader(csvfile, delimiter='\t')
     next(reader, None)
     for row in reader:
