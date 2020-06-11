@@ -44,7 +44,7 @@ with open('../bi_system/stable_dims/municipalities.tsv') as csvfile:
     reader = csv.reader(csvfile, delimiter='\t')
     next(reader, None)
     for row in reader:
-        n = Node("Municipality", code=row[0], name=row[1])
+        n = Node("Municipality", code=row[0], name=row[1], population=row[4])
         municipalities[row[0]] = n
         tx.create(n)
 
