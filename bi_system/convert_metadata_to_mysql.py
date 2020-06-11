@@ -1,9 +1,11 @@
+from datetime import date
+
 import mysql.connector
 from mysql.connector import errorcode
 import argparse
 
 DB_NAME = 'covid19'
-TABLES = {'Patients': "CREATE TABLE `employees` ("
+TABLES = {'Persons': "CREATE TABLE `Persons` ("
                       "  `ssi_id` varchar(14) NOT NULL,"
                       "  `age` int(11) NOT NULL,"
                       "  `age_group` varchar(16) NOT NULL,"
@@ -77,10 +79,25 @@ def create_schema(cnxn):
 
 
 def clear_data(cnxn):
+    cursor = cnxn.cursor()
+    cursor.execute("USE {}".format(DB_NAME))
+    for table in TABLES.keys():
+        cursor.execute("TRUNCATE TABLE {};".format(table))
+    cnxn.commit()
     print("Cleared existing data on MariaDB server")
 
 
 def add_data(cnxn, filepath):
+    cursor = cnxn.cursor()
+    add_person = ("INSERT INTO Persons "
+                   "(ssi_id, age, age_group, sex, COVID19_Status, COVID19_EndDate) "
+                   "VALUES (%s, %s, %s, %s, %s)")
+
+    data_person = ('SSI-001', 15, '10-20' , 'M', 1, date(1977, 6, 14))
+
+    # Insert new employee
+    cursor.execute(add_person, data_person)
+    cnxn.commit()
     print("Loaded all data from {}".format(filepath))
 
 
