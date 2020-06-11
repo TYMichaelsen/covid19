@@ -35,7 +35,7 @@ with open('../bi_system/stable_dims/parishes_ses.tsv') as csvfile:
     reader = csv.reader(csvfile, delimiter='\t')
     next(reader, None)
     for row in reader:
-        n = Node("Parish", code=row[0], name=row[1], population=row[2], ghetto_area=row[3])
+        n = Node("Parish", code=row[0], name=row[1], population=int(row[2]), ghetto_area=row[3])
         parishes[row[0]] = n
         tx.create(n)
 
@@ -44,7 +44,7 @@ with open('../bi_system/stable_dims/municipalities.tsv') as csvfile:
     reader = csv.reader(csvfile, delimiter='\t')
     next(reader, None)
     for row in reader:
-        n = Node("Municipality", code=row[0], name=row[1], population=row[4])
+        n = Node("Municipality", code=row[0], name=row[1], population=int(row[4]))
         municipalities[row[0]] = n
         tx.create(n)
 
