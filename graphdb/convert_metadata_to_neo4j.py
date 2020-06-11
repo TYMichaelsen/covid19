@@ -35,7 +35,7 @@ with open('../bi_system/stable_dims/parishes_ses.tsv') as csvfile:
     reader = csv.reader(csvfile, delimiter='\t')
     next(reader, None)
     for row in reader:
-        n = Node("Parish", code=row[0], name=row[1], ghetto_area=row[1])
+        n = Node("Parish", code=row[0], name=row[1], population=row[2], ghetto_area=row[3])
         parishes[row[0]] = n
         tx.create(n)
 
