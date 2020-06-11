@@ -91,7 +91,7 @@ def add_data(cnxn, filepath):
     cursor = cnxn.cursor()
     add_person = ("INSERT INTO Persons "
                    "(ssi_id, age, age_group, sex, COVID19_Status, COVID19_EndDate) "
-                   "VALUES (%s, %s, %s, %s, %s)")
+                   "VALUES (%s, %s, %s, %s, %s, %s)")
 
     data_person = ('SSI-001', 15, '10-20' , 'M', 1, date(1977, 6, 14))
 
