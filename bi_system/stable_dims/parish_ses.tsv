@@ -1,4 +1,4 @@
-parish_code	parish_name	original_area
+code	name	original_area
 7054	Aldersro,Kbhvn	Aldersrogade, København
 7053	Kingo-Samuel,Kbhvn	Mjølnerparken, København
 9133	Tingbjerg,København	Tingbjerg/Utterslevhuse, København
@@ -20,3 +20,6 @@ parish_code	parish_name	original_area
 9116	Simon Peters,Kolding	Munkebo, Kolding and Skovvejen/Skovparken, Kolding
 8019	Alderslyst,Silkebg	Resedavej/Nørrevang II, Silkeborg
 9097	Gellerup,Aarhus	Skovgårdsparken, Aarhus and Gellerupparken/Toveshøj Aarhus
+8125    Hasle,Aarhus	Bispehaven, Aarhus
+9092    Nørremarks,Vejle	Finlandsparken, Vejle
+8988    Skt Marie,Sønderborg	Nørager/Søstjernevej m.fl, Sønderborg

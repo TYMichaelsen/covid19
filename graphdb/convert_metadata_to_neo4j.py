@@ -31,6 +31,14 @@ with open('../bi_system/stable_dims/age_groups.txt') as csvfile:
 
 ## Geodata
 parishes = {}
+with open('../bi_system/stable_dims/parishes_ses.tsv') as csvfile:
+    reader = csv.reader(csvfile, delimiter='\t')
+    next(reader, None)
+    for row in reader:
+        n = Node("Parish", code=row[0], name=row[1], ghetto_area=row[1])
+        parishes[row[0]] = n
+        tx.create(n)
+
 municipalities = {}
 with open('../bi_system/stable_dims/municipalities.tsv') as csvfile:
     reader = csv.reader(csvfile, delimiter='\t')
