@@ -1,25 +1,27 @@
-code	name	original_area
-7054	Aldersro,Kbhvn	Aldersrogade, København
-7053	Kingo-Samuel,Kbhvn	Mjølnerparken, København
-9133	Tingbjerg,København	Tingbjerg/Utterslevhuse, København
-7064	Bispebjerg,Kbhvn	Bispeparken, København
-7084	Sundby,Kbhvn	Hørgården, København
-7085	Taastrup Nkr,H-Taast	Tåstrupgård, Høje-Taastrup
-7152	Høje Taastrup,H-Taas	Gadehavegård, Høje-Taastrup
-7439	Vestervang,Helsingør	Nøjsomhed/Sydvej, Helsingør
-7218	Højelse,Køge	Karlemoseparken, Køge
-7275	Tveje Merløse,Holbæk	Agervang, Holbæk
-9144	Nørrevangs,Slagelse	Ringparken, Slagelse
-7258	Nykøbing,Odsherred	Motalavej, Korsør
-9131	Hjallese,Odense	Solbakken mv, Odense
-7780	Korsløkke,Odense	Korsløkkeparken Øst, Odense
-7782	Fredens,Odense	Vollsmose, Odense
-8908	Jerne,Esbjerg	Stengårdsvej, Esbjerg
-9087	Hannerup,Fredericia	Korskærparken, Fredericia
-8052	Klostersogn,Horsens	Sundparken, Horsens
-9116	Simon Peters,Kolding	Munkebo, Kolding and Skovvejen/Skovparken, Kolding
-8019	Alderslyst,Silkebg	Resedavej/Nørrevang II, Silkeborg
-9097	Gellerup,Aarhus	Skovgårdsparken, Aarhus and Gellerupparken/Toveshøj Aarhus
-8125    Hasle,Aarhus	Bispehaven, Aarhus
-9092    Nørremarks,Vejle	Finlandsparken, Vejle
-8988    Skt Marie,Sønderborg	Nørager/Søstjernevej m.fl, Sønderborg
+code	name	inhabitants	original_area
+7051	Skt Stefans,Kbhvn	1532	Lundtoftegade, København
+7054	Aldersro,Kbhvn	2193	Aldersrogade, København
+7053	Kingo-Samuel,Kbhvn	1659	Mjølnerparken, København
+9133	Tingbjerg,København	6626	Tingbjerg/Utterslevhuse, København
+7064	Bispebjerg,Kbhvn	1558	Bispeparken, København
+7084	Sundby,Kbhvn	1583	Hørgården, København
+7085	Taastrup Nkr,H-Taast	2181	Tåstrupgård, Høje-Taastrup
+7152	Høje Taastrup,H-Taas	2189	Gadehavegård, Høje-Taastrup
+7439	Vestervang,Helsingør	1084	Nøjsomhed/Sydvej, Helsingør
+7218	Højelse,Køge	1452	Karlemoseparken, Køge
+7275	Tveje Merløse,Holbæk	1414	Agervang, Holbæk
+9144	Nørrevangs,Slagelse	2008	Ringparken, Slagelse
+7258	Nykøbing,Odsherred	1674	Lindholm, Guldborgsund
+9070	Halskov,Slagelse	5085	Motalavej, Korsør
+9131	Hjallese,Odense	1331	Solbakken mv, Odense
+7780	Korsløkke,Odense	2066	Korsløkkeparken Øst, Odense
+7782	Fredens,Odense	7767	Vollsmose, Odense
+8908	Jerne,Esbjerg	1342	Stengårdsvej, Esbjerg
+9087	Hannerup,Fredericia	1962	Korskærparken, Fredericia
+8052	Klostersogn,Horsens	1588	Sundparken, Horsens
+9116	Simon Peters,Kolding	3789	Munkebo, Kolding and Skovvejen/Skovparken, Kolding
+8019	Alderslyst,Silkebg	1876	Resedavej/Nørrevang II, Silkeborg
+9097	Gellerup,Aarhus	6667	Skovgårdsparken, Aarhus and Gellerupparken/Toveshøj Aarhus
+8125    Hasle,Aarhus	2237	Bispehaven, Aarhus
+9092    Nørremarks,Vejle	1586	Finlandsparken, Vejle
+8988    Skt Marie,Sønderborg	1327	Nørager/Søstjernevej m.fl, Sønderborg
