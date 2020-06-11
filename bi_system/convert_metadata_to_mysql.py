@@ -8,7 +8,7 @@ TABLES = {'Patients': "CREATE TABLE `employees` ("
                       "  `age` int(11) NOT NULL,"
                       "  `age_group` varchar(16) NOT NULL,"
                       "  `sex` enum('M','F') NOT NULL,"
-                      "  `age` enum('0','1','2') NOT NULL,"
+                      "  `COVID19_Status` enum('0','1','2') NOT NULL,"
                       "  `COVID19_EndDate` date NOT NULL,"
                       "  PRIMARY KEY (`ssi_id`)"
                       ") ENGINE=InnoDB"}
