@@ -4,7 +4,7 @@ import argparse
 from datetime import date
 
 FIELD_TESTS = dict(SampleDate=['date'], sequenced=['yes'], Sex=['vals:F_M'], Travel=['yes'], ContactWithCase=['yes'],
-                   EpilprResp_start=['date'], EpilprResp=['yes'], EpilprVent_start=[date], EpilprVent=['yes'],
+                   EpilprResp_start=['date'], EpilprResp=['yes'], EpilprVent_start=['date'], EpilprVent=['yes'],
                    EpilprECMO_start=['date'], EpilprECMO=['yes'], EpilprHeart=['yes'], EpilprHeart_start=['date'],
                    Diabet=['yes'], Neuro=['yes'], Cancer=['yes'], Adipos=['yes'], Nyre=['yes'], Haem_c=['yes'],
                    Card_dis=['yes'], Resp_dis=['yes'], Immu_dis=['yes'], Other_risk=['yes'], Pregnancy=['yes'],
