@@ -3,7 +3,7 @@ import os
 import argparse
 from datetime import date
 
-FIELD_TESTS = {'SampleDate': ['date'], 'sequenced': ['yes'] }
+FIELD_TESTS = {'SampleDate': ['date'], 'sequenced': ['yes'], 'Sex': ['vals:F_M'] }
 
 
 def check_date(datestring):
@@ -111,6 +111,14 @@ def check_errors(infile, outfile, errfilewriter):
                                 else:
                                     log_field_error(field_name, rows_read, "Invalid yes/no value: {}".format(val)
                                                     , errfilewriter)
+                        if test.startswith('vals'):
+                            allowed_vals = test.split(':')[1].split('_')
+                            if len(val) > 0:
+                                if val in allowed_vals:
+                                    outrow[field_name] = val
+                                else:
+                                    log_field_error(field_name, rows_read, "Invalid value: {}, expected one of {}"
+                                                    .format(val, allowed_vals), errfilewriter)
 
             # TODO number of fields in row
             # TODO Common sense checks
