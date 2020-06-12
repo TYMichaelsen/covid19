@@ -49,7 +49,9 @@ if __name__ == '__main__':
     parser.add_argument('errfile', type=str,help='path to the error file to be created')
     args = parser.parse_args()
     infile = check_file(args.infile)
+    print('Validated infile as {}'.format(infile))
     outfile = check_file(args.outfile,True)
+    print('Validated outfile as {}'.format(infile))
     errfile = check_file(args.outfile,True)
-
+    print('Validated errfile as {}'.format(infile))
     check_errors(infile, outfile, errfile)
