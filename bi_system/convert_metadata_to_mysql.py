@@ -1,4 +1,5 @@
 from datetime import date
+import csv
 
 import mysql.connector
 from mysql.connector import errorcode
@@ -94,8 +95,28 @@ def add_data(cnxn, filepath):
                    "VALUES (%s, %s, %s, %s, %s, %s)")
 
     data_person = ('SSI-001', 15, '10-20' , 'M', 1, date(1977, 6, 14))
+    with open('/srv/rbd/covid19/metadata/2020-05-26-07-35_metadata.tsv') as csvfile:
+        reader = csv.DictReader(csvfile, delimiter='\t')
+        for row in reader:
+            cv_stat = row['COVID19_Status'] if len(row['COVID19_Status']) > 0 else '0'  # error correction
+            age = None if row['ReportAge'] == '' else int(row['ReportAge'])
+        p = Node("Person", ssi_id=row['ssi_id'], age=age, COVID19_Status=cv_stat,
+                 COVID19_EndDate=row['COVID19_EndDate'], isPregnant=(row['Pregnancy'] == '1'), sequenced=(row['sequenced'] == 'Yes'))
+        if (row['Pregnancy'] == '1' and row['Sex'] == 'M'):
+            print('anomalous case data') # TODO extract all error checking code to a separate file
+            print('SSI {}, Pregnancy {}, Sex {}'.format(row['ssi_id'],row['Pregnancy'],row['Sex']))
 
-    # Insert new employee
+        tx.create(p)
+        if row['Sex'] == 'F':
+            tx.create(Relationship(p, "ISA", sex_f))
+        elif row['Sex'] == 'M':
+            tx.create(Relationship(p, "ISA", sex_m))
+        # else: # make error log file
+        #  print('Unrecognized Sex value: {}'.format(row['Sex']))
+        ag = row['ReportAgeGrp']
+        if ag in age_groups.keys():
+            tx.create(Relationship(p, "InGroup", age_groups[ag]))
+        # TODO report missing ag
     cursor.execute(add_person, data_person)
     cnxn.commit()
     print("Loaded all data from {}".format(filepath))
