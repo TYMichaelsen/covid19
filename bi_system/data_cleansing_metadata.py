@@ -117,7 +117,7 @@ if __name__ == '__main__':
     print('Validated outfile as {}'.format(outfile))
     errfile = check_file(args.errfile, True)
     print('Validated errfile as {}'.format(errfile))
-    with open(infile, 'w') as csvfile:
+    with open(errfile, 'w') as csvfile:
         writer = csv.DictWriter(csvfile, ['MessageType', 'Row', 'ErrorType', 'Details'])
         writer.writeheader()
         writer.writerow({'MessageType': 'Info', 'ErrorType': '', 'Details': 'Started {}'.format(infile)})
