@@ -99,15 +99,20 @@ def add_data(cnxn, filepath):
             age = None if row['ReportAge'] == '' else int(row['ReportAge'])
             ag = row['ReportAgeGrp']
             sex = row['Sex'] if row['Sex'] in ['M', 'F'] else None
-            enddate = row['COVID19_EndDate'].split('-')  # e.g. '2020-03-22'.split('-')
-            enddate = date(int(enddate[0]), int(enddate[1]), int(enddate[2])) if len(enddate) == 3 else None
+            enddate_arr = row['COVID19_EndDate'].split('-')  # e.g. '2020-03-22'.split('-')
+            try:
+                enddate = date(int(enddate_arr[0]), int(enddate_arr[1]), int(enddate_arr[2])) if len(enddate_arr) == 3 else None
+            except ValueError as err:
+                print(err)
+                print("Failed data: {}".format(enddate_arr))
+                enddate = None
             data_person = (row['ssi_id'], age, ag, sex, cv_stat, enddate)
             # COVID19_EndDate=row['COVID19_EndDate'], isPregnant=(row['Pregnancy'] == '1'), sequenced=(row['sequenced'] == 'Yes'))
             try:
                 cursor.execute(add_person, data_person)
             except mysql.connector.Error as err:
                 print(err)
-                print("Failed data: ".format(data_person))
+                print("Failed data: {}".format(data_person))
 
 
     cnxn.commit()
