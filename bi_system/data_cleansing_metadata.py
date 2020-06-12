@@ -10,8 +10,11 @@ FIELD_TESTS = dict(SampleDate=['date'], sequenced=['yes'], Sex=['vals:F_M'], Tra
                    Card_dis=['yes'], Resp_dis=['yes'], Immu_dis=['yes'], Other_risk=['yes'], Pregnancy=['yes'],
                    Doctor=['yes'], Nurse=['yes'], PlaceOfInfection_EN=['dim:countries.tsv'], ReportAge=['age'],
                    ReportAgeGrp=['dim:age_groups.tsv'], COVID19_Status=['vals:0_1_2:0'], COVID19_EndDate=['date'],
-                   lineage=['str'], ParishCode=['dim:parish.tsv'], MunicipalityCode=['dim:municipalities.tsv'],
-                   NUTS3Code=['dim:nuts3_regions.csv'])
+                   lineage=['str'], lineages_version=['date'], ParishCode=['dim:parish.tsv'],
+                   MunicipalityCode=['dim:municipalities.tsv'], NUTS3Code=['dim:nuts3_regions.csv'], Occupation=['str'],
+                   CountryOfTravel=['dim:countries.tsv'], SymptomsStartDate=['date'], CodR_DateOfDeath=['date'],
+                   CodR_Death60Days=['yes'], CPR_Death60Days=['yes'], CPR_DateOfDeath=['date'],
+                   DateOfDeath_final=['date'])
 
 """
 date: check that date is well-formed and output in 'dddd-mm-yy' format
@@ -90,7 +93,7 @@ def load_dims():
                 dim_name = dim_filename.split('.')[0]
                 if not dim_name in dims.keys():
                     dim_keys = set()
-                    with open(os.path.join("stable_dims",dim_filename)) as csvfile:
+                    with open(os.path.join("stable_dims", dim_filename)) as csvfile:
                         reader = csv.reader(csvfile, delimiter='\t' if dim_filename.endswith('tsv') else ',')
                         next(reader, None)  # skip header
                         for row in reader:
