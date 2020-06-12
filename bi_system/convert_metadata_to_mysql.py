@@ -7,14 +7,14 @@ import argparse
 
 DB_NAME = 'covid19'
 TABLES = {'Persons': "CREATE TABLE `Persons` ("
-                      "  `ssi_id` varchar(14) NOT NULL,"
-                      "  `age` int(11),"
-                      "  `age_group` varchar(16),"
-                      "  `sex` enum('M','F'),"
-                      "  `COVID19_Status` enum(0,1,2) NOT NULL,"
-                      "  `COVID19_EndDate` date,"
-                      "  PRIMARY KEY (`ssi_id`)"
-                      ") ENGINE=InnoDB"}
+                     "  `ssi_id` varchar(14) NOT NULL,"
+                     "  `age` int(11),"
+                     "  `age_group` varchar(16),"
+                     "  `sex` enum('M','F'),"
+                     "  `COVID19_Status` enum('0','1','2') NOT NULL,"
+                     "  `COVID19_EndDate` date,"
+                     "  PRIMARY KEY (`ssi_id`)"
+                     ") ENGINE=InnoDB"}
 
 
 def get_connection():
@@ -77,8 +77,6 @@ def create_schema(cnxn):
             exit(-1)
 
 
-
-
 def clear_data(cnxn):
     cursor = cnxn.cursor()
     cursor.execute("USE {}".format(DB_NAME))
@@ -91,26 +89,27 @@ def clear_data(cnxn):
 def add_data(cnxn, filepath):
     cursor = cnxn.cursor()
     add_person = ("INSERT INTO Persons "
-                   "(ssi_id, age, age_group, sex, COVID19_Status, COVID19_EndDate) "
-                   "VALUES (%s, %s, %s, %s, %s, %s)")
-
+                  "(ssi_id, age, age_group, sex, COVID19_Status, COVID19_EndDate) "
+                  "VALUES (%s, %s, %s, %s, %s, %s)")
 
     with open('/srv/rbd/covid19/metadata/2020-05-26-07-35_metadata.tsv') as csvfile:
         reader = csv.DictReader(csvfile, delimiter='\t')
         for row in reader:
-            cv_stat = int(row['COVID19_Status']) if len(row['COVID19_Status']) > 0 else 0  # error correction
+            cv_stat = row['COVID19_Status'] if len(row['COVID19_Status']) > 0 else '0'  # error correction
             age = None if row['ReportAge'] == '' else int(row['ReportAge'])
             ag = row['ReportAgeGrp']
-            sex = row['Sex'] if row['Sex'] in ['M','F'] else None
-            enddate = row['COVID19_EndDate'].split('-') # e.g. '2020-03-22'.split('-')
-            enddate = date(int(enddate[0]),int(enddate[1]),int(enddate[2])) if len(enddate) == 3 else None
-            data_person = (row['ssi_id'], age, ag , sex, cv_stat, enddate)
+            sex = row['Sex'] if row['Sex'] in ['M', 'F'] else None
+            enddate = row['COVID19_EndDate'].split('-')  # e.g. '2020-03-22'.split('-')
+            enddate = date(int(enddate[0]), int(enddate[1]), int(enddate[2])) if len(enddate) == 3 else None
+            data_person = (row['ssi_id'], age, ag, sex, cv_stat, enddate)
             # COVID19_EndDate=row['COVID19_EndDate'], isPregnant=(row['Pregnancy'] == '1'), sequenced=(row['sequenced'] == 'Yes'))
-            print(data_person) #debug
+            print(data_person)  # debug
             cursor.execute(add_person, data_person)
 
     cnxn.commit()
     print("Loaded all data from {}".format(filepath))
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='convert a metadata file to SQL relational format and inject to the MariaDB')
