@@ -76,18 +76,6 @@ def check_errors(infile, outfile, errfilewriter):
         for row in reader:
             rows_read += 1
             outrow = {}
-            for field_name in row.keys():
-                if field_name in FIELD_TESTS:
-                    for test in FIELD_TESTS[field_name]:
-                        if test == 'date':
-                            res = check_date(row[field_name])
-                            if isinstance(res, ValueError):
-                                log_field_error(field_name, rows_read, "Invalid date value: {}".format(row[field_name]),
-                                                errfilewriter)
-                                outrow[field_name] = ''
-                            else:
-                                outrow[field_name] = date
-
             # Integrity checks
             # duplicates
             pk = row['ssi_id']
@@ -99,6 +87,20 @@ def check_errors(infile, outfile, errfilewriter):
                 errfilewriter.writerow({'MessageType': 'Error', 'Row': rows_read, 'ErrorType': 'Duplicate Key',
                                         'Details': '{}'.format(err_msg)})
                 continue
+
+            # Field checks
+            for field_name in row.keys():
+                if field_name in FIELD_TESTS:
+                    for test in FIELD_TESTS[field_name]:
+                        if test == 'date':
+                            res = check_date(row[field_name])
+                            if isinstance(res, ValueError):
+                                log_field_error(field_name, rows_read, "Invalid date value: {}".format(row[field_name]),
+                                                errfilewriter)
+                                outrow[field_name] = ''
+                            elif isinstance(res, date):
+                                outrow[field_name] = res.strftime("%Y-%m-%d")
+
 
             # TODO number of fields in row
             # TODO Common sense checks
