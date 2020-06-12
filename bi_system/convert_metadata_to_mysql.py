@@ -1,5 +1,6 @@
 from datetime import date
 import csv
+import os
 
 import mysql.connector
 from mysql.connector import errorcode
@@ -7,7 +8,7 @@ import argparse
 
 DB_NAME = 'covid19'
 TABLES = {'Persons': "CREATE TABLE `Persons` ("
-                     "  `ssi_id` varchar(14) NOT NULL,"
+                     "  `ssi_id` varchar(16) NOT NULL,"
                      "  `age` int(11),"
                      "  `age_group` varchar(16),"
                      "  `sex` enum('M','F'),"
@@ -44,12 +45,11 @@ def check_file(filepath):
     :param filepath: relative path to check
     :return: absolute filepath if it does, print error message and exit otherwise
     """
-    if len(filepath) == 0:
+    if len(filepath) == 0 or not os.path.exists(filepath):
         print("file not found")
         exit(-1)
     else:
         return filepath
-
 
 def create_schema(cnxn):
     cursor = cnxn.cursor()
@@ -92,7 +92,7 @@ def add_data(cnxn, filepath):
                   "(ssi_id, age, age_group, sex, COVID19_Status, COVID19_EndDate) "
                   "VALUES (%s, %s, %s, %s, %s, %s)")
 
-    with open('/srv/rbd/covid19/metadata/2020-05-26-07-35_metadata.tsv') as csvfile:
+    with open(filepath) as csvfile:
         reader = csv.DictReader(csvfile, delimiter='\t')
         for row in reader:
             cv_stat = row['COVID19_Status'] if len(row['COVID19_Status']) > 0 else '0'  # error correction
