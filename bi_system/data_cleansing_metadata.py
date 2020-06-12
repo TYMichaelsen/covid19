@@ -90,6 +90,7 @@ def check_errors(infile, outfile, errfilewriter):
             pk = row['ssi_id']
             if pk not in primary_keys:
                 primary_keys.add(pk)
+                outrow['ssi_id']=pk
             else:
                 err_msg = 'key: {}'.format(pk)
                 errfilewriter.writerow({'MessageType': 'Error', 'Row': rows_read, 'ErrorType': 'Duplicate Key',
@@ -101,8 +102,13 @@ def check_errors(infile, outfile, errfilewriter):
 
             validated_rows.append(outrow)
 
-    print("Finished processing {} rows of which {} where ommitted due to irrecoverable errors".format(rows_read,
-                                                                                                      rows_omitted))
+
+    print("Finished processing {} rows of which {} where ommitted due to irrecoverable errors".format(rows_read, rows_omitted))
+    with open(outfile, 'w') as csvfile:
+        writer = csv.DictWriter(csvfile, reader.fieldnames)
+        writer.writeheader()
+        for row in validated_rows:
+            writer.writerow(row)
 
 
 if __name__ == '__main__':
