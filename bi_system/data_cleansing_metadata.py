@@ -3,7 +3,7 @@ import os
 import argparse
 from datetime import date
 
-FIELD_TESTS = {'SampleDate': ['date']}
+FIELD_TESTS = {'SampleDate': ['date'], 'sequenced': ['yes'] }
 
 
 def check_date(datestring):
@@ -81,34 +81,40 @@ def check_errors(infile, outfile, errfilewriter):
             pk = row['ssi_id']
             if pk not in primary_keys:
                 primary_keys.add(pk)
-                outrow['ssi_id']=pk
+                outrow['ssi_id'] = pk
             else:
                 err_msg = 'key: {}'.format(pk)
                 errfilewriter.writerow({'MessageType': 'Error', 'Row': rows_read, 'ErrorType': 'Duplicate Key',
                                         'Details': '{}'.format(err_msg)})
+                rows_omitted += 1
                 continue
 
             # Field checks
             for field_name in row.keys():
                 if field_name in FIELD_TESTS:
+                    val: str = row[field_name]
                     for test in FIELD_TESTS[field_name]:
                         if test == 'date':
-                            res = check_date(row[field_name])
+                            res = check_date(val)
                             if isinstance(res, ValueError):
-                                log_field_error(field_name, rows_read, "Invalid date value: {}".format(row[field_name]),
+                                log_field_error(field_name, rows_read, "Invalid date value: {}".format(val),
                                                 errfilewriter)
                                 outrow[field_name] = ''
                             elif isinstance(res, date):
                                 outrow[field_name] = res.strftime("%Y-%m-%d")
-
+                        if test == 'yes':
+                            if val.lower() in ['y','yes','true','sand']:
+                                outrow[field_name] = 1
+                            else:
+                                outrow[field_name] = 0
 
             # TODO number of fields in row
             # TODO Common sense checks
 
             validated_rows.append(outrow)
 
-
-    print("Finished processing {} rows of which {} where ommitted due to irrecoverable errors".format(rows_read, rows_omitted))
+    print("Finished processing {} rows of which {} where ommitted due to irrecoverable errors".format(rows_read,
+                                                                                                      rows_omitted))
     with open(outfile, 'w') as csvfile:
         writer = csv.DictWriter(csvfile, reader.fieldnames)
         writer.writeheader()
