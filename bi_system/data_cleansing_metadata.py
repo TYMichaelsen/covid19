@@ -66,7 +66,7 @@ def check_file(filepath, create=False):
     return filepath
 
 
-def log_field_error(field_name, row_num, err_msg, logfilewriter):
+def log_field_error(field_name: str, row_num: int, err_msg: str, logfilewriter: csv.DictWriter) -> None:
     """
     Utility to log parameter errors
     :param field_name: field where error was found
@@ -176,10 +176,13 @@ def check_errors(datafile, outfile, errfilewriter):
                             keys = static_dims[dim_name]
                             if len(val) > 0:
                                 if not val in keys:
-                                    if val == 'Not Denmark, Unknown':
+                                    if val == 'Not Denmark, Unknown' and dim_name == 'countries':
                                         outrow[field_name] = val  # pass through
                                     else:
-                                        log_field_error(field_name, rows_read, "Invalid value: {}, expected corresponding"
+                                        if val == 'okt-19' and dim_name == 'age_groups':
+                                            outrow[field_name] = '0-9'  # quick fix
+                                        else:
+                                            log_field_error(field_name, rows_read, "Invalid value: {}, expected corresponding"
                                                                            "dimension key in {}"
                                                     .format(val, dim_name), errfilewriter)
                                 else:
