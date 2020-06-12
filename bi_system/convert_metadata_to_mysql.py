@@ -103,8 +103,12 @@ def add_data(cnxn, filepath):
             enddate = date(int(enddate[0]), int(enddate[1]), int(enddate[2])) if len(enddate) == 3 else None
             data_person = (row['ssi_id'], age, ag, sex, cv_stat, enddate)
             # COVID19_EndDate=row['COVID19_EndDate'], isPregnant=(row['Pregnancy'] == '1'), sequenced=(row['sequenced'] == 'Yes'))
-            print(data_person)  # debug
-            cursor.execute(add_person, data_person)
+            try:
+                cursor.execute(add_person, data_person)
+            except ValueError as err:
+                print(err)
+                print("Failed data: ".format(data_person))
+
 
     cnxn.commit()
     print("Loaded all data from {}".format(filepath))
