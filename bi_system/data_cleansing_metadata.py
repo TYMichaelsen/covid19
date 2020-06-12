@@ -16,7 +16,7 @@ def check_date(datestring):
         else:
             enddate = None
     except ValueError as err:
-        enddate = None
+        enddate = err
 
     return enddate
 
@@ -26,6 +26,8 @@ def check_file(filepath, create=False):
     Checks if the supplied path contains a file, if second argument is true, creates the file if missing
     :type filepath: str
     :param filepath: relative path to check
+    :type create: bool
+    :param create: defaults to false , if true will create the file
     :return: absolute filepath if it does, print error message and exit otherwise
     """
     if len(filepath) == 0:
@@ -48,12 +50,13 @@ def log_field_error(field_name, row_num, err_msg, logfilewriter):
     Utility to log parameter errors
     :param field_name: field where error was found
     :param row_num: row number where error was found
-    :param param: error_message
+    :param err_msg
     :param logfilewriter: for output
     :return: None
     """
     logfilewriter.writerow(
-        {'MessageType': 'Error', 'Row': row_num, 'ErrorType': 'Value Error', 'Details': '{}'.format(err_msg)})
+        {'MessageType': 'Error', 'Row': row_num, 'ErrorType': 'Value Error',
+         'Error in {}, details': '{}'.format(field_name, err_msg)})
 
 
 def check_errors(infile, outfile, errfilewriter):
@@ -78,7 +81,7 @@ def check_errors(infile, outfile, errfilewriter):
                     for test in FIELD_TESTS[field_name]:
                         if test == 'date':
                             res = check_date(row[field_name])
-                            if res is None:
+                            if isinstance(res, ValueError):
                                 log_field_error(field_name, rows_read, "Invalid date value: {}".format(row[field_name]),
                                                 errfilewriter)
                                 outrow[field_name] = ''
