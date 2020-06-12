@@ -104,7 +104,7 @@ def add_data(cnxn, filepath):
                 if len(enddate_arr) == 3 and len(enddate_arr[0]) == 4:
                     enddate = date(year=int(enddate_arr[0]), month=int(enddate_arr[1]), day=int(enddate_arr[2]))
                 elif len(enddate_arr) == 3 and len(enddate_arr[2]) == 4:
-                    enddate = date(year=int(enddate_arr[0]), month=int(enddate_arr[1]), day=int(enddate_arr[2]))
+                    enddate = date(year=int(enddate_arr[2]), month=int(enddate_arr[1]), day=int(enddate_arr[0]))
                 else:
                     enddate = None
             except ValueError as err:
