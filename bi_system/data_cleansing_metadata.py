@@ -103,10 +103,14 @@ def check_errors(infile, outfile, errfilewriter):
                             elif isinstance(res, date):
                                 outrow[field_name] = res.strftime("%Y-%m-%d")
                         if test == 'yes':
-                            if val.lower() in ['y','yes','true','sand']:
-                                outrow[field_name] = 1
-                            else:
-                                outrow[field_name] = 0
+                            if len(val)>0:
+                                if val.lower() in ['y','yes','ja','true','sand']:
+                                    outrow[field_name] = 1
+                                elif val.lower() in ['n','no','nej','false','falsk']:
+                                    outrow[field_name] = 0
+                                else:
+                                    log_field_error(field_name, rows_read, "Invalid yes/no value: {}".format(val)
+                                                    , errfilewriter)
 
             # TODO number of fields in row
             # TODO Common sense checks
