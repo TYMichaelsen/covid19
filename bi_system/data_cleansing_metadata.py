@@ -4,8 +4,8 @@ import argparse
 from datetime import date
 
 FIELD_TESTS = dict(SampleDate=['date'], sequenced=['yes'], Sex=['vals:F_M'], Travel=['yes'], ContactWithCase=['yes'],
-                   EpilprResp_start=['yes'], EpilprResp=['yes'], EpilprVent_start=['yes'], EpilprVent=['yes'],
-                   EpilprECMO_start=['yes'], EpilprECMO=['yes'], EpilprHeart=['yes'], EpilprHeart_start=['yes'],
+                   EpilprResp_start=[date], EpilprResp=['yes'], EpilprVent_start=[date], EpilprVent=['yes'],
+                   EpilprECMO_start=[date], EpilprECMO=['yes'], EpilprHeart=['yes'], EpilprHeart_start=[date],
                    Diabet=['yes'], Neuro=['yes'], Cancer=['yes'], Adipos=['yes'], Nyre=['yes'], Haem_c=['yes'],
                    Card_dis=['yes'], Resp_dis=['yes'], Immu_dis=['yes'], Other_risk=['yes'], Pregnancy=['yes'],
                    Doctor=['yes'], Nurse=['yes'], PlaceOfInfection_EN=['dim:countries.tsv'], ReportAge=['age'],
@@ -173,6 +173,8 @@ def check_errors(datafile, outfile, errfilewriter):
                             keys = static_dims[dim_name]
                             if len(val) > 0:
                                 if not val in keys:
+                                    if val == 'Not Denmark, Unknown':
+                                        outrow[field_name] = val  # pass through
                                     log_field_error(field_name, rows_read, "Invalid value: {}, expected corresponding"
                                                                            "dimension key in {}"
                                                     .format(val, dim_name), errfilewriter)
