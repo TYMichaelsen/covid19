@@ -8,7 +8,7 @@ FIELD_TESTS = dict(SampleDate=['date'], sequenced=['yes'], Sex=['vals:F_M'], Tra
                    EpilprECMO_start=['yes'], EpilprECMO=['yes'], EpilprHeart=['yes'], EpilprHeart_start=['yes'],
                    Diabet=['yes'], Neuro=['yes'], Cancer=['yes'], Adipos=['yes'], Nyre=['yes'], Haem_c=['yes'],
                    Card_dis=['yes'], Resp_dis=['yes'], Immu_dis=['yes'], Other_risk=['yes'], Pregnancy=['yes'],
-                   Doctor=['yes'], Nurse=['yes'], PlaceOfInfection_EN=['dim:country'], ReportAge=['age'],
+                   Doctor=['yes'], Nurse=['yes'], PlaceOfInfection_EN=['dim:countries.tsv'], ReportAge=['age'],
                    ReportAgeGrp=['dim:age_groups.tsv'], COVID19_Status=['vals:0_1_2:0'], COVID19_EndDate=['date'],
                    lineage=['str'], ParishCode=['dim:parish.tsv'], MunicipalityCode=['dim:municipalities.tsv'],
                    NUTS3Code=['dim:nuts3_regions.csv'])
@@ -74,7 +74,7 @@ def log_field_error(field_name, row_num, err_msg, logfilewriter):
     """
     logfilewriter.writerow(
         {'MessageType': 'Error', 'Row': row_num, 'ErrorType': 'Value Error',
-         'Error in {}, details': '{}'.format(field_name, err_msg)})
+         'Details': 'Error in {}, details: {}'.format(field_name, err_msg)})
 
 
 def load_dims():
@@ -90,7 +90,7 @@ def load_dims():
                 dim_name = dim_filename.split('.')[0]
                 if not dim_name in dims.keys():
                     dim_keys = set()
-                    with open(dim_filename) as csvfile:
+                    with open(os.path.join("stable_dims",dim_filename)) as csvfile:
                         reader = csv.reader(csvfile, delimiter='\t' if dim_filename.endswith('tsv') else ',')
                         next(reader, None)  # skip header
                         for row in reader:
@@ -169,7 +169,7 @@ def check_errors(datafile, outfile, errfilewriter):
                                     outrow[field_name] = test_params[2]
 
                         if test.startswith('dim'):
-                            dim_name = test.split(':')[1]
+                            dim_name = test.split(':')[1].split('.')[0]
                             keys = static_dims[dim_name]
                             if len(val) > 0:
                                 if not val in keys:
