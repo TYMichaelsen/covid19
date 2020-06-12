@@ -101,10 +101,12 @@ def add_data(cnxn, filepath):
             cv_stat = int(row['COVID19_Status']) if len(row['COVID19_Status']) > 0 else 0  # error correction
             age = None if row['ReportAge'] == '' else int(row['ReportAge'])
             ag = row['ReportAgeGrp']
+            sex = row['Sex'] if row['Sex'] in ['M','F'] else None
             enddate = row['COVID19_EndDate'].split('-') # e.g. '2020-03-22'.split('-')
             enddate = date(int(enddate[0]),int(enddate[1]),int(enddate[2])) if len(enddate) == 3 else None
-            data_person = (row['ssi_id'], age, ag , row['Sex'], cv_stat, enddate)
+            data_person = (row['ssi_id'], age, ag , sex, cv_stat, enddate)
             # COVID19_EndDate=row['COVID19_EndDate'], isPregnant=(row['Pregnancy'] == '1'), sequenced=(row['sequenced'] == 'Yes'))
+            print(data_person) #debug
             cursor.execute(add_person, data_person)
 
     cnxn.commit()
