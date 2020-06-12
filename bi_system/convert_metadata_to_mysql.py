@@ -105,7 +105,7 @@ def add_data(cnxn, filepath):
             # COVID19_EndDate=row['COVID19_EndDate'], isPregnant=(row['Pregnancy'] == '1'), sequenced=(row['sequenced'] == 'Yes'))
             try:
                 cursor.execute(add_person, data_person)
-            except Exception as err:
+            except mysql.connector.Error as err:
                 print(err)
                 print("Failed data: ".format(data_person))
 
