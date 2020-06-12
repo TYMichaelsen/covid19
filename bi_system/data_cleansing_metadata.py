@@ -18,10 +18,11 @@ def check_file(filepath, create=False):
     if not os.path.exists(filepath):
         if create:
             with open(filepath, 'w'): pass
-            return filepath
         else:
             print("Invalid filepath: {}".format(filepath))
             exit(-1)
+
+    return filepath
 
 
 def check_errors(infile, outfile, errfile):
