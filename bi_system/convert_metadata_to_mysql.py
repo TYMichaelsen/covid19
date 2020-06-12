@@ -8,11 +8,11 @@ import argparse
 DB_NAME = 'covid19'
 TABLES = {'Persons': "CREATE TABLE `Persons` ("
                       "  `ssi_id` varchar(14) NOT NULL,"
-                      "  `age` int(11) NOT NULL,"
-                      "  `age_group` varchar(16) NOT NULL,"
-                      "  `sex` enum('M','F') NOT NULL,"
+                      "  `age` int(11),"
+                      "  `age_group` varchar(16),"
+                      "  `sex` enum('M','F'),"
                       "  `COVID19_Status` enum('0','1','2') NOT NULL,"
-                      "  `COVID19_EndDate` date NOT NULL,"
+                      "  `COVID19_EndDate` date,"
                       "  PRIMARY KEY (`ssi_id`)"
                       ") ENGINE=InnoDB"}
 
