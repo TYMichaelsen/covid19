@@ -98,7 +98,7 @@ def load_dims():
                         next(reader, None)  # skip header
                         for row in reader:
                             if len(row[0]) > 0:
-                                dim_keys.add(row[0])
+                                dim_keys.add(row[0].strip())
                     dims[dim_name] = dim_keys
 
     return dims
@@ -139,7 +139,7 @@ def check_errors(datafile, outfile, errfilewriter):
             # Field checks
             for field_name in row.keys():
                 if field_name in FIELD_TESTS:
-                    val: str = row[field_name]
+                    val: str = row[field_name].strip()
                     for test in FIELD_TESTS[field_name]:
                         if test == 'date':
                             res = check_date(val)
@@ -178,7 +178,8 @@ def check_errors(datafile, outfile, errfilewriter):
                                 if not val in keys:
                                     if val == 'Not Denmark, Unknown':
                                         outrow[field_name] = val  # pass through
-                                    log_field_error(field_name, rows_read, "Invalid value: {}, expected corresponding"
+                                    else:
+                                        log_field_error(field_name, rows_read, "Invalid value: {}, expected corresponding"
                                                                            "dimension key in {}"
                                                     .format(val, dim_name), errfilewriter)
                                 else:
