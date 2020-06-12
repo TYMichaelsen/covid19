@@ -11,7 +11,7 @@ TABLES = {'Persons': "CREATE TABLE `Persons` ("
                       "  `age` int(11),"
                       "  `age_group` varchar(16),"
                       "  `sex` enum('M','F'),"
-                      "  `COVID19_Status` enum('0','1','2') NOT NULL,"
+                      "  `COVID19_Status` enum(0,1,2) NOT NULL,"
                       "  `COVID19_EndDate` date,"
                       "  PRIMARY KEY (`ssi_id`)"
                       ") ENGINE=InnoDB"}
