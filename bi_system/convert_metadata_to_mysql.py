@@ -101,10 +101,10 @@ def add_data(cnxn, filepath):
             sex = row['Sex'] if row['Sex'] in ['M', 'F'] else None
             enddate_arr = row['COVID19_EndDate'].split('-')  # e.g. '2020-03-22'.split('-')
             try:
-                enddate = date(int(enddate_arr[2]), int(enddate_arr[1]), int(enddate_arr[0])) if len(enddate_arr) == 3 else None
+                enddate = date(year=int(enddate_arr[0]), month=int(enddate_arr[1]), day=int(enddate_arr[2])) if len(enddate_arr) == 3 else None
             except ValueError as err:
                 print(err)
-                print("Failed data: {}".format(enddate_arr))
+                print("Failed data: {} year {} month {} day {} ".format(enddate_arr, int(enddate_arr[0]), int(enddate_arr[1]), int(enddate_arr[2])))
                 enddate = None
             data_person = (row['ssi_id'], age, ag, sex, cv_stat, enddate)
             # COVID19_EndDate=row['COVID19_EndDate'], isPregnant=(row['Pregnancy'] == '1'), sequenced=(row['sequenced'] == 'Yes'))
