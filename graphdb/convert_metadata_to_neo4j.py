@@ -22,7 +22,7 @@ tx.create(sex_f)
 
 ## Age groups
 age_groups = {}
-with open('../bi_system/stable_dims/age_groups.txt') as csvfile:
+with open('../bi_system/stable_dims/age_groups.tsv') as csvfile:
     reader = csv.reader(csvfile)
     for row in reader:
         n = Node("AgeGroup", name=row[0])

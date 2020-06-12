@@ -3,7 +3,25 @@ import os
 import argparse
 from datetime import date
 
-FIELD_TESTS = {'SampleDate': ['date'], 'sequenced': ['yes'], 'Sex': ['vals:F_M'] }
+FIELD_TESTS = dict(SampleDate=['date'], sequenced=['yes'], Sex=['vals:F_M'], Travel=['yes'], ContactWithCase=['yes'],
+                   EpilprResp_start=['yes'], EpilprResp=['yes'], EpilprVent_start=['yes'], EpilprVent=['yes'],
+                   EpilprECMO_start=['yes'], EpilprECMO=['yes'], EpilprHeart=['yes'], EpilprHeart_start=['yes'],
+                   Diabet=['yes'], Neuro=['yes'], Cancer=['yes'], Adipos=['yes'], Nyre=['yes'], Haem_c=['yes'],
+                   Card_dis=['yes'], Resp_dis=['yes'], Immu_dis=['yes'], Other_risk=['yes'], Pregnancy=['yes'],
+                   Doctor=['yes'], Nurse=['yes'], PlaceOfInfection_EN=['dim:country'], ReportAge=['age'],
+                   ReportAgeGrp=['dim:age_groups.tsv'], COVID19_Status=['vals:0_1_2:0'], COVID19_EndDate=['date'],
+                   lineage=['str'], ParishCode=['dim:parish.tsv'], MunicipalityCode=['dim:municipalities.tsv'],
+                   NUTS3Code=['dim:nuts3_regions.csv'])
+
+"""
+date: check that date is well-formed and output in 'dddd-mm-yy' format
+yes: check that field is y/n or 1/0 or any other boolean variation and output as 1/0
+vals:val1_val2_...[:default]: Check that val is in list of given values. 
+                              Optionally output default value when no value is supplied
+dim:dim_name: check that code exists in first column of stable dimension file.
+age: check int and reasonable number (0-120)
+str: string - just pass through 
+"""
 
 
 def check_date(datestring):
@@ -59,19 +77,45 @@ def log_field_error(field_name, row_num, err_msg, logfilewriter):
          'Error in {}, details': '{}'.format(field_name, err_msg)})
 
 
-def check_errors(infile, outfile, errfilewriter):
+def load_dims():
+    """
+    Load keys of dimension from dimension file
+    :return: dictionary from dimension filename to set of keys
+    """
+    dims = dict()
+    for test_list in FIELD_TESTS.values():
+        for test in test_list:
+            if test.startswith('dim'):
+                dim_filename = test.split(':')[1]
+                dim_name = dim_filename.split('.')[0]
+                if not dim_name in dims.keys():
+                    dim_keys = set()
+                    with open(dim_filename) as csvfile:
+                        reader = csv.reader(csvfile, delimiter='\t' if dim_filename.endswith('tsv') else ',')
+                        next(reader, None)  # skip header
+                        for row in reader:
+                            if len(row[0]) > 0:
+                                dim_keys.add(row[0])
+                    dims[dim_name] = dim_keys
+
+    return dims
+
+
+def check_errors(datafile, outfile, errfilewriter):
     """
     Checks for value errors, duplicates and malformed rows in metadata files
-    :param infile: metadata file to check
+    :param datafile: metadata file to check
     :param outfile: same file with value erros ommitted and
     :param errfilewriter: csv DictWriter object to log file to contain list of errors and ommitted values/rows
     :return: None
     """
+
+    static_dims = load_dims()
     rows_read = 0
     rows_omitted = 0
     primary_keys = set()
     validated_rows = []
-    with open(infile) as csvfile:
+    with open(datafile) as csvfile:
         reader = csv.DictReader(csvfile, delimiter='\t')
         for row in reader:
             rows_read += 1
@@ -103,22 +147,54 @@ def check_errors(infile, outfile, errfilewriter):
                             elif isinstance(res, date):
                                 outrow[field_name] = res.strftime("%Y-%m-%d")
                         if test == 'yes':
-                            if len(val)>0:
-                                if val.lower() in ['y','yes','ja','true','sand']:
+                            if len(val) > 0:
+                                if val.lower() in ['y', 'yes', 'ja', 'true', 'sand', '1']:
                                     outrow[field_name] = 1
-                                elif val.lower() in ['n','no','nej','false','falsk']:
+                                elif val.lower() in ['n', 'no', 'nej', 'false', 'falsk', '0']:
                                     outrow[field_name] = 0
                                 else:
                                     log_field_error(field_name, rows_read, "Invalid yes/no value: {}".format(val)
                                                     , errfilewriter)
                         if test.startswith('vals'):
-                            allowed_vals = test.split(':')[1].split('_')
+                            test_params = test.split(':')
+                            allowed_vals = test_params[1].split('_')
                             if len(val) > 0:
                                 if val in allowed_vals:
                                     outrow[field_name] = val
                                 else:
                                     log_field_error(field_name, rows_read, "Invalid value: {}, expected one of {}"
                                                     .format(val, allowed_vals), errfilewriter)
+                            else:
+                                if len(test_params) == 3:  # there exists a default value
+                                    outrow[field_name] = test_params[2]
+
+                        if test.startswith('dim'):
+                            dim_name = test.split(':')[1]
+                            keys = static_dims[dim_name]
+                            if len(val) > 0:
+                                if not val in keys:
+                                    log_field_error(field_name, rows_read, "Invalid value: {}, expected corresponding"
+                                                                           "dimension key in {}"
+                                                    .format(val, dim_name), errfilewriter)
+                                else:
+                                    outrow[field_name] = val
+
+                        if test == 'age':
+                            if len(val) > 0:
+                                try:
+                                    int_val = int(val)
+                                    if int_val >= 0 and int_val < 120:
+                                        outrow[field_name] = val
+                                    else:
+                                        log_field_error(field_name, rows_read,
+                                                        "Invalid numeric value: {}, expected between 0 and 120"
+                                                        .format(val), errfilewriter)
+                                except Exception as e:
+                                    log_field_error(field_name, rows_read, "Non numeric value: {}"
+                                                    .format(e), errfilewriter)
+
+                        if test == 'str':  # just pass through
+                            outrow[field_name] = val
 
             # TODO number of fields in row
             # TODO Common sense checks
