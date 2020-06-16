@@ -26,8 +26,9 @@ TABLES = {'Persons': ("CREATE TABLE `Persons` ("
                              "administrative_center VARCHAR(40), area FLOAT, population INTEGER COMMENT '(2012-01-01)', "
                              "region CHAR(5))", "municipalities.tsv", ['code','name','administrative_center',
                                                                        'area','population','region']),
-          'AgeGroups': ("CREATE TABLE AgeGroups (age_group VARCHAR(5) PRIMARY KEY, meta_group VARCHAR(7))",
-                        "age_groups.tsv", ['age_group', 'meta_group'])}
+          'AgeGroups': ("CREATE TABLE AgeGroups (age_group VARCHAR(5) PRIMARY KEY, meta_group VARCHAR(8))",
+                        "age_groups.tsv", ['age_group', 'meta_group']),
+          'NUTS3_Regions': ("CREATE TABLE NUTS3_Regions(code CHAR(5) PRIMARY KEY, `name` VARCHAR(20))", "nuts3_regions.tsv", ['code', 'name'])}
 
 
 def get_connection():
