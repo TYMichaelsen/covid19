@@ -19,7 +19,7 @@ TABLES = {'Persons': ("CREATE TABLE `Persons` ("
                       ") ENGINE=InnoDB", '',
                       ['ssi_id', 'age', 'age_group', 'sex', 'COVID19_Status', 'COVID19_EndDate']),
           'Countries': (
-          "CREATE TABLE `Countries` (`country` varchar(25) PRIMARY KEY, population INTEGER COMMENT '(2020)',"
+          "CREATE TABLE `Countries` (`country` varchar(35) PRIMARY KEY, population INTEGER COMMENT '(2020)',"
           " `land_area` INTEGER COMMENT '(Km²)', `density` INTEGER COMMENT '(P/Km²)')",
           'countries.tsv', ['country', 'population', 'land_area', 'density'])}
 
@@ -104,7 +104,7 @@ def add_data(cnxn, filepath):
         field_list_str = ','.join(field_list)
         # noinspection PyUnusedLocal
         place_holders = ','.join(['%s' for f in field_list])
-        insert_string = ("INSERT INTO {} ({}) VALUES ({}".format(table_name, field_list_str, place_holders))
+        insert_string = ("INSERT INTO {} ({}) VALUES ({})".format(table_name, field_list_str, place_holders))
         with open(os.path.join(DIM_PATH, dim_filepath)) as tsvfile:
             reader = csv.DictReader(tsvfile, delimiter='\t')
             for row in reader:
@@ -113,7 +113,7 @@ def add_data(cnxn, filepath):
                     cursor.execute(insert_string, data)
                 except mysql.connector.Error as err:
                     print(err)
-                    print("Failed data: {}".format(data))
+                    print("Failed data: {} for insert statement: {}".format(data, insert_string))
     # Persons
     add_person = ("INSERT INTO Persons "
                   "(ssi_id, age, age_group, sex, COVID19_Status, COVID19_EndDate) "
