@@ -97,7 +97,7 @@ def add_data(cnxn, filepath):
     cursor = cnxn.cursor()
 
     # Dimensions
-    for table_name, definition in TABLES:
+    for table_name, definition in TABLES.items():
         if table_name == 'Persons':
             continue
         create_string, dim_filepath, field_list = definition
