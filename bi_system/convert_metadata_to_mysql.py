@@ -32,12 +32,14 @@ TABLES = {'Persons': ("CREATE TABLE `Persons` ("
           'NUTS3_Regions': ("CREATE TABLE NUTS3_Regions(code CHAR(5) PRIMARY KEY, `name` VARCHAR(20))", "nuts3_regions.tsv", ['code', 'name']),
           'Parishes': ("CREATE TABLE Parishes(code INTEGER PRIMARY KEY, `name` VARCHAR(20))", "parish.tsv", ['code', 'name'])}
 
+BOOL_FIELDS = ['Diabet', 'Neuro', 'Cancer', 'Adipos', 'Nyre', 'Haem_c', 'Card_dis', 'Resp_dis', 'Immu_dis', 'Other_risk']
 
 def get_connection():
     try:
         host = input("Please enter the mysql database server IP (defaults to localhost): ")
         host = 'localhost' if len(host.strip(' ')) == 0 else host
-        password = input("Please enter the mysql user's database password: ")
+        password = input("Please enter the mysql user's database pass"
+                         "word: ")
         cnxn = mysql.connector.connect(user='covid19', password=password,
                                        host=host,
                                        database=DB_NAME)
@@ -126,9 +128,11 @@ def add_data(cnxn, filepath):
         print("Finished loading {}".format(table_name))
 
     # Persons
+    bool_field_names = ','.join(BOOL_FIELDS)
+    bf_ss = ', '.join(['%s' for f in BOOL_FIELDS])
     add_person = ("INSERT INTO Persons "
-                  "(ssi_id, age, age_group, sex, COVID19_Status, COVID19_EndDate) "
-                  "VALUES (%s, %s, %s, %s, %s, %s)")
+                  "(ssi_id, age, age_group, sex, COVID19_Status, COVID19_EndDate, {}) "
+                  "VALUES (%s, %s, %s, %s, %s, %s, {})".format(bool_field_names, bf_ss))
 
     with open(filepath) as csvfile:
         reader = csv.DictReader(csvfile)
@@ -150,7 +154,12 @@ def add_data(cnxn, filepath):
                 print("Failed data: {} year {} month {} day {} ".format(enddate_arr, int(enddate_arr[0]),
                                                                         int(enddate_arr[1]), int(enddate_arr[2])))
                 enddate = None
-            data_person = (row['ssi_id'], age, ag, sex, cv_stat, enddate)
+
+            data_person = [row['ssi_id'], age, ag, sex, cv_stat, enddate]
+            boolean_field_data = [int(row[f]) if len(row[f])>0 else None for f in BOOL_FIELDS]
+            data_person.extend(boolean_field_data)
+            data_person = tuple(data_person)
+
             # COVID19_EndDate=row['COVID19_EndDate'], isPregnant=(row['Pregnancy'] == '1'), sequenced=(row['sequenced'] == 'Yes'))
             try:
                 cursor.execute(add_person, data_person)
