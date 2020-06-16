@@ -11,7 +11,7 @@ FIELD_TESTS = dict(SampleDate=['date'], sequenced=['yes'], Sex=['vals:F_M'], Tra
                    Doctor=['yes'], Nurse=['yes'], PlaceOfInfection_EN=['dim:countries.tsv'], ReportAge=['age'],
                    ReportAgeGrp=['dim:age_groups.tsv'], COVID19_Status=['vals:0_1_2:0'], COVID19_EndDate=['date'],
                    lineage=['str'], lineages_version=['date'], ParishCode=['dim:parish.tsv'],
-                   MunicipalityCode=['dim:municipalities.tsv'], NUTS3Code=['dim:nuts3_regions.csv'], Occupation=['str'],
+                   MunicipalityCode=['dim:municipalities.tsv'], NUTS3Code=['dim:nuts3_regions.tsv'], Occupation=['str'],
                    CountryOfTravel=['dim:countries.tsv'], SymptomsStartDate=['date'], CodR_DateOfDeath=['date'],
                    CodR_Death60Days=['yes'], CPR_Death60Days=['yes'], CPR_DateOfDeath=['date'],
                    DateOfDeath_final=['date'])
