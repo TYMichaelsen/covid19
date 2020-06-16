@@ -182,7 +182,7 @@ def check_errors(datafile, outfile, errfilewriter):
                                         if val == 'okt-19' and dim_name == 'age_groups':
                                             outrow[field_name] = '0-9'  # quick fix
                                         else:
-                                            log_field_error(field_name, rows_read, "Invalid value: {}, expected corresponding"
+                                            log_field_error(field_name, rows_read, "Invalid value: {}, expected corresponding "
                                                                            "dimension key in {}"
                                                     .format(val, dim_name), errfilewriter)
                                 else:
