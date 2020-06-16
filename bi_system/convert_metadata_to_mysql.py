@@ -21,7 +21,11 @@ TABLES = {'Persons': ("CREATE TABLE `Persons` ("
           'Countries': (
           "CREATE TABLE `Countries` (`country` varchar(35) PRIMARY KEY, population INTEGER COMMENT '(2020)',"
           " `land_area` INTEGER COMMENT '(Km²)', `density` INTEGER COMMENT '(P/Km²)')",
-          'countries.tsv', ['country', 'population', 'land_area', 'density'])}
+          'countries.tsv', ['country', 'population', 'land_area', 'density']),
+          'Municipalities': ("CREATE TABLE Municipalities (code INTEGER PRIMARY KEY, name VARCHAR (35), "
+                             "administrative_center VARCHAR(20), area FLOAT, population INTEGER COMMENT '(2012-01-01)', "
+                             "region CHAR(5))", "municipalities.tsv", ['code','name','administrative_center',
+                                                                       'area','population','region'])}
 
 
 def get_connection():
