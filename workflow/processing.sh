@@ -271,24 +271,3 @@ awk -v THR=$MAXN -v LEN=$MINLENGTH -v outdir=$OUTDIR '!/^>/ { next } { getline s
 
 echo "$(wc -l $OUTDIR/results/filtered.txt | sed 's/ .*//') genomes failed QC, see $OUTDIR/results/filtered.txt"
 
-### Remove human reads.########################################################
-#echo "Output .fastq file with mapped reads for each genome"
-
-# List all available .bam files.
-#grep ">" $OUTDIR/results/consensus.fasta | sed "s|^>|$OUTDIR\/articminion\/|" | sed 's/$/.sorted.bam/'> $OUTDIR/TMPDIR/bamfiles
-
-# for each mapping, run sanitize-me.
-#awk -v outdir=$OUTDIR -v human=$HUMANREF '{print $1":"outdir":"human}' $OUTDIR/TMPDIR/bamfiles | parallel -j $THREADS --colsep ':' --bar \
-#'
-#if [ -z {1} ]; then
-#  >&2 echo "warning: .bam file {1} was not in the artic output." 
-#else
-#  SAMPLE=$(basename {1} | sed 's/.sorted.bam//')
-
-  # Extract mapped reads and remove human reads with the CDC protocol: https://github.com/CDCgov/SanitizeMe
-#  samtools fastq --threads 1 -F 4 {1} 2> /dev/null |\
-#  minimap2 -ax map-ont {3} - -t 1 2> /dev/null |\
-#  samtools view --threads 1 -u -f 4 - 2> /dev/null |\
-#  samtools bam2fq --threads 1 - 2> /dev/null |\
-#  gzip -c - > {2}/mapped_fastq/$SAMPLE.fastq.gz 2> /dev/null
-#fi' 
