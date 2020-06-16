@@ -15,6 +15,7 @@ TABLES = {'Persons': ("CREATE TABLE `Persons` ("
                       "  `sex` enum('M','F'),"
                       "  `COVID19_Status` enum('0','1','2') NOT NULL,"
                       "  `COVID19_EndDate` date,"
+                      "  `Parishcode` INTEGER"
                       "  `Diabet` TINYINT COMMENT 'Diabetes',Neuro TINYINT COMMENT 'Neurological deficiency',Cancer TINYINT COMMENT 'Cancer',Adipos TINYINT COMMENT 'Obese',Nyre TINYINT COMMENT 'Renal disease',Haem_c TINYINT COMMENT 'Hematological disease',Card_dis TINYINT COMMENT 'Cardio-vascular disease',Resp_dis TINYINT COMMENT 'Respiratory',Immu_dis TINYINT COMMENT 'Immunological',Other_risk TINYINT COMMENT 'Other risk factor',"
                       "  PRIMARY KEY (`ssi_id`)"
                       ") ENGINE=InnoDB", '',
@@ -131,8 +132,8 @@ def add_data(cnxn, filepath):
     bool_field_names = ','.join(BOOL_FIELDS)
     bf_ss = ', '.join(['%s' for f in BOOL_FIELDS])
     add_person = ("INSERT INTO Persons "
-                  "(ssi_id, age, age_group, sex, COVID19_Status, COVID19_EndDate, {}) "
-                  "VALUES (%s, %s, %s, %s, %s, %s, {})".format(bool_field_names, bf_ss))
+                  "(ssi_id, age, age_group, sex, COVID19_Status, COVID19_EndDate, Parishcode, {}) "
+                  "VALUES (%s, %s, %s, %s, %s, %s, %s, {})".format(bool_field_names, bf_ss))
 
     with open(filepath) as csvfile:
         reader = csv.DictReader(csvfile)
@@ -155,7 +156,8 @@ def add_data(cnxn, filepath):
                                                                         int(enddate_arr[1]), int(enddate_arr[2])))
                 enddate = None
 
-            data_person = [row['ssi_id'], age, ag, sex, cv_stat, enddate]
+            pc = int(row['Parishcode']) if len (row['Parishcode']>0) else None
+            data_person = [row['ssi_id'], age, ag, sex, cv_stat, enddate, pc]
             boolean_field_data = [int(row[f]) if len(row[f])>0 else None for f in BOOL_FIELDS]
             data_person.extend(boolean_field_data)
             data_person = tuple(data_person)
