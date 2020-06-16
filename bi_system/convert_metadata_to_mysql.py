@@ -25,7 +25,9 @@ TABLES = {'Persons': ("CREATE TABLE `Persons` ("
           'Municipalities': ("CREATE TABLE Municipalities (code INTEGER PRIMARY KEY, name VARCHAR (35), "
                              "administrative_center VARCHAR(40), area FLOAT, population INTEGER COMMENT '(2012-01-01)', "
                              "region CHAR(5))", "municipalities.tsv", ['code','name','administrative_center',
-                                                                       'area','population','region'])}
+                                                                       'area','population','region']),
+          'AgeGroups': ("CREATE TABLE AgeGroups (age_group VARCHAR(5) PRIMARY KEY, meta_group VARCHAR(7))",
+                        "age_groups.tsv", ['age_group', 'meta_group'])}
 
 
 def get_connection():
@@ -118,6 +120,8 @@ def add_data(cnxn, filepath):
                 except mysql.connector.Error as err:
                     print(err)
                     print("Failed data: {} for insert statement: {}".format(data, insert_string))
+        print("Finished loading {}".format(table_name))
+
     # Persons
     add_person = ("INSERT INTO Persons "
                   "(ssi_id, age, age_group, sex, COVID19_Status, COVID19_EndDate) "
@@ -155,6 +159,11 @@ def add_data(cnxn, filepath):
     print("Loaded all data from {}".format(filepath))
 
 
+def create_fk():
+    # TODO
+    print("Created foreign keys")
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='convert a metadata file to SQL relational format and inject to the MariaDB')
@@ -171,5 +180,5 @@ if __name__ == '__main__':
 
     clear_data(cnx)
     add_data(cnx, file)
-
+    create_fk()
     cnx.close()
