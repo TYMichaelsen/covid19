@@ -7,15 +7,21 @@ from mysql.connector import errorcode
 import argparse
 
 DB_NAME = 'covid19'
-TABLES = {'Persons': "CREATE TABLE `Persons` ("
-                     "  `ssi_id` varchar(16) NOT NULL,"
-                     "  `age` int(11),"
-                     "  `age_group` varchar(16),"
-                     "  `sex` enum('M','F'),"
-                     "  `COVID19_Status` enum('0','1','2') NOT NULL,"
-                     "  `COVID19_EndDate` date,"
-                     "  PRIMARY KEY (`ssi_id`)"
-                     ") ENGINE=InnoDB"}
+DIM_PATH = 'stable_dims'
+TABLES = {'Persons': ("CREATE TABLE `Persons` ("
+                      "  `ssi_id` varchar(16) NOT NULL,"
+                      "  `age` int(11),"
+                      "  `age_group` varchar(16),"
+                      "  `sex` enum('M','F'),"
+                      "  `COVID19_Status` enum('0','1','2') NOT NULL,"
+                      "  `COVID19_EndDate` date,"
+                      "  PRIMARY KEY (`ssi_id`)"
+                      ") ENGINE=InnoDB", '',
+                      ['ssi_id', 'age', 'age_group', 'sex', 'COVID19_Status', 'COVID19_EndDate']),
+          'Countries': (
+          "CREATE TABLE `Countries` (`country` varchar(25) PRIMARY KEY, population INTEGER COMMENT '(2020)',"
+          " `land_area` INTEGER COMMENT '(Km²)', `density` INTEGER COMMENT '(P/Km²)')",
+          'countries.tsv', ['country', 'population', 'land_area', 'density'])}
 
 
 def get_connection():
@@ -51,12 +57,13 @@ def check_file(filepath):
     else:
         return filepath
 
+
 def create_schema(cnxn):
     cursor = cnxn.cursor()
     try:
         cursor.execute("USE {}".format(DB_NAME))
         for table_name in TABLES:
-            table_description = TABLES[table_name]
+            table_description = TABLES[table_name][0]
             try:
                 # TODO: drop them all like this: SELECT concat('DROP TABLE IF EXISTS `', table_name, '`;')
                 # FROM information_schema.tables
@@ -88,6 +95,26 @@ def clear_data(cnxn):
 
 def add_data(cnxn, filepath):
     cursor = cnxn.cursor()
+
+    # Dimensions
+    for table_name, definition in TABLES:
+        if table_name == 'Persons':
+            continue
+        create_string, dim_filepath, field_list = definition
+        field_list_str = ','.join(field_list)
+        # noinspection PyUnusedLocal
+        place_holders = ','.join(['%s' for f in field_list])
+        insert_string = ("INSERT INTO {} ({}) VALUES ({}".format(table_name, field_list_str, place_holders))
+        with open(os.path.join(DIM_PATH, dim_filepath)) as tsvfile:
+            reader = csv.DictReader(tsvfile, delimiter='\t')
+            for row in reader:
+                data = [row[col] for col in field_list]
+                try:
+                    cursor.execute(insert_string, data)
+                except mysql.connector.Error as err:
+                    print(err)
+                    print("Failed data: {}".format(data))
+    # Persons
     add_person = ("INSERT INTO Persons "
                   "(ssi_id, age, age_group, sex, COVID19_Status, COVID19_EndDate) "
                   "VALUES (%s, %s, %s, %s, %s, %s)")
@@ -109,7 +136,8 @@ def add_data(cnxn, filepath):
                     enddate = None
             except ValueError as err:
                 print(err)
-                print("Failed data: {} year {} month {} day {} ".format(enddate_arr, int(enddate_arr[0]), int(enddate_arr[1]), int(enddate_arr[2])))
+                print("Failed data: {} year {} month {} day {} ".format(enddate_arr, int(enddate_arr[0]),
+                                                                        int(enddate_arr[1]), int(enddate_arr[2])))
                 enddate = None
             data_person = (row['ssi_id'], age, ag, sex, cv_stat, enddate)
             # COVID19_EndDate=row['COVID19_EndDate'], isPregnant=(row['Pregnancy'] == '1'), sequenced=(row['sequenced'] == 'Yes'))
@@ -118,7 +146,6 @@ def add_data(cnxn, filepath):
             except mysql.connector.Error as err:
                 print(err)
                 print("Failed data: {}".format(data_person))
-
 
     cnxn.commit()
     print("Loaded all data from {}".format(filepath))
