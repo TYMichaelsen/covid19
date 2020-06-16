@@ -15,7 +15,7 @@ TABLES = {'Persons': ("CREATE TABLE `Persons` ("
                       "  `sex` enum('M','F'),"
                       "  `COVID19_Status` enum('0','1','2') NOT NULL,"
                       "  `COVID19_EndDate` date,"
-                      "  Diabet TINYINT COMMENT 'Diabetes',Neuro TINYINT COMMENT 'Neurological deficiency',Cancer TINYINT COMMENT 'Cancer',Adipos TINYINT COMMENT 'Obese',Nyre TINYINT COMMENT 'Renal disease',Haem_c TINYINT COMMENT 'Hematological disease',Card_dis TINYINT COMMENT 'Cardio-vascular disease',Resp_dis TINYINT COMMENT 'Respiratory',Immu_dis TINYINT COMMENT 'Immunological',Other_risk TINYINT COMMENT 'Other risk factor'"
+                      "  Diabet TINYINT COMMENT 'Diabetes',Neuro TINYINT COMMENT 'Neurological deficiency',Cancer TINYINT COMMENT 'Cancer',Adipos TINYINT COMMENT 'Obese',Nyre TINYINT COMMENT 'Renal disease',Haem_c TINYINT COMMENT 'Hematological disease',Card_dis TINYINT COMMENT 'Cardio-vascular disease',Resp_dis TINYINT COMMENT 'Respiratory',Immu_dis TINYINT COMMENT 'Immunological',Other_risk TINYINT COMMENT 'Other risk factor,'"
                       "  PRIMARY KEY (`ssi_id`)"
                       ") ENGINE=InnoDB", '',
                       ['ssi_id', 'age', 'age_group', 'sex', 'COVID19_Status', 'COVID19_EndDate']),
