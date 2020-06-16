@@ -15,6 +15,7 @@ TABLES = {'Persons': ("CREATE TABLE `Persons` ("
                       "  `sex` enum('M','F'),"
                       "  `COVID19_Status` enum('0','1','2') NOT NULL,"
                       "  `COVID19_EndDate` date,"
+                      "  Diabet TINYINT COMMENT 'Diabetes',Neuro TINYINT COMMENT 'Neurological deficiency',Cancer TINYINT COMMENT 'Cancer',Adipos TINYINT COMMENT 'Obese',Nyre TINYINT COMMENT 'Renal disease',Haem_c TINYINT COMMENT 'Hematological disease',Card_dis TINYINT COMMENT 'Cardio-vascular disease',Resp_dis TINYINT COMMENT 'Respiratory',Immu_dis TINYINT COMMENT 'Immunological',Other_risk TINYINT COMMENT 'Other risk factor'"
                       "  PRIMARY KEY (`ssi_id`)"
                       ") ENGINE=InnoDB", '',
                       ['ssi_id', 'age', 'age_group', 'sex', 'COVID19_Status', 'COVID19_EndDate']),
@@ -28,7 +29,8 @@ TABLES = {'Persons': ("CREATE TABLE `Persons` ("
                                                                        'area','population','region']),
           'AgeGroups': ("CREATE TABLE AgeGroups (age_group VARCHAR(5) PRIMARY KEY, meta_group VARCHAR(8))",
                         "age_groups.tsv", ['age_group', 'meta_group']),
-          'NUTS3_Regions': ("CREATE TABLE NUTS3_Regions(code CHAR(5) PRIMARY KEY, `name` VARCHAR(20))", "nuts3_regions.tsv", ['code', 'name'])}
+          'NUTS3_Regions': ("CREATE TABLE NUTS3_Regions(code CHAR(5) PRIMARY KEY, `name` VARCHAR(20))", "nuts3_regions.tsv", ['code', 'name']),
+          'Parishes': ("CREATE TABLE Parishes(code INTEGER PRIMARY KEY, `name` VARCHAR(20))", "nuts3_regions.tsv", ['code', 'name'])}
 
 
 def get_connection():
@@ -129,7 +131,7 @@ def add_data(cnxn, filepath):
                   "VALUES (%s, %s, %s, %s, %s, %s)")
 
     with open(filepath) as csvfile:
-        reader = csv.DictReader(csvfile, delimiter='\t')
+        reader = csv.DictReader(csvfile)
         for row in reader:
             cv_stat = row['COVID19_Status'] if len(row['COVID19_Status']) > 0 else '0'  # error correction
             age = None if row['ReportAge'] == '' else int(row['ReportAge'])
