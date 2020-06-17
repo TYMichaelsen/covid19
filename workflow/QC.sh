@@ -47,7 +47,7 @@ mkdir -p $INPUT_DIR/QC
 mkdir -p $INPUT_DIR/QC/aligntree
 
 # Logging
-LOG_NAME="$INPUT_DIR/QC/QC_log_$(date +"%Y-%m-%d-%T").txt"
+LOG_NAME="$INPUT_DIR/QC/QC_log_$(date +"%Y-%m-%d_%H-%M").txt"
 echo "QC log" >> $LOG_NAME
 #echo "AAU COVID-19 revision - $(git -C $AAU_COVID19_PATH rev-parse --short HEAD)" >> $LOG_NAME
 echo "Command: $0 $*" >> $LOG_NAME
