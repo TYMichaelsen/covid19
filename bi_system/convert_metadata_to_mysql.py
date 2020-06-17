@@ -9,6 +9,7 @@ import argparse
 DB_NAME = 'covid19'
 DIM_PATH = 'stable_dims'
 TABLES = {'Persons': ("CREATE TABLE `Persons` ("
+                      "  `SampleDate` varchar(16) NOT NULL,"
                       "  `ssi_id` varchar(16) NOT NULL,"
                       "  `age` int(11),"
                       "  `age_group` varchar(16),"
@@ -20,7 +21,7 @@ TABLES = {'Persons': ("CREATE TABLE `Persons` ("
                       "  `Diabet` TINYINT COMMENT 'Diabetes',Neuro TINYINT COMMENT 'Neurological deficiency',Cancer TINYINT COMMENT 'Cancer',Adipos TINYINT COMMENT 'Obese',Nyre TINYINT COMMENT 'Renal disease',Haem_c TINYINT COMMENT 'Hematological disease',Card_dis TINYINT COMMENT 'Cardio-vascular disease',Resp_dis TINYINT COMMENT 'Respiratory',Immu_dis TINYINT COMMENT 'Immunological',Other_risk TINYINT COMMENT 'Other risk factor',"
                       "  PRIMARY KEY (`ssi_id`)"
                       ") ENGINE=InnoDB", '',
-                      ['ssi_id', 'age', 'age_group', 'sex', 'COVID19_Status', 'COVID19_EndDate', 'Parishcode', 'lineage']),
+                      ['ssi_id', 'SampleDate', 'age', 'age_group', 'sex', 'COVID19_Status', 'COVID19_EndDate', 'Parishcode', 'lineage']),
           'Countries': (
           "CREATE TABLE `Countries` (`country` varchar(35) PRIMARY KEY, population INTEGER COMMENT '(2020)',"
           " `land_area` INTEGER COMMENT '(Km²)', `density` INTEGER COMMENT '(P/Km²)')",
@@ -133,7 +134,7 @@ def add_data(cnxn, filepath):
     bool_field_names = ','.join(BOOL_FIELDS)
     bf_ss = ', '.join(['%s' for f in BOOL_FIELDS])
     add_person = ("INSERT INTO Persons "
-                  "(ssi_id, age, age_group, sex, COVID19_Status, COVID19_EndDate, Parishcode, lineage, {}) "
+                  "(ssi_id, SampleDate, age, age_group, sex, COVID19_Status, COVID19_EndDate, Parishcode, lineage, {}) "
                   "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, {})".format(bool_field_names, bf_ss))
 
     with open(filepath) as csvfile:
@@ -144,22 +145,10 @@ def add_data(cnxn, filepath):
             age = None if row['ReportAge'] == '' else int(row['ReportAge'])
             ag = row['ReportAgeGrp']
             sex = row['Sex'] if row['Sex'] in ['M', 'F'] else None
-            enddate_arr = row['COVID19_EndDate'].split('-')  # e.g. '2020-03-22'.split('-')
-            try:
-                if len(enddate_arr) == 3 and len(enddate_arr[0]) == 4:
-                    enddate = date(year=int(enddate_arr[0]), month=int(enddate_arr[1]), day=int(enddate_arr[2]))
-                elif len(enddate_arr) == 3 and len(enddate_arr[2]) == 4:
-                    enddate = date(year=int(enddate_arr[2]), month=int(enddate_arr[1]), day=int(enddate_arr[0]))
-                else:
-                    enddate = None
-            except ValueError as err:
-                print(err)
-                print("Failed data: {} year {} month {} day {} ".format(enddate_arr, int(enddate_arr[0]),
-                                                                        int(enddate_arr[1]), int(enddate_arr[2])))
-                enddate = None
-
+            enddate = getDate(row, 'COVID19_EndDate')
+            sample_date = getDate(row, 'SampleDate')
             pc = int(row['Parishcode']) if len (row['Parishcode'])>0 else None
-            data_person = [row['ssi_id'], age, ag, sex, cv_stat, enddate, pc, row['lineage']]
+            data_person = [row['ssi_id'], sample_date, age, ag, sex, cv_stat, enddate, pc, row['lineage']]
             boolean_field_data = [int(row[f]) if len(row[f])>0 else None for f in BOOL_FIELDS]
             data_person.extend(boolean_field_data)
             data_person = tuple(data_person)
@@ -173,6 +162,23 @@ def add_data(cnxn, filepath):
 
     cnxn.commit()
     print("Loaded all data from {}".format(filepath))
+
+
+def getDate(row, field_name):
+    enddate_arr = row[field_name].split('-')  # e.g. '2020-03-22'.split('-')
+    try:
+        if len(enddate_arr) == 3 and len(enddate_arr[0]) == 4:
+            enddate = date(year=int(enddate_arr[0]), month=int(enddate_arr[1]), day=int(enddate_arr[2]))
+        elif len(enddate_arr) == 3 and len(enddate_arr[2]) == 4:
+            enddate = date(year=int(enddate_arr[2]), month=int(enddate_arr[1]), day=int(enddate_arr[0]))
+        else:
+            enddate = None
+    except ValueError as err:
+        print(err)
+        print("Failed data: {} year {} month {} day {} ".format(enddate_arr, int(enddate_arr[0]),
+                                                                int(enddate_arr[1]), int(enddate_arr[2])))
+        enddate = None
+    return enddate
 
 
 def create_fk():
