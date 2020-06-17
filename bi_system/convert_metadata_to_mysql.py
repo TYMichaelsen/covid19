@@ -10,7 +10,7 @@ DB_NAME = 'covid19'
 DIM_PATH = 'stable_dims'
 TABLES = {'Persons': ("CREATE TABLE `Persons` ("
                       "  `ssi_id` varchar(16) NOT NULL,"
-                      "  `SampleDate` varchar(16) NOT NULL,"
+                      "  `SampleDate` varchar(16),"
                       "  `age` int(11),"
                       "  `age_group` varchar(16),"
                       "  `sex` enum('M','F'),"
