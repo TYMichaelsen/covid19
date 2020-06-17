@@ -140,6 +140,7 @@ def add_data(cnxn, filepath):
         reader = csv.DictReader(csvfile)
         for row in reader:
             cv_stat = row['COVID19_Status'] if len(row['COVID19_Status']) > 0 else '0'  # error correction
+        #    print("stat: {} {}".format(row['COVID19_Status'], cv_stat))
             age = None if row['ReportAge'] == '' else int(row['ReportAge'])
             ag = row['ReportAgeGrp']
             sex = row['Sex'] if row['Sex'] in ['M', 'F'] else None
