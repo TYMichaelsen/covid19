@@ -132,8 +132,8 @@ def add_data(cnxn, filepath):
     bool_field_names = ','.join(BOOL_FIELDS)
     bf_ss = ', '.join(['%s' for f in BOOL_FIELDS])
     add_person = ("INSERT INTO Persons "
-                  "(ssi_id, age, age_group, sex, COVID19_Status, COVID19_EndDate, Parishcode, {}) "
-                  "VALUES (%s, %s, %s, %s, %s, %s, %s, {})".format(bool_field_names, bf_ss))
+                  "(ssi_id, age, age_group, sex, COVID19_Status, COVID19_EndDate, Parishcode, lineage, {}) "
+                  "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, {})".format(bool_field_names, bf_ss))
 
     with open(filepath) as csvfile:
         reader = csv.DictReader(csvfile)
@@ -157,7 +157,7 @@ def add_data(cnxn, filepath):
                 enddate = None
 
             pc = int(row['Parishcode']) if len (row['Parishcode'])>0 else None
-            data_person = [row['ssi_id'], age, ag, sex, cv_stat, enddate, pc]
+            data_person = [row['ssi_id'], age, ag, sex, cv_stat, enddate, pc, row['lineage']]
             boolean_field_data = [int(row[f]) if len(row[f])>0 else None for f in BOOL_FIELDS]
             data_person.extend(boolean_field_data)
             data_person = tuple(data_person)
