@@ -9,8 +9,8 @@ import argparse
 DB_NAME = 'covid19'
 DIM_PATH = 'stable_dims'
 TABLES = {'Persons': ("CREATE TABLE `Persons` ("
-                      "  `SampleDate` varchar(16) NOT NULL,"
                       "  `ssi_id` varchar(16) NOT NULL,"
+                      "  `SampleDate` varchar(16) NOT NULL,"
                       "  `age` int(11),"
                       "  `age_group` varchar(16),"
                       "  `sex` enum('M','F'),"
@@ -135,7 +135,7 @@ def add_data(cnxn, filepath):
     bf_ss = ', '.join(['%s' for f in BOOL_FIELDS])
     add_person = ("INSERT INTO Persons "
                   "(ssi_id, SampleDate, age, age_group, sex, COVID19_Status, COVID19_EndDate, Parishcode, lineage, {}) "
-                  "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, {})".format(bool_field_names, bf_ss))
+                  "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, {})".format(bool_field_names, bf_ss))
 
     with open(filepath) as csvfile:
         reader = csv.DictReader(csvfile)
