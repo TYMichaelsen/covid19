@@ -49,7 +49,7 @@ if [ -z ${THREADS+x} ]; then THREADS=50; fi;
 mkdir -p $OUTDIR
 AAU_COVID19_PATH="$(dirname "$(readlink -f "$0")")"
 # Logging
-LOG_NAME="$OUTDIR/processing_log_$(date +"%Y-%m-%d-%T").txt"
+LOG_NAME="$OUTDIR/processing_log_$(date +"%Y-%m-%d_%H-%M").txt"
 echo "processing log" >> $LOG_NAME
 #echo "AAU COVID-19 revision - $(git -C $AAU_COVID19_PATH rev-parse --short HEAD)" >> $LOG_NAME ##Not working in singularity
 echo "Command: $0 $*" >> $LOG_NAME
