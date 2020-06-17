@@ -38,8 +38,8 @@ library("ape")
 ```{r,eval=F}
 # For build mode.
 batch     <- "CJ060"
-labmeta   <- "/srv/rbd/covid19/processing/CJ060/sample_sheet.csv"
-input_dir <- "/srv/rbd/covid19/processing/CJ060"
+labmeta   <- "/srv/rbd/covid19/processing/CJ060_test2/sample_sheet.csv"
+input_dir <- "/srv/rbd/covid19/processing/CJ060_test2"
 ref       <- "/srv/rbd/covid19/git/covid19/workflow/dependencies/ref/MN908947.3.fasta"
 ```
 
@@ -327,11 +327,23 @@ filter(asnv_sub, snv_type %in% c("I","D")) %>%
 <!--   kable_styling(bootstrap_options = c("striped", "hover"), full_width = F) -->
 <!-- ``` -->
 
+## Coverage for specific samples
+
+```{r}
+meta_sub <- filter(d,sample_type == "sample" & genome_qc == "Fail" & coverage > 1000)
+LIB-CJ060-135
+```
+
 ## Coverage (HQ)
 
 ```{r}
 meta_sub <- filter(d,sample_type == "sample" & genome_qc == "HQ") %>%
   head(n = 10) 
+
+#meta_sub <- filter(d,sample_type == "sample" & genome_qc == "Fail" & coverage > 5) %>%
+  #arrange(-coverage) %>%
+  #head(n = 10) 
+
 if (nrow(meta_sub) > 0){
   # Subset.
   cov_sub  <- filter(cov, library_id %in% meta_sub$library_id)
@@ -347,7 +359,7 @@ if (nrow(meta_sub) > 0){
     theme(legend.position = "none") +
    geom_text(data = meta_sub, aes(x = 15000, y = 100000, label = paste0("Library conc.: ", round(library_conc, 0), " ng/ul, Coverage: ", coverage)), color = "black", size = 3) +
     #geom_text(data = asnv_sub, aes(x = position, y = 100, label = paste0(snv_type, "\n", alt_frac, "\n", het)), color = "red", size = 2) +
-    geom_text(data = snv_sub, aes(x = position, y = 1, label = alt), color = "black", size = 2)
+    if (nrow(snv_sub) != 0) geom_text(data = snv_sub, aes(x = position, y = 1, label = alt), color = "black", size = 2)
 }
 
 ```
