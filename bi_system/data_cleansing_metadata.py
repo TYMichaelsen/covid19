@@ -173,8 +173,8 @@ def check_errors(datafile, outfile, errfilewriter):
 
                         if test.startswith('dim'):
                             dim_name = test.split(':')[1].split('.')[0]
-                            if field_name == 'Parishcode':
-                                print('looking up {} in {}'.format(val, dim_name))
+                            # if field_name == 'Parishcode':
+                            #     print('looking up {} in {}'.format(val, dim_name))
 
                             keys = static_dims[dim_name]
                             if len(val) > 0:
@@ -190,8 +190,8 @@ def check_errors(datafile, outfile, errfilewriter):
                                                             .format(val, dim_name), errfilewriter)
                                 else:
                                     outrow[field_name] = val
-                                    if field_name == 'Parishcode':
-                                        print("{} to be written in {} ".format(outrow[field_name],field_name))
+                                    # if field_name == 'Parishcode':
+                                    #     print("{} to be written in {} ".format(outrow[field_name],field_name))
 
                         if test == 'age':
                             if len(val) > 0:
