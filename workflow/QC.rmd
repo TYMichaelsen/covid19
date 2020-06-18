@@ -27,6 +27,7 @@ options(scipen=999)
 
 # Load libraries.
 library("tidyverse")
+library("scales")
 library("magrittr")
 library("ggtree")
 library("knitr")
@@ -190,9 +191,12 @@ d <- left_join(libconc, cov_tot, by = "library_id") %>%
 # QC label.
 d <- d %>%
   mutate(genome_qc = ifelse(is.na(n_count),
-                       ifelse(coverage >= 5 ,"Fail_artic","Fail"),
+                       ifelse(coverage >= 5,
+                         "Fail_artic",
+                         "Fail"),
                        cut(n_count, breaks = c(-Inf,130,5000,Inf), labels = c("HQ","MQ","Fail")) %>% as.character())) %>%
-  mutate(genome_qc = factor(genome_qc,levels = c("HQ","MQ","Fail","Fail_artic"))) 
+  mutate(genome_qc = ifelse(coverage > 5 & genome_qc == "Fail","Dropout",genome_qc)) %>%
+  mutate(genome_qc = factor(genome_qc,levels = c("HQ","MQ","Fail","Dropout","Fail_artic"))) 
 ```
 
 # General overview
@@ -201,8 +205,9 @@ d <- d %>%
 
 - `HQ`: A genome with < 130 N's in total.
 - `MQ`: A genome with < 5000 N's in total.
-- `Fail`: Either 1) A genome with > 5000 N's in total or 2) less than 5x average coverage.
-- `Fail_artic`: The artic pipeline failed for some reason. 
+- `Fail`: A genome with either 1) >5000 N's in total or 2) <5x coverage.
+- `Dropout`: A genome with >5x coverage and >5000 N's.
+- `Fail_artic`: No genome generated with >5x coverage. The artic pipeline failed for some reason. 
 
 ```{r}
 tab <- d %>% 
@@ -213,23 +218,37 @@ tot <- tab %>% pull(!!batch) %>% sum() %>%
   data.frame("Total",.) %>% `colnames<-`(colnames(tab)) 
 
 rbind(tab,tot) %>%
-  mutate(genome_qc = factor(genome_qc,levels = c("HQ","MQ","Fail","Fail_artic","Total"))) %>%
+  mutate(genome_qc = factor(genome_qc,levels = c("HQ","MQ","Fail","Dropout","Fail_artic","Total"))) %>%
   arrange(genome_qc) %>%
   dplyr::rename(`Genome Quality` = genome_qc) %>%
   kable() %>%
   kable_styling(bootstrap_options = c("striped", "hover"), full_width = F) %>%
-  row_spec(5,bold=T)
+  row_spec(6,bold=T)
 ```
 
 ## Library concentrations vs. coverage
 
 ```{r}
+cols <- c("#52854C", "#E7B800", "#FC4E07","#999999","black") %>%
+  setNames(.,nm = c("HQ","MQ","Fail","Dropout","Fail_artic"))
+
 ggplot(data = d, aes(x=library_conc, y = coverage, color = genome_qc)) +
   geom_point() +
   labs(y      = "Average coverage",
        x      = "Library Concentration [ng/ul]",
        colour = "Genome Quality") +
-  scale_y_log10()
+  scale_y_log10() + 
+  scale_colour_manual(values = cols)
+```
+
+## Samples dropping out
+
+```{r}
+filter(d,genome_qc == "Dropout") %>%
+  select(library_id,library_conc,coverage) %>%
+  arrange(-coverage) %>%
+  kable() %>%
+  kable_styling(bootstrap_options = c("striped", "hover"), full_width = F)
 ```
 
 ## Samples failing the artic pipeline
@@ -237,6 +256,7 @@ ggplot(data = d, aes(x=library_conc, y = coverage, color = genome_qc)) +
 ```{r}
 filter(d,genome_qc == "Fail_artic") %>%
   select(library_id,library_conc) %>%
+  arrange(-library_conc) %>%
   kable() %>%
   kable_styling(bootstrap_options = c("striped", "hover"), full_width = F)
 ```
