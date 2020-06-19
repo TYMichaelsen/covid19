@@ -10,11 +10,16 @@ USAGE="$(basename "$0") [-h] [-d dir -r file]
 Arguments:
     -h  Show this help text.
     -b  What batch to do QC for.
+    -s  What scheme you are running. See Schemes below.
     -r  R script to run to generate QC report.
     -t  Number of threads.
 
-Output:
-    To come.
+Schemes:
+    aau_long_v3.1
+    aau_short_v3
+    v1
+    v2
+    v3
 "
 ### Terminal Arguments ---------------------------------------------------------
 
@@ -24,6 +29,7 @@ while getopts ':hi:b:r:t:' OPTION; do
     h) echo "$USAGE"; exit 1;;
     i) INPUT_DIR=$OPTARG;;
     b) BATCH=$OPTARG;;
+    s) SCHEME=$OPTARG;;
     r) RMD=$OPTARG;;
     t) THREADS=$OPTARG;;
     :) printf "missing argument for -$OPTARG\n" >&2; exit 1;;
@@ -35,6 +41,7 @@ done
 MISSING="is missing but required. Exiting."
 if [ -z ${INPUT_DIR+x} ]; then echo "-i $MISSING"; exit 1; fi;
 if [ -z ${BATCH+x} ]; then echo "-b $MISSING"; exit 1; fi;
+if [ -z ${SCHEME+x} ]; then echo "-s $MISSING"; exit 1; fi;
 if [ -z ${RMD+x} ]; then echo "-r $MISSING"; exit 1; fi;
 if [ -z ${THREADS+x} ]; then THREADS=50; fi;
 
@@ -130,6 +137,8 @@ fi
 
 # Run .rmd script.
 REF_PATH=$AAU_COVID19_PATH/dependencies/ref/MN908947.3.fasta
+SCHEME_PATH=$AAU_COVID19_PATH/dependencies/primer_schemes/nCoV-2019/$SCHEME
+
 Rscript \
   -e \
   "
@@ -141,6 +150,7 @@ Rscript \
       batch='$BATCH',
       labmeta='$labmeta',
       input_dir='$INPUT_DIR',
+      scheme_dir='$SCHEME_PATH',
       ref='$REF_PATH'
     )
   )
