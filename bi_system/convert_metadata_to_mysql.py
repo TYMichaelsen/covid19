@@ -9,33 +9,34 @@ import argparse
 DB_NAME = 'covid19'
 DIM_PATH = 'stable_dims'
 TABLES = {'Persons': ("CREATE TABLE `Persons` ("
-                      "  `ssi_id` varchar(16) NOT NULL,"
-                      "  `SampleDate` varchar(16),"
+                      "  `ssi_id` varchar(16) NOT NULL PRIMARY KEY,"
                       "  `age` int(11),"
                       "  `age_group` varchar(16),"
                       "  `sex` enum('M','F'),"
                       "  `COVID19_Status` enum('0','1','2') NOT NULL,"
-                      "  `COVID19_EndDate` date,"
                       "  `Parishcode` INTEGER,"
                       "  `lineage` VARCHAR(10),"
                       "  `Diabet` TINYINT COMMENT 'Diabetes',Neuro TINYINT COMMENT 'Neurological deficiency',Cancer TINYINT COMMENT 'Cancer',Adipos TINYINT COMMENT 'Obese',Nyre TINYINT COMMENT 'Renal disease',Haem_c TINYINT COMMENT 'Hematological disease',Card_dis TINYINT COMMENT 'Cardio-vascular disease',Resp_dis TINYINT COMMENT 'Respiratory',Immu_dis TINYINT COMMENT 'Immunological',Other_risk TINYINT COMMENT 'Other risk factor',"
-                      "  PRIMARY KEY (`ssi_id`)"
-                      ") ENGINE=InnoDB", '',
-                      ['ssi_id', 'SampleDate', 'age', 'age_group', 'sex', 'COVID19_Status', 'COVID19_EndDate', 'Parishcode', 'lineage']),
+                      , '',['ssi_id', 'age', 'age_group', 'sex', 'COVID19_Status','Parishcode', 'lineage']),
           'Countries': (
-          "CREATE TABLE `Countries` (`country` varchar(35) PRIMARY KEY, population INTEGER COMMENT '(2020)',"
-          " `land_area` INTEGER COMMENT '(Km²)', `density` INTEGER COMMENT '(P/Km²)')",
-          'countries.tsv', ['country', 'population', 'land_area', 'density']),
+              "CREATE TABLE `Countries` (`country` varchar(35) PRIMARY KEY, population INTEGER COMMENT '(2020)',"
+              " `land_area` INTEGER COMMENT '(Km²)', `density` INTEGER COMMENT '(P/Km²)')",
+              'countries.tsv', ['country', 'population', 'land_area', 'density']),
           'Municipalities': ("CREATE TABLE Municipalities (code INTEGER PRIMARY KEY, name VARCHAR (35), "
                              "administrative_center VARCHAR(40), area FLOAT, population INTEGER COMMENT '(2012-01-01)', "
-                             "region CHAR(5))", "municipalities.tsv", ['code','name','administrative_center',
-                                                                       'area','population','region']),
+                             "region CHAR(5))", "municipalities.tsv", ['code', 'name', 'administrative_center',
+                                                                       'area', 'population', 'region']),
           'AgeGroups': ("CREATE TABLE AgeGroups (age_group VARCHAR(5) PRIMARY KEY, meta_group VARCHAR(8))",
                         "age_groups.tsv", ['age_group', 'meta_group']),
-          'NUTS3_Regions': ("CREATE TABLE NUTS3_Regions(code CHAR(5) PRIMARY KEY, `name` VARCHAR(20))", "nuts3_regions.tsv", ['code', 'name']),
-          'Parishes': ("CREATE TABLE Parishes(code INTEGER PRIMARY KEY, `name` VARCHAR(20))", "parish.tsv", ['code', 'name'])}
+          'NUTS3_Regions': (
+          "CREATE TABLE NUTS3_Regions(code CHAR(5) PRIMARY KEY, `name` VARCHAR(20))", "nuts3_regions.tsv",
+          ['code', 'name']),
+          'Parishes': (
+          "CREATE TABLE Parishes(code INTEGER PRIMARY KEY, `name` VARCHAR(20))", "parish.tsv", ['code', 'name'])}
 
-BOOL_FIELDS = ['Diabet', 'Neuro', 'Cancer', 'Adipos', 'Nyre', 'Haem_c', 'Card_dis', 'Resp_dis', 'Immu_dis', 'Other_risk']
+BOOL_FIELDS = ['Diabet', 'Neuro', 'Cancer', 'Adipos', 'Nyre', 'Haem_c', 'Card_dis', 'Resp_dis', 'Immu_dis',
+               'Other_risk', 'Pregnancy', 'Doctor', 'Nurse']
+DATE_FIELDS = ['SampleDate', 'COVID19_EndDate','SymptomsStartDate']
 
 def get_connection():
     try:
@@ -84,6 +85,11 @@ def create_schema(cnxn):
                 # WHERE table_schema = 'MyDatabaseName';
                 print("Creating table {}: ".format(table_name), end='')
                 cursor.execute("DROP TABLE IF EXISTS {}".format(table_name))
+                if table_name=='Persons':
+                    for df in DATE_FIELDS:
+                        table_description+="{} date,".format(df)
+                    table_description = table_description[:-1]
+                    table_description += ") ENGINE=InnoDB"
                 cursor.execute(table_description)
             except mysql.connector.Error as err:
                 if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
@@ -133,24 +139,26 @@ def add_data(cnxn, filepath):
     # Persons
     bool_field_names = ','.join(BOOL_FIELDS)
     bf_ss = ', '.join(['%s' for f in BOOL_FIELDS])
+    date_field_names = ','.join(DATE_FIELDS)
+    df_ss = ', '.join(['%s' for f in DATE_FIELDS])
     add_person = ("INSERT INTO Persons "
-                  "(ssi_id, SampleDate, age, age_group, sex, COVID19_Status, COVID19_EndDate, Parishcode, lineage, {}) "
-                  "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, {})".format(bool_field_names, bf_ss))
+                  "(ssi_id, age, age_group, sex, COVID19_Status, Parishcode, lineage, {}) "
+                  "VALUES (%s, %s, %s, %s, %s, %s, %s, {}, {})".format(bool_field_names,date_field_names, bf_ss, df_ss))
 
     with open(filepath) as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             cv_stat = row['COVID19_Status'] if len(row['COVID19_Status']) > 0 else '0'  # error correction
-        #    print("stat: {} {}".format(row['COVID19_Status'], cv_stat))
+            #    print("stat: {} {}".format(row['COVID19_Status'], cv_stat))
             age = None if row['ReportAge'] == '' else int(row['ReportAge'])
             ag = row['ReportAgeGrp']
             sex = row['Sex'] if row['Sex'] in ['M', 'F'] else None
-            enddate = getDate(row, 'COVID19_EndDate')
-            sample_date = getDate(row, 'SampleDate')
-            pc = int(row['Parishcode']) if len (row['Parishcode'])>0 else None
-            data_person = [row['ssi_id'], sample_date, age, ag, sex, cv_stat, enddate, pc, row['lineage']]
-            boolean_field_data = [int(row[f]) if len(row[f])>0 else None for f in BOOL_FIELDS]
+            pc = int(row['Parishcode']) if len(row['Parishcode']) > 0 else None
+            data_person = [row['ssi_id'], age, ag, sex, cv_stat, pc, row['lineage']]
+            boolean_field_data = [int(row[f]) if len(row[f]) > 0 else None for f in BOOL_FIELDS]
+            date_field_data = [getDate(row,df) for df in DATE_FIELDS]
             data_person.extend(boolean_field_data)
+            data_person.extend(date_field_data)
             data_person = tuple(data_person)
 
             # COVID19_EndDate=row['COVID19_EndDate'], isPregnant=(row['Pregnancy'] == '1'), sequenced=(row['sequenced'] == 'Yes'))
