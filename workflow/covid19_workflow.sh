@@ -195,6 +195,7 @@ singularity \
     $WORKFLOW_PATH/QC.sh \
       -i $OUT_DIR \
       -b $RUN_ID \
+      -s $SCHEME \
       -r $WORKFLOW_PATH/QC.rmd \
       -t $THREADS
     "
