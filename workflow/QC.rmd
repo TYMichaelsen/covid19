@@ -38,18 +38,29 @@ library("ape")
 
 ```{r,eval=F}
 # For build mode.
-batch     <- "CJ060"
-labmeta   <- "/srv/rbd/covid19/processing/CJ060_test2/sample_sheet.csv"
-input_dir <- "/srv/rbd/covid19/processing/CJ060_test2"
-ref       <- "/srv/rbd/covid19/git/covid19/workflow/dependencies/ref/MN908947.3.fasta"
+batch      <- "CJ061"
+labmeta    <- "/srv/rbd/covid19/processing/CJ061/sample_sheet.csv"
+input_dir  <- "/srv/rbd/covid19/processing/CJ061"
+scheme_dir <- "/srv/rbd/covid19/git/covid19/workflow/dependencies/primer_schemes/nCoV-2019/aau_long_v3.1"
+ref        <- "/srv/rbd/covid19/git/covid19/workflow/dependencies/ref/MN908947.3.fasta"
 ```
 
 ```{r}
-batch     <- params$batch
-labmeta   <- params$labmeta
-input_dir <- params$input_dir
-ref <- params$ref
+batch      <- params$batch
+labmeta    <- params$labmeta
+input_dir  <- params$input_dir
+scheme_dir <- params$scheme_dir
+ref        <- params$ref
 ```
+
+```{r}
+print(scheme_dir)
+```
+
+```{r}
+knitr::knit_exit()
+```
+
 
 ```{r}
 # Load amplicon counts.---------------------------------------------------------
@@ -76,6 +87,9 @@ cov_tot <- mutate(cov,
                   bp_temp = (end-start)*coverage %>% round(0)) %>%
            group_by(library_id) %>%
            summarise(coverage = round(sum(bp_temp)/29903,0))
+
+# Append the library pool.
+libpool <- read_delim(file = paste0(scheme_dir,"/nCoV-2019.scheme.bed"),delim = "\t",col_names = F)
 ```
 
 
@@ -148,7 +162,7 @@ libconc <- read_delim(labmeta, delim = ",", col_names = F) %>%
 
 ```{r}
 # Get clade assignment.---------------------------------------------------------
-clades <- fromJSON(file = paste0(input_dir,"/QC/aligntree/clades.json")) %>%
+clades <- rjson::fromJSON(file = paste0(input_dir,"/QC/aligntree/clades.json")) %>%
   .$nodes %>%
   sapply("[[",1) %>%
   {data.frame(library_id = names(.),Clade = .,row.names = NULL)} %>%
@@ -240,6 +254,13 @@ ggplot(data = d, aes(x=library_conc, y = coverage, color = genome_qc)) +
   scale_y_log10() + 
   scale_colour_manual(values = cols)
 ```
+
+## Amplicon dropout
+
+```{r}
+
+```
+
 
 ## Samples dropping out
 
@@ -347,22 +368,15 @@ filter(asnv_sub, snv_type %in% c("I","D")) %>%
 <!--   kable_styling(bootstrap_options = c("striped", "hover"), full_width = F) -->
 <!-- ``` -->
 
-## Coverage for specific samples
-
-```{r}
-meta_sub <- filter(d,sample_type == "sample" & genome_qc == "Fail" & coverage > 1000)
-LIB-CJ060-135
-```
-
 ## Coverage (HQ)
 
 ```{r}
 meta_sub <- filter(d,sample_type == "sample" & genome_qc == "HQ") %>%
   head(n = 10) 
 
-#meta_sub <- filter(d,sample_type == "sample" & genome_qc == "Fail" & coverage > 5) %>%
-  #arrange(-coverage) %>%
-  #head(n = 10) 
+meta_sub <- filter(d,sample_type == "sample" & genome_qc == "Fail" & coverage > 5) %>%
+  arrange(coverage) %>%
+  head(n = 10) 
 
 if (nrow(meta_sub) > 0){
   # Subset.
