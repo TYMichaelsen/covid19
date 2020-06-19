@@ -24,7 +24,7 @@ Schemes:
 ### Terminal Arguments ---------------------------------------------------------
 
 # Import user arguments
-while getopts ':hi:b:r:t:' OPTION; do
+while getopts ':hi:b:s:r:t:' OPTION; do
   case $OPTION in
     h) echo "$USAGE"; exit 1;;
     i) INPUT_DIR=$OPTARG;;
