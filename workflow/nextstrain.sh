@@ -143,11 +143,11 @@ else
 fi
 
 ### Mask bases ###
-mask_sites="18529 29849 29851 29853"
+mask_sites="13402 24389 24390"
 
 python3 ${DEFDIR}/mask-alignment.py \
         --alignment $OUTDIR/aligned.fasta \
-        --mask-from-beginning 130 \
+        --mask-from-beginning 100 \
         --mask-from-end 50 \
         --mask-sites $mask_sites \
         --output $OUTDIR/masked.fasta
