@@ -1,5 +1,8 @@
 
 library(httr)
+library(jsonlite)
+library(magrittr)
+library(tidyverse)
 
 # Swap DK wierd letters function.
 swapDKlet <- function(x){stringr::str_replace_all(x,c("ø" = "oe","Ø" = "Oe","å" = "aa","Å" = "Aa","æ" = "ae","Æ" = "Ae"))}
@@ -11,18 +14,19 @@ request <- GET(url = path)
 
 response <- content(request, as = "text", encoding = "UTF-8")
 
-kommune <- fromJSON(response, flatten = TRUE) %>% 
+postnr <- fromJSON(response, flatten = TRUE) %>% 
   data.frame() %>%
   separate(visueltcenter, c("long", "lat"), sep = ",") %>%
   mutate(long = gsub('[c()]', '',long) %>% as.numeric()) %>%
   mutate(lat  = gsub('[c()]', '',lat) %>% as.numeric()) %>%
-  mutate(muncipal = swapDKlet(navn)) %>%
-  select(nr,muncipal,navn,long,lat)
+  mutate(zipcode_name = swapDKlet(navn)) %>%
+  mutate(zipcode      = nr) %>%
+  select(zipcode,zipcode_name,long,lat)
 
 # Average by muncipal. 
-latlong_muncipal <- group_by(kommune,muncipal) %>%
+latlong_postnr <- group_by(postnr,zipcode) %>%
   summarise(lat = mean(lat),long = mean(long)) %>%
-  mutate(type = "location",loc = muncipal) %>%
+  mutate(type = "location",loc = zipcode) %>%
   select(type,loc,lat,long)
 
 # Add regions.
@@ -40,6 +44,6 @@ latlong_regions <- rbind(
 # Add country.
 latlong_country <- data.frame(type = "country",loc = "Denmark",lat = 56.2639,long = 9.5018)
 
-latlong_nxt <- rbind(latlong_muncipal,latlong_regions,latlong_country)
+latlong_nxt <- rbind(latlong_postnr,latlong_regions,latlong_country)
 
-fwrite(latlong_nxt,"/srv/rbd/covid19/git/covid19/workflow/dependencies/nextstrain/latlong_nextstrain.tsv",col.names = F,sep = "\t")
+write_delim(latlong_nxt,path = "/srv/rbd/covid19/git/covid19/workflow/dependencies/nextstrain/latlong_nextstrain.tsv",col_names = F,delim = "\t")

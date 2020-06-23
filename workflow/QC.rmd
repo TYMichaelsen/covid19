@@ -8,6 +8,7 @@ params:
   batch: "Batch name"
   labmeta:  "lab metadata"
   input_dir:  "Input directory"
+  scheme_dir: "Scheme version directory"
   ref: "genome reference"
 editor_options: 
       chunk_output_type: console
@@ -54,15 +55,6 @@ ref        <- params$ref
 ```
 
 ```{r}
-print(scheme_dir)
-```
-
-```{r}
-knitr::knit_exit()
-```
-
-
-```{r}
 # Load amplicon counts.---------------------------------------------------------
 
 cov <- read_delim(file = paste0(input_dir,"/processing/results/amplicon_count.tsv"), delim = "\t") %>%
@@ -83,13 +75,31 @@ cov <- read_delim(file = paste0(input_dir,"/processing/results/amplicon_count.ts
     coverage_relative = coverage/sum(coverage)*100,
     pos_mean          = start + (end-start)/2)
 
-cov_tot <- mutate(cov,
-                  bp_temp = (end-start)*coverage %>% round(0)) %>%
-           group_by(library_id) %>%
-           summarise(coverage = round(sum(bp_temp)/29903,0))
-
 # Append the library pool.
-libpool <- read_delim(file = paste0(scheme_dir,"/nCoV-2019.scheme.bed"),delim = "\t",col_names = F)
+libpool <- read_delim(file = paste0(scheme_dir,"/nCoV-2019.scheme.bed"),delim = "\t",col_names = F) %>%
+  dplyr::rename(primer_id = X4,pool = X5) %>%
+  mutate(primer_id = str_match(primer_id,"_(.*?)_")[,2] %>% as.numeric(),
+         pool      = sub("nCoV-2019_","",x = pool) %>% as.numeric()) %>%
+  select(primer_id,pool)
+
+cov <- left_join(cov,libpool,by = "primer_id")
+
+
+tmp1 <- mutate(cov,bp_temp = (end-start)*coverage %>% round(0)) %>%
+  group_by(library_id) %>%
+  summarise(coverage   = round(sum(bp_temp)/29903,0),
+            dropout    = sum(coverage < 20)) 
+
+tmp2 <- mutate(cov,
+  bp_temp = (end-start)*coverage %>% round(0),
+  pool    = paste0("coverage_",pool)) %>%
+  group_by(library_id,pool) %>%
+  summarise(coverage   = round(sum(bp_temp)/29903,0),
+            dropout    = sum(coverage < 20)) %>%
+  pivot_wider(names_from = pool,values_from = c(coverage,dropout)) %>%
+  {`colnames<-`(.,sub("_coverage_","_",colnames(.)))}
+
+cov_tot <- left_join(tmp1,tmp2,by = "library_id")
 ```
 
 
@@ -200,7 +210,12 @@ d <- left_join(libconc, cov_tot, by = "library_id") %>%
      left_join(clades,by = "library_id") %>%
      mutate(sample_type = tolower(library_id) %>%
        {case_when(grepl("neg",.) ~ "NEG",grepl("pos",.) ~ "POS",!grepl("neg|pos",.) ~ "sample")}) %>%
-  mutate(coverage = ifelse(is.na(coverage),0,coverage))
+  mutate(coverage   = ifelse(is.na(coverage),0,coverage)) %>%
+  mutate(coverage_1 = ifelse(is.na(coverage_1),0,coverage_1)) %>%
+  mutate(coverage_2 = ifelse(is.na(coverage_2),0,coverage_2)) %>%
+  mutate(dropout    = ifelse(is.na(dropout),unique(libpool$primer_id) %>% length(),dropout)) %>%
+  mutate(dropout_1  = ifelse(is.na(dropout_1),unique(libpool$primer_id) %>% length(),dropout_1)) %>%
+  mutate(dropout_2  = ifelse(is.na(dropout_2),unique(libpool$primer_id) %>% length(),dropout_2))
 
 # QC label.
 d <- d %>%
@@ -219,8 +234,8 @@ d <- d %>%
 
 - `HQ`: A genome with < 130 N's in total.
 - `MQ`: A genome with < 5000 N's in total.
-- `Fail`: A genome with either 1) >5000 N's in total or 2) <5x coverage.
-- `Dropout`: A genome with >5x coverage and >5000 N's.
+- `Fail`: A genome with either >5000 N's in total.
+- `Dropout`: A genome .
 - `Fail_artic`: No genome generated with >5x coverage. The artic pipeline failed for some reason. 
 
 ```{r}
@@ -240,12 +255,31 @@ rbind(tab,tot) %>%
   row_spec(6,bold=T)
 ```
 
-## Library concentrations vs. coverage
+## amplicon dropout vs. library concentration
+
+```{r}
+ggplot(d,aes(x = dropout_1,y = dropout_2,colour = library_conc)) +
+  geom_point()
+```
+
+
+## Library concentration vs. amplicon dropout
 
 ```{r}
 cols <- c("#52854C", "#E7B800", "#FC4E07","#999999","black") %>%
   setNames(.,nm = c("HQ","MQ","Fail","Dropout","Fail_artic"))
 
+ggplot(d,aes(x = library_conc,y = dropout,color = genome_qc)) + 
+  geom_point() +
+  labs(y      = "Amplicon dropout [n] ",
+       x      = "Library Concentration [ng/ul]",
+       colour = "Genome Quality") + 
+  scale_colour_manual(values = cols)
+```
+
+## Library concentrations vs. coverage
+
+```{r}
 ggplot(data = d, aes(x=library_conc, y = coverage, color = genome_qc)) +
   geom_point() +
   labs(y      = "Average coverage",
@@ -254,13 +288,6 @@ ggplot(data = d, aes(x=library_conc, y = coverage, color = genome_qc)) +
   scale_y_log10() + 
   scale_colour_manual(values = cols)
 ```
-
-## Amplicon dropout
-
-```{r}
-
-```
-
 
 ## Samples dropping out
 

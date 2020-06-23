@@ -9,6 +9,7 @@ USAGE="$(basename "$0") [-h] [-d dir -r file]
 
 Arguments:
     -h  Show this help text.
+    -i  Input directory.
     -b  What batch to do QC for.
     -s  What scheme you are running. See Schemes below.
     -r  R script to run to generate QC report.
