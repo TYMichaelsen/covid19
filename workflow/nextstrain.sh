@@ -252,7 +252,7 @@ pangolin $OUTDIR/masked.fasta -t $THREADS \
 "
 
 # Add pangolin lineages and lineage version to metadata.
-join -1 1 -2 1 -t $'\t' <(tail -n +2 $OUTDIR/metadata.tsv | sort) <(awk -F',' '{print $1"\t"$2"\t"$5}' $OUTDIR/lineage_report.csv | tail -n +2 | sort) > $OUTDIR/metadata_w_linage.tsv
+LANG=en_EN join -1 1 -2 1 -t $'\t' <(tail -n +2 $OUTDIR/metadata.tsv | LANG=en_EN sort) <(awk -F',' '{print $1"\t"$2"\t"$5}' $OUTDIR/lineage_report.csv | tail -n +2 | LANG=en_EN sort) > $OUTDIR/metadata_w_linage.tsv
 
 cat <(awk 'NR == 1 {print $0"\tlineage\tlineage_version"}' $OUTDIR/metadata.tsv) $OUTDIR/metadata_w_linage.tsv > tmp && mv tmp $OUTDIR/metadata_w_linage.tsv
 
