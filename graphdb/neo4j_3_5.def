@@ -13,7 +13,7 @@ Stage: build
 %environment
     # export LISTEN_PORT=12345
     # export LC_ALL=C
-    export JAVA_HOME=/usr/local/openjdk-11
+    export JAVA_HOME=/usr/local/openjdk-8
 
 %post
     apt-get update && apt-get install -y netcat less curl
@@ -24,7 +24,7 @@ Stage: build
     echo "neo4j	hard	nofile	46000" >> /etc/security/limits.conf
     echo "root	soft	nofile	40000" >> /etc/security/limits.conf
     echo "root  hard    nofile  45000" >> /etc/security/limits.conf
-    echo "dbms.default_listen_address=0.0.0.0" >> /var/lib/neo4j/conf/neo4j.conf
+    echo "dbms.connectors.default_listen_address=0.0.0.0" >> /var/lib/neo4j/conf/neo4j.conf
 
 %runscript
     echo "Container was created $NOW"
