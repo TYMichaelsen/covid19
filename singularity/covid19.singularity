@@ -77,7 +77,7 @@ From: covid19_1.5.sif
   # Upgrade auspice
   cd /opt/nextstrain 
   rm -rf auspice # The base image already has this directory
-  git clone --depth 1 -b v2.14.0 https://github.com/nextstrain/auspice.git
+  git clone --depth 1 -b v2.16.0 https://github.com/nextstrain/auspice.git
   cd /opt/nextstrain/auspice
   conda run -n nextstrain npm update 
   conda run -n nextstrain npm install 

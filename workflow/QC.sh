@@ -9,21 +9,28 @@ USAGE="$(basename "$0") [-h] [-d dir -r file]
 
 Arguments:
     -h  Show this help text.
+    -i  Input directory.
     -b  What batch to do QC for.
+    -s  What scheme you are running. See Schemes below.
     -r  R script to run to generate QC report.
     -t  Number of threads.
 
-Output:
-    To come.
+Schemes:
+    aau_long_v3.1
+    aau_short_v3
+    v1
+    v2
+    v3
 "
 ### Terminal Arguments ---------------------------------------------------------
 
 # Import user arguments
-while getopts ':hi:b:r:t:' OPTION; do
+while getopts ':hi:b:s:r:t:' OPTION; do
   case $OPTION in
     h) echo "$USAGE"; exit 1;;
     i) INPUT_DIR=$OPTARG;;
     b) BATCH=$OPTARG;;
+    s) SCHEME=$OPTARG;;
     r) RMD=$OPTARG;;
     t) THREADS=$OPTARG;;
     :) printf "missing argument for -$OPTARG\n" >&2; exit 1;;
@@ -35,6 +42,7 @@ done
 MISSING="is missing but required. Exiting."
 if [ -z ${INPUT_DIR+x} ]; then echo "-i $MISSING"; exit 1; fi;
 if [ -z ${BATCH+x} ]; then echo "-b $MISSING"; exit 1; fi;
+if [ -z ${SCHEME+x} ]; then echo "-s $MISSING"; exit 1; fi;
 if [ -z ${RMD+x} ]; then echo "-r $MISSING"; exit 1; fi;
 if [ -z ${THREADS+x} ]; then THREADS=50; fi;
 
@@ -47,7 +55,7 @@ mkdir -p $INPUT_DIR/QC
 mkdir -p $INPUT_DIR/QC/aligntree
 
 # Logging
-LOG_NAME="$INPUT_DIR/QC/QC_log_$(date +"%Y-%m-%d-%T").txt"
+LOG_NAME="$INPUT_DIR/QC/QC_log_$(date +"%Y-%m-%d_%H-%M").txt"
 echo "QC log" >> $LOG_NAME
 #echo "AAU COVID-19 revision - $(git -C $AAU_COVID19_PATH rev-parse --short HEAD)" >> $LOG_NAME
 echo "Command: $0 $*" >> $LOG_NAME
@@ -130,6 +138,8 @@ fi
 
 # Run .rmd script.
 REF_PATH=$AAU_COVID19_PATH/dependencies/ref/MN908947.3.fasta
+SCHEME_PATH=$AAU_COVID19_PATH/dependencies/primer_schemes/nCoV-2019/$SCHEME
+
 Rscript \
   -e \
   "
@@ -141,6 +151,7 @@ Rscript \
       batch='$BATCH',
       labmeta='$labmeta',
       input_dir='$INPUT_DIR',
+      scheme_dir='$SCHEME_PATH',
       ref='$REF_PATH'
     )
   )

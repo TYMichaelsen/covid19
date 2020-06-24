@@ -1,0 +1,11 @@
+age_group	meta_group
+0-9	children
+10-19	children
+20-29	adults
+30-39	adults
+40-49	adults
+50-59	adults
+60-69	adults
+70-79	elderly
+80-89	elderly
+90+	elderly

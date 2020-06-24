@@ -48,7 +48,7 @@ fi
 
 
 # Logging
-LOG_NAME="$OUT_DIR/demultiplex_log_$(date +"%Y-%m-%d-%T").txt"
+LOG_NAME="$OUT_DIR/demultiplex_log_$(date +"%Y-%m-%d_%H-%M").txt"
 echo "demultiplex log" >> $LOG_NAME
 # echo "AAU COVID-19 revision - $(git init; git -C $AAU_COVID19_PATH rev-parse --short HEAD)" >> $LOG_NAME ##Not working in singularity
 echo "Command: $0 $*" >> $LOG_NAME

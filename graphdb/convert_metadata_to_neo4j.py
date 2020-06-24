@@ -22,7 +22,7 @@ tx.create(sex_f)
 
 ## Age groups
 age_groups = {}
-with open('../bi_system/stable_dims/age_groups.txt') as csvfile:
+with open('../bi_system/stable_dims/age_groups.tsv') as csvfile:
     reader = csv.reader(csvfile)
     for row in reader:
         n = Node("AgeGroup", name=row[0])
@@ -31,24 +31,46 @@ with open('../bi_system/stable_dims/age_groups.txt') as csvfile:
 
 ## Geodata
 parishes = {}
+with open('../bi_system/stable_dims/parish_ses.tsv') as csvfile:
+    reader = csv.reader(csvfile, delimiter='\t')
+    next(reader, None)
+    for row in reader:
+        n = Node("Parish", code=row[0], name=row[1], population=int(row[2]), ghetto_area=row[3])
+        parishes[row[0]] = n
+        tx.create(n)
+
 municipalities = {}
 with open('../bi_system/stable_dims/municipalities.tsv') as csvfile:
     reader = csv.reader(csvfile, delimiter='\t')
     next(reader, None)
     for row in reader:
-        n = Node("Municipality", code=row[0], name=row[1])
+        n = Node("Municipality", code=row[0], name=row[1], population=int(row[4]))
         municipalities[row[0]] = n
         tx.create(n)
 
+countries = {}
+dk = Node("Country", name='Denmark', nuts_code='DK0')
+countries['Denmark'] = tx.create(dk)
 nuts3_regions = {}
+with open('../bi_system/stable_dims/nuts3_regions.tsv') as csvfile:
+    reader = csv.reader(csvfile, delimiter='\t')
+    next(reader, None)
+    for row in reader:
+        n = Node("NUTS3_Region", code=row[0], name=row[1])
+        nuts3_regions[row[0]] = n
+        tx.create(n)
+        tx.create(Relationship(n,"PartOf",dk))
+
+
+countries = {}
 
 ## Virus Strains
 strains = {}
 
 ## Medical History
 risk_factors = {}
-with open('../bi_system/stable_dims/risk_factors.csv') as csvfile:
-    reader = csv.reader(csvfile)
+with open('../bi_system/stable_dims/risk_factors.tsv') as csvfile:
+    reader = csv.reader(csvfile, delimiter='\t')
     next(reader, None)
     for row in reader:
         n = Node("RiskFactor", code=row[0], name=row[1])
@@ -104,6 +126,13 @@ with open('/srv/rbd/covid19/metadata/2020-05-26-07-35_metadata.tsv') as csvfile:
         p = Node("Person", ssi_id=row['ssi_id'], age=row['ReportAge'], COVID19_Status=cv_stat,
                  COVID19_EndDate=row['COVID19_EndDate'], IsPregnant=(row['Pregnancy'] == '1')
                  , SampleDate = row['SampleDate'], SymptomsStartDate=['SymptomsStartDate'])
+        age = row['ReportAge'] if row['ReportAge']=='' else int(row['ReportAge'])
+        p = Node("Person", ssi_id=row['ssi_id'], age=age, COVID19_Status=cv_stat,
+                 COVID19_EndDate=row['COVID19_EndDate'], isPregnant=(row['Pregnancy'] == '1'), sequenced=(row['sequenced'] == 'Yes'))
+        if (row['Pregnancy'] == '1' and row['Sex'] == 'M'):
+            print('anomalous case data') # TODO extract all error checking code to a separate file
+            print('SSI {}, Pregnancy {}, Sex {}'.format(row['ssi_id'],row['Pregnancy'],row['Sex']))
+
         tx.create(p)
         if row['Sex'] == 'F':
             tx.create(Relationship(p, "ISA", sex_f))
@@ -127,8 +156,9 @@ with open('/srv/rbd/covid19/metadata/2020-05-26-07-35_metadata.tsv') as csvfile:
 
         # NUTS3 Region
         if muni is not None:
-            make_rel(with_node=muni, code_field_name='NUTS3Code', lookup_dict=nuts3_regions, relation_name="PartOf",
+            region = make_rel(with_node=muni, code_field_name='NUTS3Code', lookup_dict=nuts3_regions, relation_name="PartOf",
                  rel_node_label="NUTS3_Region", name_field_name="NUTS3Text")
+
 
         # strains
         strain_name = row['lineage']
@@ -141,6 +171,12 @@ with open('/srv/rbd/covid19/metadata/2020-05-26-07-35_metadata.tsv') as csvfile:
             if row[field_name] in ['SAND','TRUE']:
                 tx.create(Relationship(p, "HasRisk", risk_factors[field_name]))
 
+
+        # Place of infection
+        country = row['PlaceOfInfection_EN']
+        if len(country) > 0:
+            make_rel(with_node=p,code_field_name='PlaceOfInfection_EN',lookup_dict=countries, relation_name="PlaceOfInfection",
+                     rel_node_label="Country")
 
 # p = Node("Person", ssi_id="example_id")
 # tx.create(Relationship(p,"ISA",sex_m))

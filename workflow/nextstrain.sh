@@ -143,11 +143,11 @@ else
 fi
 
 ### Mask bases ###
-mask_sites="18529 29849 29851 29853"
+mask_sites="13402 24389 24390"
 
 python3 ${DEFDIR}/mask-alignment.py \
         --alignment $OUTDIR/aligned.fasta \
-        --mask-from-beginning 130 \
+        --mask-from-beginning 100 \
         --mask-from-end 50 \
         --mask-sites $mask_sites \
         --output $OUTDIR/masked.fasta
@@ -252,7 +252,7 @@ pangolin $OUTDIR/masked.fasta -t $THREADS \
 "
 
 # Add pangolin lineages and lineage version to metadata.
-join -1 1 -2 1 -t $'\t' <(tail -n +2 $OUTDIR/metadata.tsv | sort) <(awk -F',' '{print $1"\t"$2"\t"$5}' $OUTDIR/lineage_report.csv | tail -n +2 | sort) > $OUTDIR/metadata_w_linage.tsv
+LANG=en_EN join -1 1 -2 1 -t $'\t' <(tail -n +2 $OUTDIR/metadata.tsv | LANG=en_EN sort) <(awk -F',' '{print $1"\t"$2"\t"$5}' $OUTDIR/lineage_report.csv | tail -n +2 | LANG=en_EN sort) > $OUTDIR/metadata_w_linage.tsv
 
 cat <(awk 'NR == 1 {print $0"\tlineage\tlineage_version"}' $OUTDIR/metadata.tsv) $OUTDIR/metadata_w_linage.tsv > tmp && mv tmp $OUTDIR/metadata_w_linage.tsv
 
@@ -261,7 +261,7 @@ cat <(awk 'NR == 1 {print $0"\tlineage\tlineage_version"}' $OUTDIR/metadata.tsv)
 mkdir -p $OUTDIR/auspice
 
 # Cat DK lat long with auspice.
-cat ${METADIR}/latlong_nextstrain.tsv ${NCOVDIR}/lat_longs.tsv > $OUTDIR/latlongs.tsv
+cat $NCOVDIR/latlong_nextstrain.tsv ${NCOVDIR}/lat_longs.tsv > $OUTDIR/latlongs.tsv
 
 # Get all metadata columns except strain, virus and date to display in auspice.
 cols=$(awk -F'\t' 'NR == 1 {$1=$2=$3=""; print $0}' $OUTDIR/metadata_w_linage.tsv)

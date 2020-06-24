@@ -59,6 +59,11 @@ echo ""
 WORKFLOW_PATH="$(dirname "$(readlink -f "$0")")"
 COVID19_PATH=${WORKFLOW_PATH%/*}
 SINGIMG="${COVID19_PATH}/singularity/covid19_latest.sif"
+RUNTIME_DIR="/tmp/sing.${UID}"
+if [ -d ${RUNTIME_DIR} ]; then
+    rm -rf ${RUNTIME_DIR}
+fi
+mkdir -m 0700 -p ${RUNTIME_DIR}
 
 # Determine absolute path to input/output
 INPUT_DIR=$(readlink -f "$INPUT_DIR")
@@ -128,6 +133,7 @@ else
     -B $FASTQ_DIR:$FASTQ_DIR \
     -B $OUT_DIR:$OUT_DIR \
     -B $INPUT_DIR:$INPUT_DIR \
+    -B $RUNTIME_DIR:/run/user/$UID \
     $SINGIMG \
     bash -c "
       $WORKFLOW_PATH/demultiplex.sh \
@@ -155,6 +161,7 @@ singularity \
   -B $WORKFLOW_PATH:$WORKFLOW_PATH \
   -B $INPUT_DIR:$INPUT_DIR \
   -B $OUT_DIR:$OUT_DIR \
+  -B $RUNTIME_DIR:/run/user/$UID \
   $SINGIMG \
   bash -c "
     source activate artic-ncov2019-medaka;
@@ -188,6 +195,7 @@ singularity \
   -B $WORKFLOW_PATH:$WORKFLOW_PATH \
   -B $INPUT_DIR:$INPUT_DIR \
   -B $OUT_DIR:$OUT_DIR \
+  -B $RUNTIME_DIR:/run/user/$UID \
   --no-home \
   $SINGIMG \
   bash -c "
@@ -195,6 +203,7 @@ singularity \
     $WORKFLOW_PATH/QC.sh \
       -i $OUT_DIR \
       -b $RUN_ID \
+      -s $SCHEME \
       -r $WORKFLOW_PATH/QC.rmd \
       -t $THREADS
     "
