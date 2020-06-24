@@ -52,8 +52,8 @@ countries = {}
 dk = Node("Country", name='Denmark', nuts_code='DK0')
 countries['Denmark'] = tx.create(dk)
 nuts3_regions = {}
-with open('../bi_system/stable_dims/nuts3_regions.csv') as csvfile:
-    reader = csv.reader(csvfile)
+with open('../bi_system/stable_dims/nuts3_regions.tsv') as csvfile:
+    reader = csv.reader(csvfile, delimiter='\t')
     next(reader, None)
     for row in reader:
         n = Node("NUTS3_Region", code=row[0], name=row[1])
@@ -69,8 +69,8 @@ strains = {}
 
 ## Medical History
 risk_factors = {}
-with open('../bi_system/stable_dims/risk_factors.csv') as csvfile:
-    reader = csv.reader(csvfile)
+with open('../bi_system/stable_dims/risk_factors.tsv') as csvfile:
+    reader = csv.reader(csvfile, delimiter='\t')
     next(reader, None)
     for row in reader:
         n = Node("RiskFactor", code=row[0], name=row[1])
