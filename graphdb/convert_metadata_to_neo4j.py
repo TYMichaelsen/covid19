@@ -122,13 +122,13 @@ def make_rel(with_node, code_field_name, lookup_dict, relation_name, rel_node_la
 with open('/srv/rbd/covid19/metadata/2020-05-26-07-35_metadata.tsv') as csvfile:
     reader = csv.DictReader(csvfile, delimiter='\t')
     for row in reader:
-        cv_stat = row['COVID19_Status'] if len(row['COVID19_Status']) > 0 else '0'  # error correction
-        p = Node("Person", ssi_id=row['ssi_id'], age=row['ReportAge'], COVID19_Status=cv_stat,
-                 COVID19_EndDate=row['COVID19_EndDate'], IsPregnant=(row['Pregnancy'] == '1')
-                 , SampleDate = row['SampleDate'], SymptomsStartDate=['SymptomsStartDate'])
         age = row['ReportAge'] if row['ReportAge']=='' else int(row['ReportAge'])
+        cv_stat = row['COVID19_Status'] if len(row['COVID19_Status']) > 0 else '0'  # error correction
         p = Node("Person", ssi_id=row['ssi_id'], age=age, COVID19_Status=cv_stat,
-                 COVID19_EndDate=row['COVID19_EndDate'], isPregnant=(row['Pregnancy'] == '1'), sequenced=(row['sequenced'] == 'Yes'))
+                 COVID19_EndDate=row['COVID19_EndDate'], IsPregnant=(row['Pregnancy'] == '1')
+                 , sequenced=(row['sequenced'] == 'Yes'), SampleDate = row['SampleDate'],
+                 SymptomsStartDate=['SymptomsStartDate'])
+
         if (row['Pregnancy'] == '1' and row['Sex'] == 'M'):
             print('anomalous case data') # TODO extract all error checking code to a separate file
             print('SSI {}, Pregnancy {}, Sex {}'.format(row['ssi_id'],row['Pregnancy'],row['Sex']))
