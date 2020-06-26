@@ -112,7 +112,7 @@ sample <- {
     mutate(ExtractionID = sub("-A$", "", ExtractionID)) %>%
     mutate(
       sample_group =  case_when(
-        grepl(".*-NEG[0-9]$", ExtractionID, perl = T) ~ "NC",
+        grepl(".*-NEG[0-9]{1,3}$", ExtractionID, perl = T) ~ "NC",
         grepl("EXT-CJ002-4", ExtractionID, perl = T) ~ "PC",
         TRUE ~ "RS"
       )
@@ -133,7 +133,7 @@ qubit <- {
     mutate(ExtractionID = sub("-A$", "", ExtractionID))  %>%
     mutate(
       sample_group =  case_when(
-        grepl(".*-NEG[0-9]$", ExtractionID, perl = T) ~ "NC",
+        grepl(".*-NEG[0-9]{1,3}$", ExtractionID, perl = T) ~ "NC",
         grepl("EXT-CJ002-4", ExtractionID, perl = T) ~ "PC",
         TRUE ~ "RS"
       )
@@ -154,7 +154,7 @@ norm <- {
     mutate(ExtractionID = sub("-A$", "", ExtractionID))  %>%
     mutate(
       sample_group =  case_when(
-        grepl(".*-NEG[0-9]$", ExtractionID, perl = T) ~ "NC",
+        grepl(".*-NEG[0-9]{1,3}$", ExtractionID, perl = T) ~ "NC",
         grepl("EXT-CJ002-4", ExtractionID, perl = T) ~ "PC",
         TRUE ~ "RS"
       )
@@ -183,32 +183,32 @@ msf <-
   # Fill out data
   mutate(
     ProjectName = if_else(
-      grepl(".*-NEG[0-9]$|EXT-CJ002-4", ExtractionID, perl = T),
+      grepl(".*-NEG[0-9]{1,3}$|EXT-CJ002-4", ExtractionID, perl = T),
       COV,
       ProjectName 
     ),
     InternalContact = if_else(
-      grepl(".*-NEG[0-9]$", ExtractionID, perl = T),
+      grepl(".*-NEG[0-9]{1,3}$", ExtractionID, perl = T),
       "SMK",
       InternalContact
     ),
     ExternalContact = if_else(
-      grepl(".*-NEG[0-9]$", ExtractionID, perl = T),
+      grepl(".*-NEG[0-9]{1,3}$", ExtractionID, perl = T),
       "AAU",
       ExternalContact
     ),
     LibraryID = case_when(
-      grepl(".*-NEG[0-9]$", ExtractionID, perl = T) ~ sub("^EXT-", "LIB-", ExtractionID),
+      grepl(".*-NEG[0-9]{1,3}$", ExtractionID, perl = T) ~ sub("^EXT-", "LIB-", ExtractionID),
       grepl("EXT-CJ002-4", ExtractionID, perl = T) ~ paste("LIB-", CJ, "-POS", 1:n(), sep =""),
       TRUE ~ paste("LIB-", CJ, "-", 1:n(), sep = "")
     ),
     SampleName = case_when(
-      grepl(".*-NEG[0-9]$", ExtractionID, perl = T) ~ LibraryID,
+      grepl(".*-NEG[0-9]{1,3}$", ExtractionID, perl = T) ~ LibraryID,
       grepl("EXT-CJ002-4", ExtractionID, perl = T) ~ LibraryID,
       TRUE ~ SampleName
     ),
     SampleSite = if_else(
-      grepl(".*-NEG[0-9]$", ExtractionID, perl = T),
+      grepl(".*-NEG[0-9]{1,3}$", ExtractionID, perl = T),
       "AAU",
       SampleSite
     )
