@@ -131,7 +131,7 @@ def create_dims(tx):
     print("Created dimensions")
     return {'parishes': parishes, 'sex_m': sex_m, 'sex_f': sex_f, 'municipalities': municipalities,
             'nuts3_regions': nuts3_regions, 'risk_factors': risk_factors, 'strains': strains,
-            'countries': countries, 'age_groups': age_groups}
+            'countries': countries, 'age_groups': age_groups, 'nursing_homes': {}, 'branches': {}, 'post_codes': {} }
 
 
 def load_data(datafile, logwriter):
@@ -155,7 +155,12 @@ def load_data(datafile, logwriter):
             p = Node("Person", ssi_id=row['ssi_id'], age=age, COVID19_Status=cv_stat,
                      COVID19_EndDate=row['COVID19_EndDate'], IsPregnant=(row['Pregnancy'] == '1')
                      , sequenced=(row['sequenced'] == 'Yes'), SymptomsStartDate=row['SymptomsStartDate']
-                     , SampleDate=row['SampleDate'])
+                     , SampleDate=row['SampleDate'], Symptoms=row['Symptoms'], Travel=(row['Travel'] == 'Yes'),
+                     ContactWithCase=(row['ContactWithCase'] == 'Yes'), Doctor=(row['Doctor'] == 'Yes'),
+                     Nurse=(row['Nurse'] == 'Yes'), HealthAssist=(row['HealthAssist'] == 'Yes'),
+                     Death60Days_final=(row['Death60Days_final'] == 'Yes'), DateOfDeath=row['DateOfDeath_final'],
+                     Occupation=row['Occupation'], CitizenshipCode=row['CitizenshipCode'],
+                     Reg_RegionCode=row['CitizenshipCode'])
 
             if row['Pregnancy'] == '1' and row['Sex'] == 'M':
                 log_field_error('anomalous case data', i,
@@ -174,6 +179,10 @@ def load_data(datafile, logwriter):
                 tx.create(Relationship(p, "InGroup", dims['age_groups'][ag]))
             # TODO report missing ag
 
+            # postcode
+            make_rel(tx, row, with_node=p, code_field_name='ZipCodeCity', lookup_dict=dims['post_codes'],
+                              relation_name="LivesIn",
+                              rel_node_label="PostCode", name_field_name="zipcode_name")
             # Parish
             parish = make_rel(tx, row, with_node=p, code_field_name='Parishcode', lookup_dict=dims['parishes'],
                               relation_name="LivesIn",
@@ -193,9 +202,7 @@ def load_data(datafile, logwriter):
                              rel_node_label="NUTS3_Region", name_field_name="NUTS3Text")
 
             # strains
-            strain_name = row['lineage']
-            if len(strain_name) > 0:
-                make_rel(tx, row, with_node=p, code_field_name='lineage', lookup_dict=dims['strains'],
+            make_rel(tx, row, with_node=p, code_field_name='lineage', lookup_dict=dims['strains'],
                          relation_name="HasStrain",
                          rel_node_label="Strain")
 
@@ -205,11 +212,25 @@ def load_data(datafile, logwriter):
                     tx.create(Relationship(p, "HasRisk", dims['risk_factors'][field_name]))
 
             # Place of infection
-            country = row['PlaceOfInfection_EN']
-            if len(country) > 0:
-                make_rel(tx, row, with_node=p, code_field_name='PlaceOfInfection_EN', lookup_dict=dims['countries'],
+            make_rel(tx, row, with_node=p, code_field_name='PlaceOfInfection_EN', lookup_dict=dims['countries'],
                          relation_name="PlaceOfInfection",
                          rel_node_label="Country")
+
+            # Nursing home
+            make_rel(tx, row, with_node=p, code_field_name='Plejehjemsnavn', lookup_dict=dims['nursing_homes'],
+                         relation_name="RESIDENT_OF", rel_node_label="NursingHome")
+
+            # Occupation branche
+            make_rel(tx, row, with_node=p, code_field_name='branche1', lookup_dict=dims['branches'],
+                         relation_name="OcccupationBranche", rel_node_label="Branche")
+
+            # Occupation branche
+            make_rel(tx, row, with_node=p, code_field_name='branche2', lookup_dict=dims['branches'],
+                         relation_name="OcccupationBranche", rel_node_label="Branche")
+
+            # Occupation branche
+            make_rel(tx, row, with_node=p, code_field_name='branche3', lookup_dict=dims['branches'],
+                         relation_name="OcccupationBranche", rel_node_label="Branche")
 
     tx.commit()
 
