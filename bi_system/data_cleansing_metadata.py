@@ -139,6 +139,9 @@ def check_errors(datafile, outfile, errfilewriter):
             # Field checks
             for field_name in row.keys():
                 if field_name in FIELD_TESTS:
+                    if field_name not in row.keys():
+                        print("Missing field, expected {}".format(field_name))
+                        continue
                     val: str = row[field_name].strip()
                     for test in FIELD_TESTS[field_name]:
                         if test == 'date':
