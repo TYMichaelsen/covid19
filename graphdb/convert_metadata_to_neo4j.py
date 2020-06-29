@@ -130,7 +130,8 @@ def create_dims(graph):
     tx.commit()
     print("Created dimensions")
     return {'parishes': parishes, 'sex_m': sex_m, 'sex_f': sex_f, 'municipalities': municipalities,
-            'nuts3_regions': nuts3_regions, 'risk_factors': risk_factors, 'strains': strains, 'countries': countries}
+            'nuts3_regions': nuts3_regions, 'risk_factors': risk_factors, 'strains': strains,
+            'countries': countries, 'age_groups': age_groups}
 
 
 def load_data(datafile, logwriter):
