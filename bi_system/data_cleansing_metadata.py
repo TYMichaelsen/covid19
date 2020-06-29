@@ -226,7 +226,7 @@ def check_errors(datafile, outfile, errfilewriter):
     print("Finished processing {} rows of which {} where ommitted due to irrecoverable errors".format(rows_read,
                                                                                                       rows_omitted))
     with open(outfile, 'w') as csvfile:
-        writer = csv.DictWriter(csvfile, reader.fieldnames)
+        writer = csv.DictWriter(csvfile, FIELD_TESTS.keys())
         writer.writeheader()
         for row in validated_rows:
             writer.writerow(row)
