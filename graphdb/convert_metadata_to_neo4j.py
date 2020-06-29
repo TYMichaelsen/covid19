@@ -31,6 +31,12 @@ def make_rel(tx, row, with_node, code_field_name, lookup_dict, relation_name, re
                 rel_node = Node(rel_node_label, name=rel_node_key)
             lookup_dict[rel_node_key] = rel_node
             tx.create(rel_node)
+        if with_node is None:
+            print('Error creating relationship {} , source node is None'.format(relation_name))
+            return
+        if rel_node is None:
+            print('Error creating relationship {} , target node is None, key was {}, dictionary contained {}'.format(relation_name, rel_node_key, lookup_dict))
+            return
         tx.create(Relationship(with_node, relation_name, rel_node))
 
     return rel_node
