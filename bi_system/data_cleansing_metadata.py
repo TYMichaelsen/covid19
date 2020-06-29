@@ -8,13 +8,15 @@ FIELD_TESTS = dict(SampleDate=['date'], sequenced=['yes'], Sex=['vals:F_M'], Tra
                    EpilprECMO_start=['date'], EpilprECMO=['yes'], EpilprHeart=['yes'], EpilprHeart_start=['date'],
                    Diabet=['yes'], Neuro=['yes'], Cancer=['yes'], Adipos=['yes'], Nyre=['yes'], Haem_c=['yes'],
                    Card_dis=['yes'], Resp_dis=['yes'], Immu_dis=['yes'], Other_risk=['yes'], Pregnancy=['yes'],
-                   Doctor=['yes'], Nurse=['yes'], PlaceOfInfection_EN=['dim:countries.tsv'], ReportAge=['age'],
+                   Doctor=['yes'], Nurse=['yes'], HealthAssist=['yes'], PlaceOfInfection_EN=['dim:countries.tsv'], ReportAge=['age'],
                    ReportAgeGrp=['dim:age_groups.tsv'], COVID19_Status=['vals:0_1_2:0'], COVID19_EndDate=['date'],
-                   lineage=['str'], lineages_version=['date'], Parishcode=['dim:parish.tsv'],
+                   lineage=['str'], lineages_version=['date'], Parishcode=['dim:parish.tsv'],Reg_RegionCode=['str'],
                    MunicipalityCode=['dim:municipalities.tsv'], NUTS3Code=['dim:nuts3_regions.tsv'], Occupation=['str'],
                    CountryOfTravel=['dim:countries.tsv'], SymptomsStartDate=['date'], CodR_DateOfDeath=['date'],
-                   CodR_Death60Days=['yes'], CPR_Death60Days=['yes'], CPR_DateOfDeath=['date'],
-                   DateOfDeath_final=['date'])
+                   Symptoms=['str'], branche1=['str'],branche2=['str'],branche3=['str'],CitizenshipCode=['str'],
+                   Death60Days_final=['yes'], Death30Days_final=['yes'], CPR_DateOfDeath=['date'],
+                   DateOfDeath_final=['date'], ZipCodeCity=['str'], Plejehjemsnavn=['str'] # TODDOconvert to dim
+                   )
 
 """
 date: check that date is well-formed and output in 'dddd-mm-yy' format
