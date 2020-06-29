@@ -60,13 +60,7 @@ def check_file(filepath, create=False):
     return filepath
 
 
-def create_dims(graph):
-    # Create schema
-    tx = graph.begin()
-
-    # Relationships
-    ISA = Relationship.type("ISA")
-
+def create_dims(tx):
     # Sex's
     sex_m = Node("Sex", name="M")
     sex_f = Node("Sex", name="F")
@@ -127,7 +121,6 @@ def create_dims(graph):
             risk_factors[row[0]] = n
             tx.create(n)
 
-    tx.commit()
     print("Created dimensions")
     return {'parishes': parishes, 'sex_m': sex_m, 'sex_f': sex_f, 'municipalities': municipalities,
             'nuts3_regions': nuts3_regions, 'risk_factors': risk_factors, 'strains': strains,
@@ -141,10 +134,10 @@ def load_data(datafile, logwriter):
     graph = Graph("bolt://{}:7687".format(host), user='neo4j',
                   password=password)  # this may need to change when running from the server since there it needs the instance IP
     graph.delete_all()
-    dims = create_dims(graph)
+    tx = graph.begin()
+    dims = create_dims(tx)
 
     # Create data
-    tx = graph.begin()
     with open(datafile) as file:
         reader = csv.DictReader(file)
         i = 0
