@@ -39,9 +39,9 @@ library("ape")
 
 ```{r,eval=F}
 # For build mode.
-batch      <- "CJ061"
-labmeta    <- "/srv/rbd/covid19/processing/CJ061/sample_sheet.csv"
-input_dir  <- "/srv/rbd/covid19/processing/CJ061"
+batch      <- "CJ069"
+labmeta    <- "/srv/rbd/covid19/processing/CJ069/sample_sheet.csv"
+input_dir  <- "/srv/rbd/covid19/processing/CJ069"
 scheme_dir <- "/srv/rbd/covid19/git/covid19/workflow/dependencies/primer_schemes/nCoV-2019/aau_long_v3.1"
 ref        <- "/srv/rbd/covid19/git/covid19/workflow/dependencies/ref/MN908947.3.fasta"
 ```
@@ -61,20 +61,14 @@ cov <- read_delim(file = paste0(input_dir,"/processing/results/amplicon_count.ts
   mutate(
     library_id = str_match(library_id, "_(.*?)_")[,2],
     primer_id  = str_match(primer_id,"_(.*?)_")[,2] %>% as.numeric()) %>%
-  pivot_wider(
-    names_from  = "library_id", 
-    values_from = "count", 
-    values_fill = list("count" = 0)) %>% 
-  pivot_longer(
-    names_to  = "library_id",
-    values_to = "count", 
-    cols      = c(-primer_id,-start,-end)) %>%
+  unique() %>% # Need this due to bug that a line sometimes is printed twice.
+  complete(library_id,nesting(primer_id,start,end),fill = list(count = 0)) %>%
   dplyr::rename(coverage = count) %>%
   group_by(library_id) %>%
   mutate(
     coverage_relative = coverage/sum(coverage)*100,
     pos_mean          = start + (end-start)/2)
-
+ 
 # Append the library pool.
 libpool <- read_delim(file = paste0(scheme_dir,"/nCoV-2019.scheme.bed"),delim = "\t",col_names = F) %>%
   dplyr::rename(primer_id = X4,pool = X5) %>%
