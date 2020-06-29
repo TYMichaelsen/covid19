@@ -10,7 +10,7 @@ FIELD_TESTS = dict(SampleDate=['date'], sequenced=['yes'], Sex=['vals:F_M'], Tra
                    Card_dis=['yes'], Resp_dis=['yes'], Immu_dis=['yes'], Other_risk=['yes'], Pregnancy=['yes'],
                    Doctor=['yes'], Nurse=['yes'], HealthAssist=['yes'], PlaceOfInfection_EN=['dim:countries.tsv'], ReportAge=['age'],
                    ReportAgeGrp=['dim:age_groups.tsv'], COVID19_Status=['vals:0_1_2:0'], COVID19_EndDate=['date'],
-                   lineage=['str'], lineages_version=['date'], Parishcode=['dim:parish.tsv'], ParishName=[str],
+                   lineage=['str'], lineages_version=['date'], Parishcode=['dim:parish.tsv'], ParishName=['str'],
                    Reg_RegionCode=['str'], MunicipalityCode=['dim:municipalities.tsv'], NUTS3Code=['dim:nuts3_regions.tsv'], Occupation=['str'],
                    CountryOfTravel=['dim:countries.tsv'], SymptomsStartDate=['date'], CodR_DateOfDeath=['date'],
                    Symptoms=['str'], branche1=['str'],branche2=['str'],branche3=['str'],CitizenshipCode=['str'],
