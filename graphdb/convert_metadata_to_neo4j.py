@@ -154,11 +154,11 @@ def load_data(datafile, logwriter):
             cv_stat = row['COVID19_Status'] if len(row['COVID19_Status']) > 0 else '0'  # error correction
             p = Node("Person", ssi_id=row['ssi_id'], age=age, COVID19_Status=cv_stat,
                      COVID19_EndDate=row['COVID19_EndDate'], IsPregnant=(row['Pregnancy'] == '1')
-                     , sequenced=(row['sequenced'] == 'Yes'), SymptomsStartDate=row['SymptomsStartDate']
-                     , SampleDate=row['SampleDate'], Symptoms=row['Symptoms'], Travel=(row['Travel'] == 'Yes'),
-                     ContactWithCase=(row['ContactWithCase'] == 'Yes'), Doctor=(row['Doctor'] == 'Yes'),
-                     Nurse=(row['Nurse'] == 'Yes'), HealthAssist=(row['HealthAssist'] == 'Yes'),
-                     Death60Days_final=(row['Death60Days_final'] == 'Yes'), DateOfDeath=row['DateOfDeath_final'],
+                     , sequenced=(row['sequenced'] == '1'), SymptomsStartDate=row['SymptomsStartDate']
+                     , SampleDate=row['SampleDate'], Symptoms=row['Symptoms'], Travel=(row['Travel'] == '1'),
+                     ContactWithCase=(row['ContactWithCase'] == '1'), Doctor=(row['Doctor'] == '1'),
+                     Nurse=(row['Nurse'] == '1'), HealthAssist=(row['HealthAssist'] == '1'),
+                     Death60Days_final=(row['Death60Days_final'] == '1'), DateOfDeath=row['DateOfDeath_final'],
                      Occupation=row['Occupation'], CitizenshipCode=row['CitizenshipCode'],
                      Reg_RegionCode=row['Reg_RegionCode'])
 
@@ -236,18 +236,26 @@ def load_data(datafile, logwriter):
     print("loaded data")
 
 
+def load_global_clades(gfile, writer):
+    pass
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='load a metadata file to neo4j')
-    parser.add_argument('infile', type=str, help='path to the file to be checked')
+    parser.add_argument('infile', type=str, help='path to the metadata file to be checked')
+    parser.add_argument('globfile', type=str, help='path to the global clade file to be checked')
     parser.add_argument('errfile', type=str, help='path to the error file to be created')
     args = parser.parse_args()
     infile = check_file(args.infile)
     print('Validated infile as {}'.format(infile))
+    gfile = check_file(args.globfile)
+    print('Validated global clade file as {}'.format(gfile))
     errfile = check_file(args.errfile, True)
     print('Validated errfile as {}'.format(errfile))
     with open(errfile, 'w') as csvfile:
         writer = csv.DictWriter(csvfile, ['MessageType', 'Row', 'ErrorType', 'Details'])
         writer.writeheader()
         writer.writerow({'MessageType': 'Info', 'ErrorType': '', 'Details': 'Started {}'.format(infile)})
+        load_global_clades(gfile, writer)
         load_data(infile, writer)
         writer.writerow({'MessageType': 'Info', 'ErrorType': '', 'Details': 'Finished {}'.format(infile)})
