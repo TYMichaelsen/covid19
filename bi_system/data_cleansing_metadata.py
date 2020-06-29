@@ -144,6 +144,7 @@ def check_errors(datafile, outfile, errfilewriter):
                         continue
                     if row[field_name] is None:
                         print("Warning, none value in row {}, field {}".format(rows_read,field_name))
+                        continue
                     val: str = row[field_name].strip()
                     for test in FIELD_TESTS[field_name]:
                         if test == 'date':
