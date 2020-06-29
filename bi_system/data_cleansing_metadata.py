@@ -142,6 +142,8 @@ def check_errors(datafile, outfile, errfilewriter):
                     if field_name not in row.keys():
                         print("Missing field, expected {}".format(field_name))
                         continue
+                    if row[field_name] is None:
+                        print("Warning, none value in row {}, field {}".format(rows_read,field_name))
                     val: str = row[field_name].strip()
                     for test in FIELD_TESTS[field_name]:
                         if test == 'date':
