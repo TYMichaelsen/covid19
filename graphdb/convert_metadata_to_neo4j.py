@@ -160,7 +160,7 @@ def load_data(datafile, logwriter):
                      Nurse=(row['Nurse'] == 'Yes'), HealthAssist=(row['HealthAssist'] == 'Yes'),
                      Death60Days_final=(row['Death60Days_final'] == 'Yes'), DateOfDeath=row['DateOfDeath_final'],
                      Occupation=row['Occupation'], CitizenshipCode=row['CitizenshipCode'],
-                     Reg_RegionCode=row['CitizenshipCode'])
+                     Reg_RegionCode=row['Reg_RegionCode'])
 
             if row['Pregnancy'] == '1' and row['Sex'] == 'M':
                 log_field_error('anomalous case data', i,
@@ -233,6 +233,7 @@ def load_data(datafile, logwriter):
                          relation_name="OcccupationBranche", rel_node_label="Branche")
 
     tx.commit()
+    print("loaded data")
 
 
 if __name__ == '__main__':
