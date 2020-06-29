@@ -103,7 +103,8 @@ def create_dims(tx):
 
     countries = {}
     dk = Node("Country", name='Denmark', nuts_code='DK0')
-    countries['Denmark'] = tx.create(dk)
+    tx.create(dk)
+    countries['Denmark'] = dk
     nuts3_regions = {}
     with open('../bi_system/stable_dims/nuts3_regions.tsv') as rfile:
         reader = csv.reader(rfile, delimiter='\t')
