@@ -145,7 +145,7 @@ def load_data(datafile, logwriter):
     # Create data
     tx = graph.begin()
     with open(datafile) as file:
-        reader = csv.DictReader(file, delimiter='\t')
+        reader = csv.DictReader(file)
         i = 0
         for row in reader:
             i += 1
