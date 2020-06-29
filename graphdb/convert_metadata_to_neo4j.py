@@ -180,16 +180,17 @@ def load_data(datafile, logwriter):
                               rel_node_label="Parish", name_field_name="ParishName")
 
             # Municipality
+
             if parish is not None:
                 muni = make_rel(tx, row, with_node=parish, code_field_name='MunicipalityCode',
                                 lookup_dict=dims['municipalities'], relation_name="PartOf",
                                 rel_node_label="Municipality")
 
-            # NUTS3 Region
-            if muni is not None:
-                make_rel(tx, row, with_node=muni, code_field_name='NUTS3Code', lookup_dict=dims['nuts3_regions'],
-                         relation_name="PartOf",
-                         rel_node_label="NUTS3_Region", name_field_name="NUTS3Text")
+                # NUTS3 Region
+                if muni is not None:
+                    make_rel(tx, row, with_node=muni, code_field_name='NUTS3Code', lookup_dict=dims['nuts3_regions'],
+                             relation_name="PartOf",
+                             rel_node_label="NUTS3_Region", name_field_name="NUTS3Text")
 
             # strains
             strain_name = row['lineage']
