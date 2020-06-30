@@ -262,7 +262,8 @@ def load_data(graph, datafile, logwriter, clade_dict):
             if ssi_id in persons.keys():
                 tx.create(Relationship(persons[ssi_id], "HasStrain", clade_node))
             else:
-                log_field_error('Clade person',-1, 'Missing person {} in person dictionary'.format(ssi_id), logwriter)
+                log_field_error('Clade person',-1, 'Missing person {} in person dictionary {}'.format(ssi_id, persons.keys()), logwriter)
+                
 
     tx.commit()
     print("loaded data")
