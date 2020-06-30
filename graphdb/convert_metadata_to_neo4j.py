@@ -255,7 +255,7 @@ def load_data(graph, datafile, logwriter, clade_dict):
     # add clade info for persons in global assignment
     for clade in clade_dict.keys():
         clade_node = dims['strains'][clade]
-        for ssi_id in clade_dict['clade']['cases']:
+        for ssi_id in clade_dict[clade]['cases']:
             if ssi_id in persons.keys():
                 tx.create(Relationship(persons[ssi_id], "HasStrain", clade_node))
 
