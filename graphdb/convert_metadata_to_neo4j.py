@@ -255,7 +255,7 @@ def load_data(graph, datafile, logwriter, clade_dict):
     # add clade info for persons in global assignment
     for clade in clade_dict.keys():
         if clade not in dims['strains'].keys():
-            log_field_error('Clade',-1, 'Missing clade {} in clade dictionary', logwriter)
+            log_field_error('Clade',-1, 'Missing clade {} in clade dictionary'.format(clade), logwriter)
             continue
         clade_node = dims['strains'][clade]
         for ssi_id in clade_dict[clade]['cases']:
