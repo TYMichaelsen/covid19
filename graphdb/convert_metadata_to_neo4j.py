@@ -270,6 +270,9 @@ def get_global_clades(cladefile, logwriter):
         i = 0
         for row in reader:
             i += 1
+            if 'Strain' not in row:
+                logwriter.writerow({'MessageType': 'Error', 'ErrorType': 'FATAL', 'Details': 'Could not find Strain field in row {}'.format(row)})
+                continue
             ID = row['Strain'].split('/')[1].replace('ALAB-','')
             country = row['Strain'].split('/')[0]
             if country == 'Wuhan':
