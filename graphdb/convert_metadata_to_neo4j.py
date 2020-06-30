@@ -280,9 +280,9 @@ def get_global_clades(cladefile, logwriter):
                 logwriter.writerow({'MessageType': 'Error', 'ErrorType': 'FATAL', 'Details': 'Could not find Strain field in row {}'.format(row)})
                 continue
             ID = row['Strain'].split('/')[1].replace('ALAB-','')
-            if ID.startswith('SSI'):
+            if ID.startswith('SSI') and not ID.startswith('SSI-'):
                 ID = ID.replace('SSI','SSI-')
-            if ID.startswith('HH'):
+            if ID.startswith('HH') and not ID.startswith('HH-'):
                 ID = ID.replace('HH','HH-')
             country = row['Strain'].split('/')[0]
             if country == 'Wuhan':
