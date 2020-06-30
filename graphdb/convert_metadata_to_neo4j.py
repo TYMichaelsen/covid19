@@ -66,7 +66,7 @@ def check_file(filepath, create=False):
     return filepath
 
 
-def create_dims(tx):
+def create_dims(tx, clades_dict):
     # Sex's
     sex_m = Node("Sex", name="M")
     sex_f = Node("Sex", name="F")
@@ -117,6 +117,18 @@ def create_dims(tx):
 
     # Virus Strains
     strains = {}
+    for clade in clades_dict.keys():
+        clade_details = clades_dict[clade]
+        n = Node("Strain", name=clade)
+        tx.create(n)
+        for country_name in clade_details['countries']:
+            row = {'country_name' : country_name} # just a hack to cause make_rel to work here
+            make_rel(tx=tx,row=row,with_node=n,code_field_name='country_name',lookup_dict=countries,
+                         relation_name="IDENTIFIED_IN", rel_node_label="Country")
+        if clade_details['parent'] is not None:
+            make_rel(tx=tx,row=clade_details,with_node=n,code_field_name='parent',lookup_dict=strains,
+                         relation_name="EvolvedFrom", rel_node_label="Strain")
+
 
     # Medical History
     risk_factors = {}
@@ -134,19 +146,24 @@ def create_dims(tx):
             'countries': countries, 'age_groups': age_groups, 'nursing_homes': {}, 'branches': {}, 'post_codes': {} }
 
 
-def load_data(datafile, logwriter):
+def connect():
     host = input("Please enter the neo4j database server IP (defaults to localhost): ")
     host = 'localhost' if len(host.strip(' ')) == 0 else host
     password = input("Please enter the neo4j user's database password: ")
     graph = Graph("bolt://{}:7687".format(host), user='neo4j',
                   password=password)  # this may need to change when running from the server since there it needs the instance IP
     graph.delete_all()
+    return graph
+
+
+def load_data(graph, datafile, logwriter, clade_dict):
     tx = graph.begin()
-    dims = create_dims(tx)
+    dims = create_dims(tx, clade_dict)
 
     # Create data
     with open(datafile) as file:
         reader = csv.DictReader(file)
+        persons = {}
         i = 0
         for row in reader:
             i += 1
@@ -155,12 +172,13 @@ def load_data(datafile, logwriter):
             p = Node("Person", ssi_id=row['ssi_id'], age=age, COVID19_Status=cv_stat,
                      COVID19_EndDate=row['COVID19_EndDate'], IsPregnant=(row['Pregnancy'] == '1')
                      , sequenced=(row['sequenced'] == '1'), SymptomsStartDate=row['SymptomsStartDate']
-                     , SampleDate=row['SampleDate'], Symptoms=row['Symptoms'], Travel=(row['Travel'] == '1'),
-                     ContactWithCase=(row['ContactWithCase'] == '1'), Doctor=(row['Doctor'] == '1'),
+                     , SampleDate=row['SampleDate'], Symptoms=row['Symptoms'], Travel=(row['Travel'] == '1')
+                     # ContactWithCase=(row['ContactWithCase'] == '1')
+                     , Doctor=(row['Doctor'] == '1'),
                      Nurse=(row['Nurse'] == '1'), HealthAssist=(row['HealthAssist'] == '1'),
                      Death60Days_final=(row['Death60Days_final'] == '1'), DateOfDeath=row['DateOfDeath_final'],
-                     Occupation=row['Occupation'], CitizenshipCode=row['CitizenshipCode'],
-                     Reg_RegionCode=row['Reg_RegionCode'])
+                     Occupation=row['Occupation'], CitizenshipCode=row['CitizenshipCode'])
+                     # Reg_RegionCode=row['Reg_RegionCode'])
 
             if row['Pregnancy'] == '1' and row['Sex'] == 'M':
                 log_field_error('anomalous case data', i,
@@ -168,6 +186,7 @@ def load_data(datafile, logwriter):
                                 logwriter)  # TODO extract all error checking code to a separate file
 
             tx.create(p)
+            persons[row['ssi_id']] = p
             if row['Sex'] == 'F':
                 tx.create(Relationship(p, "ISA", dims['sex_f']))
             elif row['Sex'] == 'M':
@@ -232,13 +251,44 @@ def load_data(datafile, logwriter):
             make_rel(tx, row, with_node=p, code_field_name='branche3', lookup_dict=dims['branches'],
                          relation_name="OcccupationBranche", rel_node_label="Branche")
 
+
+    # add clade info for persons in global assignment
+    for clade in clade_dict.keys():
+        clade_node = dims['strains'][clade]
+        for ssi_id in clade_dict['clade']['cases']:
+            if ssi_id in persons.keys():
+                tx.create(Relationship(persons[ssi_id], "HasStrain", clade_node))
+
     tx.commit()
     print("loaded data")
 
 
-def load_global_clades(gfile, writer):
-    pass
+def get_global_clades(cladefile, logwriter):
+    clades = {}
+    with open(cladefile) as file:
+        reader = csv.DictReader(file)
+        i = 0
+        for row in reader:
+            i += 1
+            ID = row['Strain'].split('/')[1].replace('ALAB-','')
+            country = row['Strain'].split('/')[0]
+            if country == 'Wuhan':
+                country = 'China'
+            clade = row['Clade'] if row['Clade'] != '--' else None
+            parent = None
+            if '/' in clade:
+                parent = '/'.join(clade.split('/')[:-1])
+            # if len(row) > 2:
+            #    parent = row['parent clades'] if row['parent clades'] != '--' else None
+            clade_details = clades[clade] if clade in clades.keys() else {'countries': set(), 'parent': parent, 'cases': set()}
+            clade_details['countries'].add(country)
+            clade_details['parent'] = parent if parent is not None else clade_details['parent']
+            clade_details['cases'].add(ID)
+            clades[clade] = clade_details
 
+    logwriter.writerow({'MessageType': 'Info', 'ErrorType': '', 'Details': 'Finished parsing {} rows from {} resulting in {} clades'.format(i, cladefile, len(clades))})
+
+    return clades
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='load a metadata file to neo4j')
@@ -256,6 +306,7 @@ if __name__ == '__main__':
         writer = csv.DictWriter(csvfile, ['MessageType', 'Row', 'ErrorType', 'Details'])
         writer.writeheader()
         writer.writerow({'MessageType': 'Info', 'ErrorType': '', 'Details': 'Started {}'.format(infile)})
-        load_global_clades(gfile, writer)
-        load_data(infile, writer)
+        graph = connect()
+        clades = get_global_clades(gfile, writer)
+        load_data(graph, infile, writer, clades)
         writer.writerow({'MessageType': 'Info', 'ErrorType': '', 'Details': 'Finished {}'.format(infile)})
