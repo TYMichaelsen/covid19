@@ -266,7 +266,7 @@ def load_data(graph, datafile, logwriter, clade_dict):
 def get_global_clades(cladefile, logwriter):
     clades = {}
     with open(cladefile) as file:
-        reader = csv.DictReader(file)
+        reader = csv.DictReader(file, delimiter='\t')
         i = 0
         for row in reader:
             i += 1
