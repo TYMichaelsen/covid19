@@ -254,6 +254,9 @@ def load_data(graph, datafile, logwriter, clade_dict):
 
     # add clade info for persons in global assignment
     for clade in clade_dict.keys():
+        if clade not in dims['strains'].keys():
+            log_field_error('Clade',-1, 'Missing clade {} in clade dictionary', logwriter)
+            continue
         clade_node = dims['strains'][clade]
         for ssi_id in clade_dict[clade]['cases']:
             if ssi_id in persons.keys():
@@ -277,7 +280,7 @@ def get_global_clades(cladefile, logwriter):
             country = row['Strain'].split('/')[0]
             if country == 'Wuhan':
                 country = 'China'
-            clade = row['Clade'] if row['Clade'] != '--' else None
+            clade = row['Clade']
             parent = None
             if '/' in clade:
                 parent = '/'.join(clade.split('/')[:-1])
