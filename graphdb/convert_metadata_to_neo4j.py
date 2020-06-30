@@ -261,6 +261,8 @@ def load_data(graph, datafile, logwriter, clade_dict):
         for ssi_id in clade_dict[clade]['cases']:
             if ssi_id in persons.keys():
                 tx.create(Relationship(persons[ssi_id], "HasStrain", clade_node))
+            else:
+                log_field_error('Clade person',-1, 'Missing person {} in person dictionary'.format(ssi_id), logwriter)
 
     tx.commit()
     print("loaded data")
@@ -277,6 +279,10 @@ def get_global_clades(cladefile, logwriter):
                 logwriter.writerow({'MessageType': 'Error', 'ErrorType': 'FATAL', 'Details': 'Could not find Strain field in row {}'.format(row)})
                 continue
             ID = row['Strain'].split('/')[1].replace('ALAB-','')
+            if ID.startswith('SSI'):
+                ID = ID.replace('SSI','SSI-')
+            if ID.startswith('HH'):
+                ID = ID.replace('HH','HH-')
             country = row['Strain'].split('/')[0]
             if country == 'Wuhan':
                 country = 'China'
