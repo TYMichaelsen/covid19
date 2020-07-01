@@ -286,7 +286,6 @@ augur export v2 \
       --color-by-metadata $cols \
       --lat-longs $OUTDIR/latlongs.tsv \
       --output $OUTDIR/auspice/ncov_custom.json
-#--description {input.description} \
 
 cp $OUTDIR/tip-frequencies.json $OUTDIR/auspice/ncov_custom_tip-frequencies.json
 
