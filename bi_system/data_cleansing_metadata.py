@@ -257,7 +257,7 @@ def check_errors(datafile, outfile, errfilewriter):
                     else:
                         try:
                             min_a, max_a = outrow['ReportAgeGrp'].split('-')
-                            if int(outrow['ReportAge']) < int(min_a) or outrow['ReportAge'] > int(max_a):
+                            if int(outrow['ReportAge']) < int(min_a) or int(outrow['ReportAge']) > int(max_a):
                                 log_field_error('ReportAge', rows_read, "Inconcsistent age group: {} and age: {} "
                                                 .format(outrow['ReportAgeGrp'], outrow['ReportAge']), errfilewriter)
                         except Exception as e:
