@@ -199,7 +199,7 @@ def check_errors(datafile, outfile, errfilewriter):
                             keys = static_dims[dim_name]
                             if len(val) > 0:
                                 if not val in keys:
-                                    if val == 'Not Denmark, Unknown' and dim_name == 'countries':
+                                    if dim_name == 'countries':
                                         if val == 'xxxx' or 'Not Denmark, Unknown':
                                             outrow[field_name] = 'Not Denmark, Unknown'
                                     else:
