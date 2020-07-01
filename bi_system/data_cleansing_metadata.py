@@ -200,7 +200,8 @@ def check_errors(datafile, outfile, errfilewriter):
                             if len(val) > 0:
                                 if not val in keys:
                                     if val == 'Not Denmark, Unknown' and dim_name == 'countries':
-                                        outrow[field_name] = val  # pass through
+                                        if val == 'xxxx' or 'Not Denmark, Unknown':
+                                            outrow[field_name] = 'Not Denmark, Unknown'
                                     else:
                                         if val == 'okt-19' and dim_name == 'age_groups':
                                             outrow[field_name] = '0-9'  # quick fix
