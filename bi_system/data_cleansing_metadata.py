@@ -120,7 +120,7 @@ def check_errors(datafile, outfile, errfilewriter):
     """
 
     static_dims = load_dims()
-    rows_read = 0
+    rows_read: int = 0
     rows_omitted = 0
     primary_keys = set()
     validated_rows = []
@@ -199,8 +199,9 @@ def check_errors(datafile, outfile, errfilewriter):
                             keys = static_dims[dim_name]
                             if len(val) > 0:
                                 if not val in keys:
-                                    if val == 'Not Denmark, Unknown' and dim_name == 'countries':
-                                        outrow[field_name] = val  # pass through
+                                    if dim_name == 'countries':
+                                        if val == 'xxxx' or 'Not Denmark, Unknown':
+                                            outrow[field_name] = 'Not Denmark, Unknown'
                                     else:
                                         if val == 'okt-19' and dim_name == 'age_groups':
                                             outrow[field_name] = '0-9'  # quick fix
@@ -209,6 +210,8 @@ def check_errors(datafile, outfile, errfilewriter):
                                                             "Invalid value: {}, expected corresponding "
                                                             "dimension key in {}"
                                                             .format(val, dim_name), errfilewriter)
+                                            if field_name=='Parishcode':
+                                                print("{}\t{}".format(row['Parishcode'], row['ParishName']))
                                 else:
                                     outrow[field_name] = val
                                     # if field_name == 'Parishcode':
@@ -243,7 +246,7 @@ def check_errors(datafile, outfile, errfilewriter):
                                     .format(row['COVID19_Status']), errfilewriter)
             # consistent pregnancy info
             if outrow['Pregnancy'] == TRUE_VALUE:
-                if outrow['ReportAge'] < 18 or outrow['ReportAge'] > 45 or outrow['Sex'] == 'M':
+                if int(outrow['ReportAge']) < 18 or int(outrow['ReportAge']) > 45 or outrow['Sex'] == 'M':
                     log_field_error('Pregnancy', rows_read, "suspicious demographics for pregnant person: {} {} "
                                     .format(outrow['Sex'], outrow['ReportAge']), errfilewriter)
 
@@ -254,15 +257,15 @@ def check_errors(datafile, outfile, errfilewriter):
                         if int(outrow['ReportAge']) < 90:
                             log_field_error('ReportAge', rows_read, "Inconcsistent age group: {} and age: {} "
                                             .format(outrow['ReportAgeGrp'], outrow['ReportAge']), errfilewriter)
-                        else:
-                            try:
-                                min_a, max_a = outrow['ReportAgeGrp'].split('-')
-                                if int(outrow['ReportAge']) < int(min_a) or outrow['ReportAge'] > int(max_a):
-                                    log_field_error('ReportAge', rows_read, "Inconcsistent age group: {} and age: {} "
-                                                    .format(outrow['ReportAgeGrp'], outrow['ReportAge']), errfilewriter)
-                            except Exception as e:
-                                log_field_error(field_name, rows_read, "Age group missing a dash? {} {}"
-                                                .format(outrow['ReportAgeGrp'], e), errfilewriter)
+                    else:
+                        try:
+                            min_a, max_a = outrow['ReportAgeGrp'].split('-')
+                            if int(outrow['ReportAge']) < int(min_a) or int(outrow['ReportAge']) > int(max_a):
+                                log_field_error('ReportAge', rows_read, "Inconcsistent age group: {} and age: {} "
+                                                .format(outrow['ReportAgeGrp'], outrow['ReportAge']), errfilewriter)
+                        except Exception as e:
+                            log_field_error(field_name, rows_read, "Age group missing a dash? {} {}"
+                                            .format(outrow['ReportAgeGrp'], e), errfilewriter)
 
             validated_rows.append(outrow)
 
