@@ -243,7 +243,7 @@ def check_errors(datafile, outfile, errfilewriter):
                                     .format(row['COVID19_Status']), errfilewriter)
             # consistent pregnancy info
             if outrow['Pregnancy'] == TRUE_VALUE:
-                if outrow['ReportAge'] < 18 or outrow['ReportAge'] > 45 or outrow['Sex'] == 'M':
+                if int(outrow['ReportAge']) < 18 or int(outrow['ReportAge']) > 45 or outrow['Sex'] == 'M':
                     log_field_error('Pregnancy', rows_read, "suspicious demographics for pregnant person: {} {} "
                                     .format(outrow['Sex'], outrow['ReportAge']), errfilewriter)
 
