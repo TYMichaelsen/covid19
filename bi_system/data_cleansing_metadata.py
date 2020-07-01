@@ -221,9 +221,13 @@ def check_errors(datafile, outfile, errfilewriter):
                                         log_field_error(field_name, rows_read,
                                                         "Invalid numeric value: {}, expected between 0 and 120"
                                                         .format(val), errfilewriter)
+                                        outrow[field_name] = None
                                 except Exception as e:
                                     log_field_error(field_name, rows_read, "Non numeric value: {}"
                                                     .format(e), errfilewriter)
+                                    outrow[field_name] = None
+                            else:
+                                outrow[field_name] = None
 
                         if test == 'str':  # just pass through
                             outrow[field_name] = val
@@ -240,11 +244,8 @@ def check_errors(datafile, outfile, errfilewriter):
                     log_field_error('Pregnancy', rows_read, "suspicious demographics for pregnant person: {} {} "
                                                 .format(outrow['Sex'], outrow['ReportAge']), errfilewriter)
 
-            # consistent age and group
+            # consistent age group
             if outrow['ReportAge'] is not None and len(outrow['ReportAge']) >0:
-                if int(outrow['ReportAge']) > 119 or int(outrow['ReportAge']) < 0:
-                    log_field_error('ReportAge', rows_read, "suspicious age: {} "
-                                                .format(outrow['ReportAge']), errfilewriter)
                 if outrow['ReportAgeGrp'] is not None:
                     if outrow['ReportAgeGrp'] == '90+':
                         if int(outrow['ReportAge']) < 90:
