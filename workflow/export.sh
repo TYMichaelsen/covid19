@@ -54,7 +54,7 @@ sed '/POS/d' - | # Remove all controls.
 sed '/NEG/d' - > genomes/$DT/tmp_mapping.tsv # Remove all controls.
 
 # Sweep batch-folders for consensus sequences (OBS: renaming headers according to AAU library naming scheme).
-cat processing/CJ*/final_output/consensus.fasta | awk '/^>/ {split($0,a,"_"); print ">"a[2]} !/^>/ {print}' > genomes/$DT/tmp_raw.fasta
+cat processing/?J*/final_output/consensus.fasta | awk '/^>/ {split($0,a,"_"); print ">"a[2]} !/^>/ {print}' > genomes/$DT/tmp_raw.fasta
 
 # Get headers from sequences.
 grep ">" genomes/$DT/tmp_raw.fasta | sed 's/^>//' > genomes/$DT/tmp_header.txt
