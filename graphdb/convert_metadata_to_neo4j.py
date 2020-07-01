@@ -220,10 +220,10 @@ def load_data(graph, datafile, logwriter, clade_dict):
                              relation_name="PartOf",
                              rel_node_label="NUTS3_Region", name_field_name="NUTS3Text")
 
-            # strains
-            make_rel(tx, row, with_node=p, code_field_name='lineage', lookup_dict=dims['strains'],
-                         relation_name="HasStrain",
-                         rel_node_label="Strain")
+            # strains - replaced by clade assignment file
+            # make_rel(tx, row, with_node=p, code_field_name='lineage', lookup_dict=dims['strains'],
+            #              relation_name="HasStrain",
+            #              rel_node_label="Strain")
 
             # Risk factors
             for field_name in dims['risk_factors'].keys():
