@@ -276,18 +276,18 @@ def get_global_clades(cladefile, logwriter):
         i = 0
         for row in reader:
             i += 1
-            if 'Strain' not in row:
-                logwriter.writerow({'MessageType': 'Error', 'ErrorType': 'FATAL', 'Details': 'Could not find Strain field in row {}'.format(row)})
+            if 'strain' not in row:
+                logwriter.writerow({'MessageType': 'Error', 'ErrorType': 'FATAL', 'Details': 'Could not find strain field in row {}'.format(row)})
                 continue
-            ID = row['Strain'].split('/')[1].replace('ALAB-','')
+            ID = row['strain'].split('/')[1].replace('ALAB-','')
             if ID.startswith('SSI') and not ID.startswith('SSI-'):
                 ID = ID.replace('SSI','SSI-')
             if ID.startswith('HH') and not ID.startswith('HH-'):
                 ID = ID.replace('HH','HH-')
-            country = row['Strain'].split('/')[0]
+            country = row['strain'].split('/')[0]
             if country == 'Wuhan':
                 country = 'China'
-            clade = row['Clade']
+            clade = row['clade']
             parent = None
             if '/' in clade:
                 parent = '/'.join(clade.split('/')[:-1])
