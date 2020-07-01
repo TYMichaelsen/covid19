@@ -241,18 +241,18 @@ def check_errors(datafile, outfile, errfilewriter):
                                                 .format(outrow['Sex'], outrow['ReportAge']), errfilewriter)
 
             # consistent age and group
-            if outrow['ReportAge'] is not None:
-                if outrow['ReportAge'] > 119 or outrow['ReportAge'] < 0:
+            if outrow['ReportAge'] is not None and len(outrow['ReportAge']) >0:
+                if int(outrow['ReportAge']) > 119 or int(outrow['ReportAge']) < 0:
                     log_field_error('ReportAge', rows_read, "suspicious age: {} "
                                                 .format(outrow['ReportAge']), errfilewriter)
                 if outrow['ReportAgeGrp'] is not None:
                     if outrow['ReportAgeGrp'] == '90+':
-                        if outrow['ReportAge'] < 90:
+                        if int(outrow['ReportAge']) < 90:
                             log_field_error('ReportAge', rows_read, "Inconcsistent age group: {} and age: {} "
                                                 .format(outrow['ReportAgeGrp'], outrow['ReportAge']), errfilewriter)
                         else:
                             min_a, max_a = outrow['ReportAgeGrp'].split('-')
-                            if outrow['ReportAge'] < int(min_a) or outrow['ReportAge'] > int(max_a):
+                            if int(outrow['ReportAge']) < int(min_a) or outrow['ReportAge'] > int(max_a):
                                     log_field_error('ReportAge', rows_read, "Inconcsistent age group: {} and age: {} "
                                                 .format(outrow['ReportAgeGrp'], outrow['ReportAge']), errfilewriter)
 
