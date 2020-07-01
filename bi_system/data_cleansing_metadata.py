@@ -209,6 +209,8 @@ def check_errors(datafile, outfile, errfilewriter):
                                                             "Invalid value: {}, expected corresponding "
                                                             "dimension key in {}"
                                                             .format(val, dim_name), errfilewriter)
+                                            if field_name=='Parishcode':
+                                                print("{}\t{}".format(row['Parishcode'], row['ParishName']))
                                 else:
                                     outrow[field_name] = val
                                     # if field_name == 'Parishcode':
