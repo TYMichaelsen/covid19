@@ -3,6 +3,8 @@ import os
 import argparse
 from datetime import date
 
+TRUE_VALUE = 'Yes'
+FALSE_VALUE = 'No'
 FIELD_TESTS = dict(SampleDate=['date'], sequenced=['yes'], Sex=['vals:F_M'], Travel=['yes'], ContactWithCase=['yes'],
                    EpilprResp_start=['date'], EpilprResp=['yes'], EpilprVent_start=['date'], EpilprVent=['yes'],
                    EpilprECMO_start=['date'], EpilprECMO=['yes'], EpilprHeart=['yes'], EpilprHeart_start=['date'],
@@ -137,7 +139,11 @@ def check_errors(datafile, outfile, errfilewriter):
                                         'Details': '{}'.format(err_msg)})
                 rows_omitted += 1
                 continue
-
+            # Consistent number of fields in row
+            if len(row) != len(reader.fieldnames):
+                err_msg = 'Number of fields in the row was {}, expected {}'.format(len(row),len(reader.fieldnames))
+                errfilewriter.writerow({'MessageType': 'Error', 'Row': rows_read, 'ErrorType': 'Inconsistent length',
+                                        'Details': '{}'.format(err_msg)})
             # Field checks
             for field_name in row.keys():
                 if field_name in FIELD_TESTS:
@@ -160,9 +166,9 @@ def check_errors(datafile, outfile, errfilewriter):
                         if test == 'yes':
                             if len(val) > 0:
                                 if val.lower() in ['y', 'yes', 'ja', 'true', 'sand', '1']:
-                                    outrow[field_name] = 1
+                                    outrow[field_name] = TRUE_VALUE
                                 elif val.lower() in ['n', 'no', 'nej', 'false', 'falsk', '0']:
-                                    outrow[field_name] = 0
+                                    outrow[field_name] = FALSE_VALUE
                                 else:
                                     log_field_error(field_name, rows_read, "Invalid yes/no value: {}".format(val)
                                                     , errfilewriter)
@@ -218,8 +224,33 @@ def check_errors(datafile, outfile, errfilewriter):
                         if test == 'str':  # just pass through
                             outrow[field_name] = val
 
-            # TODO number of fields in row
-            # TODO Common sense checks
+                # Common sense checks
+                # consistent COVID status and date
+                if row['COVID19_Status'] in ['1','2']:
+                    if len(row['COVID19_EndDate'.strip()]) == 0:
+                        log_field_error('COVID19_EndDate', rows_read, "missing COVID19_EndDate when status is set to: {}"
+                                                    .format(row['COVID19_Status']), errfilewriter)
+                # consistent pregnancy info
+                if outrow['Pregnancy'] == TRUE_VALUE:
+                    if outrow['ReportAge'] < 18 or outrow['ReportAge'] > 45 or outrow['Sex']=='M':
+                        log_field_error('Pregnancy', rows_read, "suspicious demographics for pregnant person: {} {} "
+                                                    .format(outrow['Sex'], outrow['ReportAge']), errfilewriter)
+
+                # consistent age and group
+                if outrow['ReportAge'] is not None:
+                    if outrow['ReportAge'] > 119 or outrow['ReportAge'] < 0:
+                        log_field_error('ReportAge', rows_read, "suspicious age: {} "
+                                                    .format(outrow['ReportAge']), errfilewriter)
+                    if outrow['ReportAgeGrp'] is not None:
+                        if outrow['ReportAgeGrp'] == '90+':
+                            if outrow['ReportAge'] < 90:
+                                log_field_error('ReportAge', rows_read, "Inconcsistent age group: {} and age: {} "
+                                                    .format(outrow['ReportAgeGrp'], outrow['ReportAge']), errfilewriter)
+                            else:
+                                min_a, max_a = outrow['ReportAgeGrp'].split('-')
+                                if outrow['ReportAge'] < int(min_a) or outrow['ReportAge'] > int(max_a):
+                                        log_field_error('ReportAge', rows_read, "Inconcsistent age group: {} and age: {} "
+                                                    .format(outrow['ReportAgeGrp'], outrow['ReportAge']), errfilewriter)
 
             validated_rows.append(outrow)
 
