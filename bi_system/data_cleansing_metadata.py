@@ -228,33 +228,33 @@ def check_errors(datafile, outfile, errfilewriter):
                         if test == 'str':  # just pass through
                             outrow[field_name] = val
 
-                # Common sense checks
-                # consistent COVID status and date
-                if row['COVID19_Status'] in ['1','2']:
-                    if len(row['COVID19_EndDate'.strip()]) == 0:
-                        log_field_error('COVID19_EndDate', rows_read, "missing COVID19_EndDate when status is set to: {}"
-                                                    .format(row['COVID19_Status']), errfilewriter)
-                # consistent pregnancy info
-                if outrow['Pregnancy'] == TRUE_VALUE:
-                    if outrow['ReportAge'] < 18 or outrow['ReportAge'] > 45 or outrow['Sex']=='M':
-                        log_field_error('Pregnancy', rows_read, "suspicious demographics for pregnant person: {} {} "
-                                                    .format(outrow['Sex'], outrow['ReportAge']), errfilewriter)
+            # Common sense checks
+            # consistent COVID status and date
+            if row['COVID19_Status'] in ['1','2']:
+                if len(row['COVID19_EndDate'.strip()]) == 0:
+                    log_field_error('COVID19_EndDate', rows_read, "missing COVID19_EndDate when status is set to: {}"
+                                                .format(row['COVID19_Status']), errfilewriter)
+            # consistent pregnancy info
+            if outrow['Pregnancy'] == TRUE_VALUE:
+                if outrow['ReportAge'] < 18 or outrow['ReportAge'] > 45 or outrow['Sex']=='M':
+                    log_field_error('Pregnancy', rows_read, "suspicious demographics for pregnant person: {} {} "
+                                                .format(outrow['Sex'], outrow['ReportAge']), errfilewriter)
 
-                # consistent age and group
-                if outrow['ReportAge'] is not None:
-                    if outrow['ReportAge'] > 119 or outrow['ReportAge'] < 0:
-                        log_field_error('ReportAge', rows_read, "suspicious age: {} "
-                                                    .format(outrow['ReportAge']), errfilewriter)
-                    if outrow['ReportAgeGrp'] is not None:
-                        if outrow['ReportAgeGrp'] == '90+':
-                            if outrow['ReportAge'] < 90:
-                                log_field_error('ReportAge', rows_read, "Inconcsistent age group: {} and age: {} "
-                                                    .format(outrow['ReportAgeGrp'], outrow['ReportAge']), errfilewriter)
-                            else:
-                                min_a, max_a = outrow['ReportAgeGrp'].split('-')
-                                if outrow['ReportAge'] < int(min_a) or outrow['ReportAge'] > int(max_a):
-                                        log_field_error('ReportAge', rows_read, "Inconcsistent age group: {} and age: {} "
-                                                    .format(outrow['ReportAgeGrp'], outrow['ReportAge']), errfilewriter)
+            # consistent age and group
+            if outrow['ReportAge'] is not None:
+                if outrow['ReportAge'] > 119 or outrow['ReportAge'] < 0:
+                    log_field_error('ReportAge', rows_read, "suspicious age: {} "
+                                                .format(outrow['ReportAge']), errfilewriter)
+                if outrow['ReportAgeGrp'] is not None:
+                    if outrow['ReportAgeGrp'] == '90+':
+                        if outrow['ReportAge'] < 90:
+                            log_field_error('ReportAge', rows_read, "Inconcsistent age group: {} and age: {} "
+                                                .format(outrow['ReportAgeGrp'], outrow['ReportAge']), errfilewriter)
+                        else:
+                            min_a, max_a = outrow['ReportAgeGrp'].split('-')
+                            if outrow['ReportAge'] < int(min_a) or outrow['ReportAge'] > int(max_a):
+                                    log_field_error('ReportAge', rows_read, "Inconcsistent age group: {} and age: {} "
+                                                .format(outrow['ReportAgeGrp'], outrow['ReportAge']), errfilewriter)
 
             validated_rows.append(outrow)
 
