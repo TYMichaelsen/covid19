@@ -172,6 +172,10 @@ def check_errors(datafile, outfile, errfilewriter):
                                 else:
                                     log_field_error(field_name, rows_read, "Invalid yes/no value: {}".format(val)
                                                     , errfilewriter)
+                                    outrow[field_name] = None
+                            else:
+                                outrow[field_name] = None
+
                         if test.startswith('vals'):
                             test_params = test.split(':')
                             allowed_vals = test_params[1].split('_')
