@@ -211,12 +211,41 @@ else
     cp ${CLADES} ${OUTDIR}/clades.tsv
 fi
 
-### add clades.
+### add default nextstrain clades to metadata.
 augur clades \
       --tree $OUTDIR/tree.nwk \
       --mutations $OUTDIR/nt_muts.json $OUTDIR/aa_muts.json \
-      --clades ${OUTDIR}/clades.tsv \
-      --output-node-data $OUTDIR/clades.json
+      --clades ${NCOVDIR}/2020-07-01_nextstrain_clades.tsv \
+      --output-node-data $OUTDIR/nextstrain_clades.json
+
+# Convert .json to .tsv and retain only tips.
+Rscript -e 'library(rjson); library(magrittr); args <- commandArgs(TRUE); clades <- fromJSON(file = paste0(args,"/nextstrain_clades.json")) %>% .$nodes %>% sapply("[[",1) %>% {data.frame(strain = names(.),Clade = .,row.names = NULL)}; write.table(clades,paste0(args,"/nextstrain_clades.tsv"),sep = ";",quote = F,row.names = F)' ${OUTDIR}
+grep -v "NODE" $OUTDIR/nextstrain_clades.tsv > tmp && mv tmp $OUTDIR/nextstrain_clades.tsv
+
+# Add nextstrain clade to metadata.
+LANG=en_EN join -1 1 -2 1 -t $'\t' <(tail -n +2 $OUTDIR/metadata.tsv | LANG=en_EN sort) <(awk -F';' 'NR > 1 {print $1"\t"$2}' $OUTDIR/nextstrain_clades.tsv | tail -n +2 | LANG=en_EN sort) > $OUTDIR/metadata_w_clade.tsv
+
+cat <(awk 'NR == 1 {print $0"\tnextstrain_clade"}' $OUTDIR/metadata.tsv) $OUTDIR/metadata_w_clade.tsv > tmp && mv tmp $OUTDIR/metadata_w_clade.tsv
+
+### add custom clades.
+augur clades \
+      --tree $OUTDIR/tree.nwk \
+      --mutations $OUTDIR/nt_muts.json $OUTDIR/aa_muts.json \
+      --clades ${NCOVDIR}/2020-07-01_Vang_clades.tsv \
+      --output-node-data $OUTDIR/highres_clades.json
+
+# Convert .json to .tsv and retain only tips.
+Rscript -e 'library(rjson); library(magrittr); args <- commandArgs(TRUE); clades <- fromJSON(file = paste0(args,"/highres_clades.json")) %>% .$nodes %>% sapply("[[",1) %>% {data.frame(strain = names(.),Clade = .,row.names = NULL)}; write.table(clades,paste0(args,"/highres_clades.tsv"),sep = ";",quote = F,row.names = F)' ${OUTDIR}
+grep -v "NODE" $OUTDIR/highres_clades.tsv > tmp && mv tmp $OUTDIR/highres_clades.tsv
+
+# Add custom clade to metadata.
+awk 'NR == 1 {print $0"\thighres_clade"}' $OUTDIR/metadata_w_clade.tsv > tmp_header
+
+LANG=en_EN join -1 1 -2 1 -t $'\t' <(tail -n +2 $OUTDIR/metadata_w_clade.tsv | LANG=en_EN sort) <(awk -F';' 'NR > 1 {print $1"\t"$2}' $OUTDIR/highres_clades.tsv | tail -n +2 | LANG=en_EN sort) > tmp && mv tmp $OUTDIR/metadata_w_clade.tsv
+
+cat tmp_header $OUTDIR/metadata_w_clade.tsv > tmp && mv tmp $OUTDIR/metadata_w_clade.tsv
+
+rm tmp_header
 
 ### construct colouring.
 python3 ${NCOVDIR}/assign-colors.py \
@@ -239,23 +268,6 @@ augur frequencies \
 # Therefore it is neccessary to run pangolin
 # this way (wrap inside a `bash -c` session)
 
-# Pangolin creates quite large temporary files
-### Doesn't work at the moment.
-# See this issue: https://github.com/hCoV-2019/pangolin/issues/61
-bash -c "
-source activate pangolin
-pangolin $OUTDIR/masked.fasta -t $THREADS \
-    --tempdir pangtmp \
-    --outdir $OUTDIR \
-    --include-putative
-    rm -rf ./pangtmp
-"
-
-# Add pangolin lineages and lineage version to metadata.
-LANG=en_EN join -1 1 -2 1 -t $'\t' <(tail -n +2 $OUTDIR/metadata.tsv | LANG=en_EN sort) <(awk -F',' '{print $1"\t"$2"\t"$5}' $OUTDIR/lineage_report.csv | tail -n +2 | LANG=en_EN sort) > $OUTDIR/metadata_w_linage.tsv
-
-cat <(awk 'NR == 1 {print $0"\tlineage\tlineage_version"}' $OUTDIR/metadata.tsv) $OUTDIR/metadata_w_linage.tsv > tmp && mv tmp $OUTDIR/metadata_w_linage.tsv
-
 ### Export data for auspice
 # Construct output for auspice.
 mkdir -p $OUTDIR/auspice
@@ -264,12 +276,12 @@ mkdir -p $OUTDIR/auspice
 cat $NCOVDIR/latlong_nextstrain.tsv ${NCOVDIR}/lat_longs.tsv > $OUTDIR/latlongs.tsv
 
 # Get all metadata columns except strain, virus and date to display in auspice.
-cols=$(awk -F'\t' 'NR == 1 {$1=$2=$3=""; print $0}' $OUTDIR/metadata_w_linage.tsv)
+cols=$(awk -F'\t' 'NR == 1 {$1=$2=$3=""; print $0}' $OUTDIR/metadata_w_clade.tsv)
 
 augur export v2 \
       --tree $OUTDIR/tree.nwk \
-      --metadata $OUTDIR/metadata_w_linage.tsv \
-      --node-data $OUTDIR/branch_lengths.json $OUTDIR/nt_muts.json $OUTDIR/aa_muts.json $OUTDIR/clades.json \
+      --metadata $OUTDIR/metadata_w_clade.tsv \
+      --node-data $OUTDIR/branch_lengths.json $OUTDIR/nt_muts.json $OUTDIR/aa_muts.json $OUTDIR/highres_clades.json \
       --auspice-config ${NCOVDIR}/auspice_config_AAU.json \
       --color-by-metadata $cols \
       --lat-longs $OUTDIR/latlongs.tsv \
