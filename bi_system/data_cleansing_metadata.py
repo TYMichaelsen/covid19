@@ -120,7 +120,7 @@ def check_errors(datafile, outfile, errfilewriter):
     """
 
     static_dims = load_dims()
-    rows_read = 0
+    rows_read: int = 0
     rows_omitted = 0
     primary_keys = set()
     validated_rows = []
@@ -254,15 +254,15 @@ def check_errors(datafile, outfile, errfilewriter):
                         if int(outrow['ReportAge']) < 90:
                             log_field_error('ReportAge', rows_read, "Inconcsistent age group: {} and age: {} "
                                             .format(outrow['ReportAgeGrp'], outrow['ReportAge']), errfilewriter)
-                        else:
-                            try:
-                                min_a, max_a = outrow['ReportAgeGrp'].split('-')
-                                if int(outrow['ReportAge']) < int(min_a) or outrow['ReportAge'] > int(max_a):
-                                    log_field_error('ReportAge', rows_read, "Inconcsistent age group: {} and age: {} "
-                                                    .format(outrow['ReportAgeGrp'], outrow['ReportAge']), errfilewriter)
-                            except Exception as e:
-                                log_field_error(field_name, rows_read, "Age group missing a dash? {} {}"
-                                                .format(outrow['ReportAgeGrp'], e), errfilewriter)
+                    else:
+                        try:
+                            min_a, max_a = outrow['ReportAgeGrp'].split('-')
+                            if int(outrow['ReportAge']) < int(min_a) or outrow['ReportAge'] > int(max_a):
+                                log_field_error('ReportAge', rows_read, "Inconcsistent age group: {} and age: {} "
+                                                .format(outrow['ReportAgeGrp'], outrow['ReportAge']), errfilewriter)
+                        except Exception as e:
+                            log_field_error(field_name, rows_read, "Age group missing a dash? {} {}"
+                                            .format(outrow['ReportAgeGrp'], e), errfilewriter)
 
             validated_rows.append(outrow)
 
