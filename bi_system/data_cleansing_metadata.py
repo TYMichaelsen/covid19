@@ -10,14 +10,16 @@ FIELD_TESTS = dict(SampleDate=['date'], sequenced=['yes'], Sex=['vals:F_M'], Tra
                    EpilprECMO_start=['date'], EpilprECMO=['yes'], EpilprHeart=['yes'], EpilprHeart_start=['date'],
                    Diabet=['yes'], Neuro=['yes'], Cancer=['yes'], Adipos=['yes'], Nyre=['yes'], Haem_c=['yes'],
                    Card_dis=['yes'], Resp_dis=['yes'], Immu_dis=['yes'], Other_risk=['yes'], Pregnancy=['yes'],
-                   Doctor=['yes'], Nurse=['yes'], HealthAssist=['yes'], PlaceOfInfection_EN=['dim:countries.tsv'], ReportAge=['age'],
+                   Doctor=['yes'], Nurse=['yes'], HealthAssist=['yes'], PlaceOfInfection_EN=['dim:countries.tsv'],
+                   ReportAge=['age'],
                    ReportAgeGrp=['dim:age_groups.tsv'], COVID19_Status=['vals:0_1_2:0'], COVID19_EndDate=['date'],
                    lineage=['str'], lineages_version=['date'], Parishcode=['dim:parish.tsv'], ParishName=['str'],
-                   Reg_RegionCode=['str'], MunicipalityCode=['dim:municipalities.tsv'], NUTS3Code=['dim:nuts3_regions.tsv'], Occupation=['str'],
+                   Reg_RegionCode=['str'], MunicipalityCode=['dim:municipalities.tsv'],
+                   NUTS3Code=['dim:nuts3_regions.tsv'], Occupation=['str'],
                    CountryOfTravel=['dim:countries.tsv'], SymptomsStartDate=['date'], CodR_DateOfDeath=['date'],
-                   Symptoms=['str'], branche1=['str'],branche2=['str'],branche3=['str'],CitizenshipCode=['str'],
+                   Symptoms=['str'], branche1=['str'], branche2=['str'], branche3=['str'], CitizenshipCode=['str'],
                    Death60Days_final=['yes'], Death30Days_final=['yes'], CPR_DateOfDeath=['date'],
-                   DateOfDeath_final=['date'], ZipCodeCity=['str'], Plejehjemsnavn=['str'] # TODDOconvert to dim
+                   DateOfDeath_final=['date'], ZipCodeCity=['str'], Plejehjemsnavn=['str']  # TODDOconvert to dim
                    )
 
 """
@@ -141,7 +143,7 @@ def check_errors(datafile, outfile, errfilewriter):
                 continue
             # Consistent number of fields in row
             if len(row) != len(reader.fieldnames):
-                err_msg = 'Number of fields in the row was {}, expected {}'.format(len(row),len(reader.fieldnames))
+                err_msg = 'Number of fields in the row was {}, expected {}'.format(len(row), len(reader.fieldnames))
                 errfilewriter.writerow({'MessageType': 'Error', 'Row': rows_read, 'ErrorType': 'Inconsistent length',
                                         'Details': '{}'.format(err_msg)})
             # Field checks
@@ -151,7 +153,7 @@ def check_errors(datafile, outfile, errfilewriter):
                         print("Missing field, expected {}".format(field_name))
                         continue
                     if row[field_name] is None:
-                        print("Warning, none value in row {}, field {}".format(rows_read,field_name))
+                        print("Warning, none value in row {}, field {}".format(rows_read, field_name))
                         continue
                     val: str = row[field_name].strip()
                     for test in FIELD_TESTS[field_name]:
@@ -203,8 +205,9 @@ def check_errors(datafile, outfile, errfilewriter):
                                         if val == 'okt-19' and dim_name == 'age_groups':
                                             outrow[field_name] = '0-9'  # quick fix
                                         else:
-                                            log_field_error(field_name, rows_read, "Invalid value: {}, expected corresponding "
-                                                                                   "dimension key in {}"
+                                            log_field_error(field_name, rows_read,
+                                                            "Invalid value: {}, expected corresponding "
+                                                            "dimension key in {}"
                                                             .format(val, dim_name), errfilewriter)
                                 else:
                                     outrow[field_name] = val
@@ -234,28 +237,32 @@ def check_errors(datafile, outfile, errfilewriter):
 
             # Common sense checks
             # consistent COVID status and date
-            if row['COVID19_Status'] in ['1','2']:
+            if row['COVID19_Status'] in ['1', '2']:
                 if len(row['COVID19_EndDate'.strip()]) == 0:
                     log_field_error('COVID19_EndDate', rows_read, "missing COVID19_EndDate when status is set to: {}"
-                                                .format(row['COVID19_Status']), errfilewriter)
+                                    .format(row['COVID19_Status']), errfilewriter)
             # consistent pregnancy info
             if outrow['Pregnancy'] == TRUE_VALUE:
-                if outrow['ReportAge'] < 18 or outrow['ReportAge'] > 45 or outrow['Sex']=='M':
+                if outrow['ReportAge'] < 18 or outrow['ReportAge'] > 45 or outrow['Sex'] == 'M':
                     log_field_error('Pregnancy', rows_read, "suspicious demographics for pregnant person: {} {} "
-                                                .format(outrow['Sex'], outrow['ReportAge']), errfilewriter)
+                                    .format(outrow['Sex'], outrow['ReportAge']), errfilewriter)
 
             # consistent age group
-            if outrow['ReportAge'] is not None and len(outrow['ReportAge']) >0:
+            if outrow['ReportAge'] is not None and len(outrow['ReportAge']) > 0:
                 if outrow['ReportAgeGrp'] is not None:
                     if outrow['ReportAgeGrp'] == '90+':
                         if int(outrow['ReportAge']) < 90:
                             log_field_error('ReportAge', rows_read, "Inconcsistent age group: {} and age: {} "
-                                                .format(outrow['ReportAgeGrp'], outrow['ReportAge']), errfilewriter)
+                                            .format(outrow['ReportAgeGrp'], outrow['ReportAge']), errfilewriter)
                         else:
-                            min_a, max_a = outrow['ReportAgeGrp'].split('-')
-                            if int(outrow['ReportAge']) < int(min_a) or outrow['ReportAge'] > int(max_a):
+                            try:
+                                min_a, max_a = outrow['ReportAgeGrp'].split('-')
+                                if int(outrow['ReportAge']) < int(min_a) or outrow['ReportAge'] > int(max_a):
                                     log_field_error('ReportAge', rows_read, "Inconcsistent age group: {} and age: {} "
-                                                .format(outrow['ReportAgeGrp'], outrow['ReportAge']), errfilewriter)
+                                                    .format(outrow['ReportAgeGrp'], outrow['ReportAge']), errfilewriter)
+                            except Exception as e:
+                                log_field_error(field_name, rows_read, "Age group missing a dash? {} {}"
+                                                .format(outrow['ReportAgeGrp'], e), errfilewriter)
 
             validated_rows.append(outrow)
 
