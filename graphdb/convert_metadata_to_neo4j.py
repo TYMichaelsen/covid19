@@ -148,7 +148,7 @@ def create_dims(tx, clades_dict):
     print("Created dimensions")
     return {'parishes': parishes, 'sex_m': sex_m, 'sex_f': sex_f, 'municipalities': municipalities,
             'nuts3_regions': nuts3_regions, 'risk_factors': risk_factors, 'strains': clades_dict,
-            'countries': countries, 'age_groups': age_groups, 'workplaces': {}, 'branches': {}, 'post_codes': {} }
+            'countries': countries, 'age_groups': age_groups, 'nursing_homes': {}, 'branches': {}, 'post_codes': {} }
 
 
 def connect():
@@ -250,10 +250,6 @@ def load_data(graph, datafile, logwriter, clade_dict):
             # Occupation branche
             make_rel(tx, row, with_node=p, code_field_name='branche3', lookup_dict=dims['branches'],
                          relation_name="OcccupationBranche", rel_node_label="Branche")
-
-            # workplace
-            make_rel(tx, row, with_node=p, code_field_name='Plejehjemsnavn', lookup_dict=dims['workplaces'],
-                         relation_name="OcccupationBranche", rel_node_label="Workplace")
 
     # add clade info for persons in global assignment
     for clade in clade_dict.keys():
