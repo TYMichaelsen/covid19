@@ -3,7 +3,7 @@ import argparse
 import csv
 import os
 
-DK_PREFIX = 'hCoV-19/DK/ALAB'
+DK_PREFIX = 'hCoV-19/DK/ALAB-'
 
 def log_field_error(field_name: str, row_num: int, err_msg: str, logfilewriter: csv.DictWriter) -> None:
     """
