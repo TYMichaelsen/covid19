@@ -251,7 +251,7 @@ def check_errors(datafile, outfile, errfilewriter):
                                     .format(outrow['Sex'], outrow['ReportAge']), errfilewriter)
 
             # consistent age group
-            if outrow['ReportAge'] is not None and len(outrow['ReportAge']) > 0:
+            if 'ReportAge' in outrow.keys() and outrow['ReportAge'] is not None and len(outrow['ReportAge']) > 0:
                 if outrow['ReportAgeGrp'] is not None:
                     if outrow['ReportAgeGrp'] == '90+':
                         if int(outrow['ReportAge']) < 90:
