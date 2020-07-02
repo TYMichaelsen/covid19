@@ -178,7 +178,7 @@ def load_data(graph, datafile, logwriter, clade_dict):
                      COVID19_EndDate=row['COVID19_EndDate'], IsPregnant=(row['Pregnancy'] == '1')
                      , sequenced=(row['sequenced'] == '1'), SymptomsStartDate=row['SymptomsStartDate']
                      , SampleDate=row['SampleDate'], Symptoms=row['Symptoms'], Travel=(row['Travel'] == '1')
-                     # ContactWithCase=(row['ContactWithCase'] == '1')
+                     , Minke=row['Minke'] # ContactWithCase=(row['ContactWithCase'] == '1')
                      , Doctor=(row['Doctor'] == '1'),
                      Nurse=(row['Nurse'] == '1'), HealthAssist=(row['HealthAssist'] == '1'),
                      Death60Days_final=(row['Death60Days_final'] == '1'), DateOfDeath=row['DateOfDeath_final'],
