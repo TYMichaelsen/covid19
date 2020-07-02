@@ -117,7 +117,6 @@ def create_dims(tx, clades_dict):
             tx.create(Relationship(n, "PartOf", dk))
 
     # Virus Strains
-    strains = {}
     for clade in clades_dict.keys():
         clade_details = clades_dict[clade]
         n = Node("Strain", name=clade)
@@ -143,7 +142,7 @@ def create_dims(tx, clades_dict):
 
     print("Created dimensions")
     return {'parishes': parishes, 'sex_m': sex_m, 'sex_f': sex_f, 'municipalities': municipalities,
-            'nuts3_regions': nuts3_regions, 'risk_factors': risk_factors, 'strains': strains,
+            'nuts3_regions': nuts3_regions, 'risk_factors': risk_factors, 'strains': clades_dict,
             'countries': countries, 'age_groups': age_groups, 'nursing_homes': {}, 'branches': {}, 'post_codes': {} }
 
 
