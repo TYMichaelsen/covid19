@@ -117,17 +117,22 @@ def create_dims(tx, clades_dict):
             tx.create(Relationship(n, "PartOf", dk))
 
     # Virus Strains
-    for clade in clades_dict.keys():
+    for clade in clades_dict.keys(): # first create all the strains
         clade_details = clades_dict[clade]
         n = Node("Strain", name=clade)
         tx.create(n)
+        clade_details['node']=n
+        clades_dict[clade]=clade_details
+
+    for clade in clades_dict.keys():
+        clade_details = clades_dict[clade]
         for country_name in clade_details['countries']:
             row = {'country_name' : country_name} # just a hack to cause make_rel to work here
-            make_rel(tx=tx,row=row,with_node=n,code_field_name='country_name',lookup_dict=countries,
+            make_rel(tx=tx,row=row,with_node=clade_details['node'],code_field_name='country_name',lookup_dict=countries,
                          relation_name="IDENTIFIED_IN", rel_node_label="Country")
         if clade_details['parent'] is not None:
-            make_rel(tx=tx,row=clade_details,with_node=n,code_field_name='parent',lookup_dict=strains,
-                         relation_name="EvolvedFrom", rel_node_label="Strain")
+            tx.create(Relationship(clade_details['node'], "EvolvedFrom", clades_dict[clade_details['parent']]['node']))
+
 
 
     # Medical History
