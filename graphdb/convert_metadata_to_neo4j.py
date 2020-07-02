@@ -3,6 +3,7 @@ import argparse
 import csv
 import os
 
+DK_PREFIX = 'hCoV-19/DK/ALAB'
 
 def log_field_error(field_name: str, row_num: int, err_msg: str, logfilewriter: csv.DictWriter) -> None:
     """
@@ -279,11 +280,16 @@ def get_global_clades(cladefile, logwriter):
             if 'strain' not in row:
                 logwriter.writerow({'MessageType': 'Error', 'ErrorType': 'FATAL', 'Details': 'Could not find strain field in row {}'.format(row)})
                 continue
-            ID = row['strain'].split('/')[1].replace('ALAB-','')
-            if ID.startswith('SSI') and not ID.startswith('SSI-'):
-                ID = ID.replace('SSI','SSI-')
-            if ID.startswith('HH') and not ID.startswith('HH-'):
-                ID = ID.replace('HH','HH-')
+            if row['strain'].startswith(DK_PREFIX):
+                ID = row['strain'].replace(DK_PREFIX,'')
+                ID = ID.replace('/2020','')
+                if ID.startswith('SSI') and not ID.startswith('SSI-'):
+                    ID = ID.replace('SSI','SSI-')
+                if ID.startswith('HH') and not ID.startswith('HH-'):
+                    ID = ID.replace('HH','HH-')
+            else:
+                ID = None
+
             country = row['strain'].split('/')[0]
             if country == 'Wuhan':
                 country = 'China'
@@ -296,7 +302,8 @@ def get_global_clades(cladefile, logwriter):
             clade_details = clades[clade] if clade in clades.keys() else {'countries': set(), 'parent': parent, 'cases': set()}
             clade_details['countries'].add(country)
             clade_details['parent'] = parent if parent is not None else clade_details['parent']
-            clade_details['cases'].add(ID)
+            if ID is not None:
+                clade_details['cases'].add(ID)
             clades[clade] = clade_details
 
     logwriter.writerow({'MessageType': 'Info', 'ErrorType': '', 'Details': 'Finished parsing {} rows from {} resulting in {} clades'.format(i, cladefile, len(clades))})
