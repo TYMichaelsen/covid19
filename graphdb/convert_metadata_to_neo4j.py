@@ -185,11 +185,6 @@ def load_data(graph, datafile, logwriter, clade_dict):
                      Occupation=row['Occupation'], CitizenshipCode=row['CitizenshipCode'])
                      # Reg_RegionCode=row['Reg_RegionCode'])
 
-            if row['Pregnancy'] == '1' and row['Sex'] == 'M':
-                log_field_error('anomalous case data', i,
-                                'SSI {}, Pregnancy {}, Sex {}'.format(row['ssi_id'], row['Pregnancy'], row['Sex']),
-                                logwriter)  # TODO extract all error checking code to a separate file
-
             tx.create(p)
             persons[row['ssi_id']] = p
             if row['Sex'] == 'F':
@@ -262,7 +257,7 @@ def load_data(graph, datafile, logwriter, clade_dict):
         if clade not in dims['strains'].keys():
             log_field_error('Clade',-1, 'Missing clade {} in clade dictionary'.format(clade), logwriter)
             continue
-        clade_node = dims['strains'][clade]
+        clade_node = dims['strains'][clade]['node']
         for ssi_id in clade_dict[clade]['cases']:
             if ssi_id in persons.keys():
                 print('debug: createing rel between {} and {}'.format(persons[ssi_id], clade_node))
