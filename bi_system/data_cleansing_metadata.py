@@ -11,7 +11,7 @@ FIELD_TESTS = dict(SampleDate=['date'], sequenced=['yes'], Sex=['vals:F_M'], Tra
                    Diabet=['yes'], Neuro=['yes'], Cancer=['yes'], Adipos=['yes'], Nyre=['yes'], Haem_c=['yes'],
                    Card_dis=['yes'], Resp_dis=['yes'], Immu_dis=['yes'], Other_risk=['yes'], Pregnancy=['yes'],
                    Doctor=['yes'], Nurse=['yes'], HealthAssist=['yes'], PlaceOfInfection_EN=['dim:countries.tsv'],
-                   ReportAge=['age'],
+                   ReportAge=['age'],Minke=['str'],
                    ReportAgeGrp=['dim:age_groups.tsv'], COVID19_Status=['vals:0_1_2:0'], COVID19_EndDate=['date'],
                    lineage=['str'], lineages_version=['date'], Parishcode=['dim:parish.tsv'], ParishName=['str'],
                    Reg_RegionCode=['str'], MunicipalityCode=['dim:municipalities.tsv'],
