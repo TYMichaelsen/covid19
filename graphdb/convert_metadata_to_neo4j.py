@@ -260,7 +260,6 @@ def load_data(graph, datafile, logwriter, clade_dict):
         clade_node = dims['strains'][clade]['node']
         for ssi_id in clade_dict[clade]['cases']:
             if ssi_id in persons.keys():
-                print('debug: createing rel between {} and {}'.format(persons[ssi_id], clade_node))
                 tx.create(Relationship(persons[ssi_id], "HasStrain", clade_node))
             else:
                 log_field_error('Clade person',-1, 'Missing person {} in person dictionary {}'.format(ssi_id, persons.keys()), logwriter)
