@@ -21,6 +21,10 @@ if(FALSE){
 opt <- list("g" = "/srv/rbd/covid19/global_data/metadata_2020-07-06_22-15.tsv",
             "l" = "/srv/rbd/covid19/genomes/2020-07-01-18-35_export/metadata.tsv",
             "o" = ".")
+
+opt <- list("g" = "/srv/rbd/tym/test-nextstrain/global_data/metadata_2020-07-06_22-15.tsv",
+            "l" = "/srv/rbd/tym/test-nextstrain/genomes/2020-07-01-18-35_export/metadata.tsv",
+            "o" = ".")
 }
 
 ###################
@@ -42,7 +46,7 @@ gisaid_meta  <- gisaid_meta[grep("Denmark", gisaid_meta$strain,invert = T), ]
 local_meta <- read_tsv(opt$l)
 
 ## Extract data from folder name
-local_date <- as.Date(strsplit(strsplit(opt$l , "\\/")[[1]][6], "_")[[1]][1])
+local_date <- as.Date(str_match(opt$l, "genomes[/](.*?)_export")[2])
 
 ## Rename local variables to match gisaid data
 local_meta <- rename(local_meta,
@@ -106,6 +110,6 @@ comb_meta_nextstrain <- select(comb_meta_full, any_of(c(ns_cols, ssi_cols)))
 ### Dump data ###
 #################
 
-write_tsv(comb_meta_full, paste0(opt$o ,"/metadata_full_", local_date,".tsv"))
-write_tsv(comb_meta_nextstrain, paste0(opt$o ,"/metadata_nextstrain_", local_date,".tsv"))
+write_tsv(comb_meta_full, paste0(opt$o ,"/metadata_full.tsv"))
+write_tsv(comb_meta_nextstrain, paste0(opt$o ,"/metadata_nextstrain.tsv"))
 
