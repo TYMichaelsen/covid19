@@ -105,7 +105,7 @@ comb_meta_full <- comb_meta_full[comb_meta_full$date > as.Date("2010-01-01"),]
 ssi_cols <- c("Address","SymptomsStartDate","Symptoms","Travel","PlaceOfInfection_EN","ContactWithCase","Occupation",
               "ReportAgeGrp","CodR_Death30Days","CPR_Death30Days","DateOfDeath_final",
               "Death60Days_final","Death30Days_final","CitizenshipText","RegHospital","Doctor",
-              "Nurse","HealthAssist","Plejehjemsnavn","branche1","branche2","branche3")
+              "Nurse","HealthAssist","Plejehjemsnavn","branche1","branche2","branche3"
 
 comb_meta_nextstrain <- select(comb_meta_full, any_of(c(ns_cols, ssi_cols)))
 
