@@ -49,7 +49,7 @@ local_meta <- read_tsv(opt$l)
 local_date <- as.Date(str_match(opt$l, "genomes[/](.*?)_export")[2])
 
 # Remove CPR duplicates.
-local_meta <- filter(local_meta,cpr_duplicate == 0) 
+local_meta <- filter(local_meta,cpr_duplicate == 0)
 
 ## Rename local variables to match gisaid data
 local_meta <- rename(local_meta,
@@ -73,10 +73,12 @@ local_meta <- rename(local_meta,
 ############################
 
 ## Columns to keep in gisaid data for nextstrain
-ns_cols <- c("strain",	"virus",	"gisaid_epi_isl",	"genbank_accession",	"date",	"country",
-             "region_exposure",	"country_exposure",	"division_exposure", "segment",	"length",
-             "host",	"age",	"sex",	"originating_lab",	"submitting_lab",	"authors",
-             "url",	"title", "paper_url",	"date_submitted",	"region",	"division",	"location")
+ns_cols <- c("strain",	"virus",	"date",	"country",
+             "region_exposure",	"country_exposure",	"division_exposure", "length",
+             "host",	"age",	"sex",	"date_submitted",	"region",	"division",	"location")
+
+# "originating_lab",	"submitting_lab",	"authors", "url",	"title", "paper_url",
+# "gisaid_epi_isl",	"genbank_accession", "segment",
 
 ## Combine & Remove samples with missing date
 comb_meta_full <- bind_rows(gisaid_meta[,ns_cols], local_meta) %>% 
@@ -113,14 +115,6 @@ comb_meta_nextstrain <- select(comb_meta_full, any_of(c(ns_cols, ssi_cols)))
 ### Dump data ###
 #################
 
-# Convert missing to "".
-comb_meta_full <- mutate_all(comb_meta_full,.funs = ~ as.character(.))
-comb_meta_full <- mutate_all(comb_meta_full,.funs = ~ ifelse(is.na(.),"",.))
-
-comb_meta_nextstrain <- mutate_all(comb_meta_nextstrain,.funs = ~ as.character(.))
-comb_meta_nextstrain <- mutate_all(comb_meta_nextstrain,.funs = ~ ifelse(is.na(.),"",.))
-
-# Dump.
-write_tsv(comb_meta_full, paste0(opt$o ,"/metadata_full.tsv"))
-write_tsv(comb_meta_nextstrain, paste0(opt$o ,"/metadata_nextstrain.tsv"))
+write_tsv(comb_meta_full, paste0(opt$o ,"/metadata_full.tsv"), NA = "")
+write_tsv(comb_meta_nextstrain, paste0(opt$o ,"/metadata_nextstrain.tsv"), NA = "")
 
