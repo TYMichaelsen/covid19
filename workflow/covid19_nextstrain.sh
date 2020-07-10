@@ -38,14 +38,16 @@ REF="${DEPEND_DIR}/ref"
 
 
 ### TESTING ################################################
-THISDIR=/srv/rbd/covid19/git/covid19/workflow
-DISTDIR="/srv/rbd/tym/test-nextstrain"
-OUTDIR=testing
+#THISDIR=/srv/rbd/covid19/git/covid19/workflow
+#DISTDIR="/srv/rbd/tym/test-nextstrain"
+#OUTDIR=testing
+#DEPEND_DIR="${THISDIR}/dependencies"
+#REF="${DEPEND_DIR}/ref"
 
-THREADS=100
+#THREADS=100
 
-META=/srv/rbd/tym/test-nextstrain/genomes/2020-07-01-18-35_export/metadata.tsv
-SEQS=/srv/rbd/tym/test-nextstrain/genomes/2020-07-01-18-35_export/sequences.fasta
+#META=/srv/rbd/covid19/genomes/2020-07-08-20-29_export/metadata.tsv
+#SEQS=/srv/rbd/covid19/genomes/2020-07-08-20-29_export/sequences.fasta
 
 ############################################################
 
@@ -79,39 +81,93 @@ mkdir -p $OUTDIR
 # Merge the metadata with GISAID metadata.-------------------------------------
 ###############################################################################
 
-# RUN R-SCRIPT. OUTPUTS A FILE "include.txt" for which seqs to include.
+GISAID_META=$(findTheLatest "${DISTDIR}/global_data/*tsv")
+
+Rscript ${THISDIR}/merge_clean_metadata.R -l $META -g $GISAID_META -o $OUTDIR
 
 ###############################################################################
 # Merge sequences and QC.------------------------------------------------------
 ###############################################################################
 
-GISAID_FASTA=$(findTheLatest "${DISTDIR}/global_data/*fasta")
-
-cat $SEQS $GISAID_FASTA | awk '/^>/ {printf("\n%s\n",$0);next; } { printf("%s",$0);}  END {printf("\n");}' - | awk 'NR > 1' - > $OUTDIR/seqs.fasta # cat and make oneliner fasta.
-
-# Subset to ones in metadata.
-#awk '{ if ((NR>1)&&($0~/^>/)) { printf("\n%s", $0); } else if (NR==1) { printf("%s", $0); } else { printf("\t%s", $0); } }' $OUTDIR/seqs.fasta | # tabularize.
-#awk -F'\t' 'FNR == NR {seqs[$1]=$0; next} {if (">"$1 in seqs) {print seqs[">"$1]} else {print $0" had no matching sequence, excluding." > "/dev/stderr"}}' - $OUTDIR/include.txt | # Subset to ones in metadata.
-#tr "\t" "\n" > tmp && mv tmp $OUTDIR/seqs.fasta # de-tabularize.
-
-# Filter bad sequences.
 MAXN=5000
 MINLENGT=25000
 
+# GISAID data -----------------------------------------------------------------  
+GISAID_FASTA=$(findTheLatest "${DISTDIR}/global_data/*fasta")
+  
+if [ ! -z "$(grep "AlignMasked" <<< $GISAID_FASTA)" ]; then
+  echo ""
+  echo "GISAID sequences has already been QC'ed, aligned and masked. Skipping that..."
+  echo "" 
+  
+  GISAID_FASTA_OUT=$GISAID_FASTA
+  GISAID_FILTER_OUT=$(sed 's/_AlignMasked.fasta/_filtered.txt/' <<< $GISAID_FASTA_OUT)
+  
+else
+  echo ""
+  echo "QC'ing, align and mask the GISAID sequences..."
+  echo ""
+  
+  GISAID_FASTA_OUT=$(sed 's/.fasta/_AlignMasked.fasta/' <<< $GISAID_FASTA)
+  GISAID_FILTER_OUT=$(sed 's/.fasta/_filtered.txt/' <<< $GISAID_FASTA)
+  
+  touch $GISAID_FILTER_OUT
+  
+  # Filter bad sequences.
+  cat $GISAID_FASTA | 
+  awk '/^>/ {printf("\n%s\n",$0);next; } { printf("%s",$0);}  END {printf("\n");}' - | awk 'NR > 1' - | # make one-line fasta.
+  awk -v THR=$MAXN -v LEN=$MINLENGTH -v filtfile=$GISAID_FILTER_OUT '!/^>/ { next } { getline seq; seq2=seq; Nn=gsub(/N/,"",seq) }; {if (length(seq2) > LEN && Nn <= THR) { print $0 "\n" seq2 } else {sub(/^>/,"",$0); print $0 >> filtfile}}' - > $GISAID_FASTA_OUT # Tidy header.
+    
+  # Align and mask bases.
+  SINGIMG="/srv/rbd/thecontainer/covid19_latest.sif"
+  singularity --silent exec -B /srv/rbd:/srv/rbd $SINGIMG bash -c "$THISDIR/AlignMask.sh ${DISTDIR}/global_data $GISAID_FASTA_OUT $REF/MN908947.3.gb $DEPEND_DIR $THREADS" 
+  
+  # Cleanup and rename.
+  rm ${DISTDIR}/global_data/aligned*
+  rm ${DISTDIR}/global_data/log.out
+  mv ${DISTDIR}/global_data/masked.fasta $GISAID_FASTA_OUT
+  
+fi
+
+echo "$(wc -l $GISAID_FILTER_OUT | sed 's/ .*//') genomes in GISAID data failed QC and will also be removed from metadata, see $OUTDIR/filtered.txt"
+
+# In-house data ---------------------------------------------------------------
+echo ""
+echo "QC'ing, align and mask the in-house sequences..."
+echo ""
+
+# Filter bad sequences.
 touch $OUTDIR/filtered.txt
 
-cat $OUTDIR/seqs.fasta | 
+cat $SEQS | 
 awk '/^>/ {printf("\n%s\n",$0);next; } { printf("%s",$0);}  END {printf("\n");}' - | awk 'NR > 1' - | # make one-line fasta.
 awk -v THR=$MAXN -v LEN=$MINLENGTH -v outdir=$OUTDIR '!/^>/ { next } { getline seq; seq2=seq; Nn=gsub(/N/,"",seq) }; {if (length(seq2) > LEN && Nn <= THR) { print $0 "\n" seq2 } else {sub(/^>/,"",$0); print $0 >> outdir"/filtered.txt"}}' - > tmp && mv tmp $OUTDIR/seqs.fasta # Tidy header.
 
-echo "$(wc -l $OUTDIR/filtered.txt | sed 's/ .*//') genomes failed QC and will also be removed from meta.tsv, see $OUTDIR/filtered.txt"
-
-# Subset metadata to remove those sequences. 
-#grep -vf $OUTDIR/filtered.txt $OUTDIR/meta.tsv > tmp && mv tmp meta.tsv
-
 # Align and mask bases.
 SINGIMG="/srv/rbd/thecontainer/covid19_latest.sif"
-singularity --silent exec -B /srv/rbd:/srv/rbd $SINGIMG bash -c "$THISDIR/AlignMask.sh $OUTDIR seqs.fasta $REF/MN908947.3.gb $DEPEND_DIR $THREADS" 
+singularity --silent exec -B /srv/rbd:/srv/rbd $SINGIMG bash -c "$THISDIR/AlignMask.sh $OUTDIR $OUTDIR/seqs.fasta $REF/MN908947.3.gb $DEPEND_DIR $THREADS" 
+
+echo "$(wc -l $OUTDIR/filtered.txt | sed 's/ .*//') genomes in in-house data failed QC and will also be removed from metadata, see $OUTDIR/filtered.txt"
+
+# Merge the SSI and GISAID filtered sequences.
+cat $GISAID_FILTER_OUT $OUTDIR/filtered.txt > tmp && mv tmp $OUTDIR/filtered.txt
+
+# Merge sequences and filter from metadata ------------------------------------
+
+# Merge GISAID and SSI sequences.
+cat $OUTDIR/masked.fasta $GISAID_FASTA_OUT > tmp && mv tmp $OUTDIR/masked.fasta
+
+# Subset to ones in metadata.
+awk 'NR > 1 {print $1}' $OUTDIR/metadata_nextstrain.tsv > $OUTDIR/include.txt
+
+cat $OUTDIR/masked.fasta | 
+awk '/^>/ {printf("\n%s\n",$0);next; } { printf("%s",$0);}  END {printf("\n");}' - | awk 'NR > 1' - | # make one-line fasta.
+awk '{ if ((NR>1)&&($0~/^>/)) { printf("\n%s", $0); } else if (NR==1) { printf("%s", $0); } else { printf("\t%s", $0); } }' - | # tabularize.
+awk -F'\t' 'FNR == NR {seqs[$1]=$0; next} {if (">"$1 in seqs) {print seqs[">"$1]} else {print $0" had no matching sequence, excluding." > "/dev/stderr"}}' - $OUTDIR/include.txt | # Subset to ones in metadata.
+tr "\t" "\n" > tmp && mv tmp $OUTDIR/masked.fasta # de-tabularize.
+
+# Subset metadata to remove filtered sequences. 
+grep -vf $OUTDIR/filtered.txt $OUTDIR/metadata_nextstrain.tsv > tmp && mv tmp $OUTDIR/metadata_nextstrain.tsv
 
 exit 1
 
