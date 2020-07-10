@@ -45,8 +45,11 @@ gisaid_meta  <- gisaid_meta[grep("Denmark", gisaid_meta$strain,invert = T), ]
 # Load local data
 local_meta <- read_tsv(opt$l)
 
-## Extract data from folder name
+## Extract date from folder name
 local_date <- as.Date(str_match(opt$l, "genomes[/](.*?)_export")[2])
+
+# Remove CPR duplicates.
+local_meta <- filter(local_meta,cpr_duplicate == 0) 
 
 ## Rename local variables to match gisaid data
 local_meta <- rename(local_meta,
@@ -110,6 +113,14 @@ comb_meta_nextstrain <- select(comb_meta_full, any_of(c(ns_cols, ssi_cols)))
 ### Dump data ###
 #################
 
+# Convert missing to "".
+comb_meta_full <- mutate_all(comb_meta_full,.funs = ~ as.character(.))
+comb_meta_full <- mutate_all(comb_meta_full,.funs = ~ ifelse(is.na(.),"",.))
+
+comb_meta_nextstrain <- mutate_all(comb_meta_nextstrain,.funs = ~ as.character(.))
+comb_meta_nextstrain <- mutate_all(comb_meta_nextstrain,.funs = ~ ifelse(is.na(.),"",.))
+
+# Dump.
 write_tsv(comb_meta_full, paste0(opt$o ,"/metadata_full.tsv"))
 write_tsv(comb_meta_nextstrain, paste0(opt$o ,"/metadata_nextstrain.tsv"))
 
