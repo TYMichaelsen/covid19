@@ -132,7 +132,7 @@ def add_data(cnxn, filepath):
     date_field_names = ','.join(DATE_FIELDS)
     df_ss = ', '.join(['%s' for fl in DATE_FIELDS])
     add_person = ("INSERT INTO Persons "
-                  "(ssi_id, age, age_group, sex, COVID19_Status, Parishcode, lineage, {}) "
+                  "(ssi_id, age, age_group, sex, COVID19_Status, Parishcode, lineage, {}, {}) "
                   "VALUES (%s, %s, %s, %s, %s, %s, %s, {}, {})".format(bool_field_names, date_field_names, bf_ss,
                                                                        df_ss))
 
