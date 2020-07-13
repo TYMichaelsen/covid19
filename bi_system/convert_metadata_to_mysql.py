@@ -1,3 +1,4 @@
+import json
 from datetime import date
 import csv
 import os
@@ -17,7 +18,7 @@ TABLES = {'Persons': ("CREATE TABLE `Persons` ("
                       "  `Parishcode` INTEGER,"
                       "  `lineage` VARCHAR(10),"
                       "  `Diabet` TINYINT COMMENT 'Diabetes',Neuro TINYINT COMMENT 'Neurological deficiency',Cancer TINYINT COMMENT 'Cancer',Adipos TINYINT COMMENT 'Obese',Nyre TINYINT COMMENT 'Renal disease',Haem_c TINYINT COMMENT 'Hematological disease',Card_dis TINYINT COMMENT 'Cardio-vascular disease',Resp_dis TINYINT COMMENT 'Respiratory',Immu_dis TINYINT COMMENT 'Immunological',Other_risk TINYINT COMMENT 'Other risk factor',"
-                      , '',['ssi_id', 'age', 'age_group', 'sex', 'COVID19_Status','Parishcode', 'lineage']),
+                      , '', ['ssi_id', 'age', 'age_group', 'sex', 'COVID19_Status', 'Parishcode', 'lineage']),
           'Countries': (
               "CREATE TABLE `Countries` (`country` varchar(35) PRIMARY KEY, population INTEGER COMMENT '(2020)',"
               " `land_area` INTEGER COMMENT '(Km²)', `density` INTEGER COMMENT '(P/Km²)')",
@@ -29,25 +30,21 @@ TABLES = {'Persons': ("CREATE TABLE `Persons` ("
           'AgeGroups': ("CREATE TABLE AgeGroups (age_group VARCHAR(5) PRIMARY KEY, meta_group VARCHAR(8))",
                         "age_groups.tsv", ['age_group', 'meta_group']),
           'NUTS3_Regions': (
-          "CREATE TABLE NUTS3_Regions(code CHAR(5) PRIMARY KEY, `name` VARCHAR(20))", "nuts3_regions.tsv",
-          ['code', 'name']),
+              "CREATE TABLE NUTS3_Regions(code CHAR(5) PRIMARY KEY, `name` VARCHAR(20))", "nuts3_regions.tsv",
+              ['code', 'name']),
           'Parishes': (
-          "CREATE TABLE Parishes(code INTEGER PRIMARY KEY, `name` VARCHAR(20))", "parish.tsv", ['code', 'name'])}
+              "CREATE TABLE Parishes(code INTEGER PRIMARY KEY, `name` VARCHAR(20))", "parish.tsv", ['code', 'name'])}
 
 BOOL_FIELDS = ['Diabet', 'Neuro', 'Cancer', 'Adipos', 'Nyre', 'Haem_c', 'Card_dis', 'Resp_dis', 'Immu_dis',
                'Other_risk', 'Pregnancy', 'Doctor', 'Nurse']
-DATE_FIELDS = ['SampleDate', 'COVID19_EndDate','SymptomsStartDate']
+DATE_FIELDS = ['SampleDate', 'COVID19_EndDate', 'SymptomsStartDate']
 
-def get_connection():
+
+def get_connection(config_dict):
     try:
-        host = input("Please enter the mysql database server IP (defaults to localhost): ")
-        host = 'localhost' if len(host.strip(' ')) == 0 else host
-        password = input("Please enter the mysql user's database pass"
-                         "word: ")
-        cnxn = mysql.connector.connect(user='covid19', password=password,
-                                       host=host,
+        cnxn = mysql.connector.connect(user=config_dict['db_user'], password=config_dict['db_password'],
+                                       host=config_dict['mariadb_server'],
                                        database=DB_NAME)
-
     except mysql.connector.Error as err:
         if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
             print("Something is wrong with your user name or password")
@@ -85,9 +82,9 @@ def create_schema(cnxn):
                 # WHERE table_schema = 'MyDatabaseName';
                 print("Creating table {}: ".format(table_name), end='')
                 cursor.execute("DROP TABLE IF EXISTS {}".format(table_name))
-                if table_name=='Persons':
+                if table_name == 'Persons':
                     for df in DATE_FIELDS:
-                        table_description+="{} date,".format(df)
+                        table_description += "{} date,".format(df)
                     table_description = table_description[:-1]
                     table_description += ") ENGINE=InnoDB"
                 cursor.execute(table_description)
@@ -104,15 +101,6 @@ def create_schema(cnxn):
             exit(-1)
 
 
-def clear_data(cnxn):
-    cursor = cnxn.cursor()
-    cursor.execute("USE {}".format(DB_NAME))
-    for table in TABLES.keys():
-        cursor.execute("TRUNCATE TABLE {};".format(table))
-    cnxn.commit()
-    print("Cleared existing data on MariaDB server")
-
-
 def add_data(cnxn, filepath):
     cursor = cnxn.cursor()
 
@@ -123,7 +111,7 @@ def add_data(cnxn, filepath):
         create_string, dim_filepath, field_list = definition
         field_list_str = ','.join(field_list)
         # noinspection PyUnusedLocal
-        place_holders = ','.join(['%s' for f in field_list])
+        place_holders = ','.join(['%s' for fl in field_list])
         insert_string = ("INSERT INTO {} ({}) VALUES ({})".format(table_name, field_list_str, place_holders))
         with open(os.path.join(DIM_PATH, dim_filepath)) as tsvfile:
             reader = csv.DictReader(tsvfile, delimiter='\t')
@@ -138,12 +126,13 @@ def add_data(cnxn, filepath):
 
     # Persons
     bool_field_names = ','.join(BOOL_FIELDS)
-    bf_ss = ', '.join(['%s' for f in BOOL_FIELDS])
+    bf_ss = ', '.join(['%s' for fl in BOOL_FIELDS])
     date_field_names = ','.join(DATE_FIELDS)
-    df_ss = ', '.join(['%s' for f in DATE_FIELDS])
+    df_ss = ', '.join(['%s' for fl in DATE_FIELDS])
     add_person = ("INSERT INTO Persons "
                   "(ssi_id, age, age_group, sex, COVID19_Status, Parishcode, lineage, {}) "
-                  "VALUES (%s, %s, %s, %s, %s, %s, %s, {}, {})".format(bool_field_names,date_field_names, bf_ss, df_ss))
+                  "VALUES (%s, %s, %s, %s, %s, %s, %s, {}, {})".format(bool_field_names, date_field_names, bf_ss,
+                                                                       df_ss))
 
     with open(filepath) as csvfile:
         reader = csv.DictReader(csvfile)
@@ -156,7 +145,7 @@ def add_data(cnxn, filepath):
             pc = int(row['Parishcode']) if len(row['Parishcode']) > 0 else None
             data_person = [row['ssi_id'], age, ag, sex, cv_stat, pc, row['lineage']]
             boolean_field_data = [int(row[f]) if len(row[f]) > 0 else None for f in BOOL_FIELDS]
-            date_field_data = [getDate(row,df) for df in DATE_FIELDS]
+            date_field_data = [get_date(row, df) for df in DATE_FIELDS]
             data_person.extend(boolean_field_data)
             data_person.extend(date_field_data)
             data_person = tuple(data_person)
@@ -172,7 +161,7 @@ def add_data(cnxn, filepath):
     print("Loaded all data from {}".format(filepath))
 
 
-def getDate(row, field_name):
+def get_date(row, field_name):
     enddate_arr = row[field_name].split('-')  # e.g. '2020-03-22'.split('-')
     try:
         if len(enddate_arr) == 3 and len(enddate_arr[0]) == 4:
@@ -197,18 +186,22 @@ def create_fk():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='convert a metadata file to SQL relational format and inject to the MariaDB')
-    parser.add_argument('file', type=str,
-                        help='path to the file to be loaded')
-    parser.add_argument('--recreate_schema', dest='re_schema', type=str, default='no',
-                        help='yes to recreate the schema')
-
+    parser.add_argument('config_file', type=str,
+                        help='path to the config file, see template config.json.template in this folder')
     args = parser.parse_args()
-    file = check_file(args.file)
-    cnx = get_connection()
-    if 'y' in args.re_schema.lower():
-        create_schema(cnx)
+    config_file = check_file(args.config_file)
+    with open(config_file) as f:
+        config = json.load(f)
 
-    clear_data(cnx)
-    add_data(cnx, file)
+    with open('config.json.template') as f:
+        expected_config = json.load(f)
+
+    for k in expected_config.keys():
+        if k not in config.keys():
+            print("Error: expected {} in config file {} but could not find such a key".format(k, config_file))
+
+    cnx = get_connection(config)
+    create_schema(cnx)
+    add_data(cnx, config['staged_metadata_file'])
     create_fk()
     cnx.close()

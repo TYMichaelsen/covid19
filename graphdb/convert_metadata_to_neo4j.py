@@ -1,9 +1,11 @@
+import json
 from py2neo import Graph, Node, Relationship
 import argparse
 import csv
 import os
 
 DK_PREFIX = 'hCoV-19/DK/ALAB-'
+
 
 def log_field_error(field_name: str, row_num: int, err_msg: str, logfilewriter: csv.DictWriter) -> None:
     """
@@ -36,7 +38,8 @@ def make_rel(tx, row, with_node, code_field_name, lookup_dict, relation_name, re
             print('Error creating relationship {} , source node is None'.format(relation_name))
             return
         if rel_node is None:
-            print('Error creating relationship {} , target node is None, key was {}, dictionary contained {}'.format(relation_name, rel_node_key, lookup_dict))
+            print('Error creating relationship {} , target node is None, key was {}, dictionary contained {}'.format(
+                relation_name, rel_node_key, lookup_dict))
             return
         tx.create(Relationship(with_node, relation_name, rel_node))
 
@@ -117,23 +120,22 @@ def create_dims(tx, clades_dict):
             tx.create(Relationship(n, "PartOf", dk))
 
     # Virus Strains
-    for clade in clades_dict.keys(): # first create all the strains
+    for clade in clades_dict.keys():  # first create all the strains
         clade_details = clades_dict[clade]
         n = Node("Strain", name=clade)
         tx.create(n)
-        clade_details['node']=n
-        clades_dict[clade]=clade_details
+        clade_details['node'] = n
+        clades_dict[clade] = clade_details
 
     for clade in clades_dict.keys():
         clade_details = clades_dict[clade]
         for country_name in clade_details['countries']:
-            row = {'country_name' : country_name} # just a hack to cause make_rel to work here
-            make_rel(tx=tx,row=row,with_node=clade_details['node'],code_field_name='country_name',lookup_dict=countries,
-                         relation_name="IDENTIFIED_IN", rel_node_label="Country")
+            row = {'country_name': country_name}  # just a hack to cause make_rel to work here
+            make_rel(tx=tx, row=row, with_node=clade_details['node'], code_field_name='country_name',
+                     lookup_dict=countries,
+                     relation_name="IDENTIFIED_IN", rel_node_label="Country")
         if clade_details['parent'] is not None:
             tx.create(Relationship(clade_details['node'], "EvolvedFrom", clades_dict[clade_details['parent']]['node']))
-
-
 
     # Medical History
     risk_factors = {}
@@ -148,17 +150,15 @@ def create_dims(tx, clades_dict):
     print("Created dimensions")
     return {'parishes': parishes, 'sex_m': sex_m, 'sex_f': sex_f, 'municipalities': municipalities,
             'nuts3_regions': nuts3_regions, 'risk_factors': risk_factors, 'strains': clades_dict,
-            'countries': countries, 'age_groups': age_groups, 'nursing_homes': {}, 'branches': {}, 'post_codes': {} }
+            'countries': countries, 'age_groups': age_groups, 'nursing_homes': {}, 'branches': {}, 'post_codes': {}}
 
 
-def connect():
-    host = input("Please enter the neo4j database server IP (defaults to localhost): ")
-    host = 'localhost' if len(host.strip(' ')) == 0 else host
-    password = input("Please enter the neo4j user's database password: ")
-    graph = Graph("bolt://{}:7687".format(host), user='neo4j',
-                  password=password)  # this may need to change when running from the server since there it needs the instance IP
-    graph.delete_all()
-    return graph
+def connect(config_dict):
+    graph_handle = Graph("bolt://{}:7687".format(config_dict['neo4j_server']), user='neo4j',
+                         password=config_dict['noe4j_server_password'])
+    # this may need to change when running from the server since there it needs the instance IP
+    graph_handle.delete_all()
+    return graph_handle
 
 
 def load_data(graph, datafile, logwriter, clade_dict):
@@ -183,7 +183,7 @@ def load_data(graph, datafile, logwriter, clade_dict):
                      Nurse=(row['Nurse'] == '1'), HealthAssist=(row['HealthAssist'] == '1'),
                      Death60Days_final=(row['Death60Days_final'] == '1'), DateOfDeath=row['DateOfDeath_final'],
                      Occupation=row['Occupation'], CitizenshipCode=row['CitizenshipCode'])
-                     # Reg_RegionCode=row['Reg_RegionCode'])
+            # Reg_RegionCode=row['Reg_RegionCode'])
 
             tx.create(p)
             persons[row['ssi_id']] = p
@@ -200,8 +200,8 @@ def load_data(graph, datafile, logwriter, clade_dict):
 
             # postcode
             make_rel(tx, row, with_node=p, code_field_name='ZipCodeCity', lookup_dict=dims['post_codes'],
-                              relation_name="LivesIn",
-                              rel_node_label="PostCode", name_field_name="zipcode_name")
+                     relation_name="LivesIn",
+                     rel_node_label="PostCode", name_field_name="zipcode_name")
             # Parish
             parish = make_rel(tx, row, with_node=p, code_field_name='Parishcode', lookup_dict=dims['parishes'],
                               relation_name="LivesIn",
@@ -232,37 +232,37 @@ def load_data(graph, datafile, logwriter, clade_dict):
 
             # Place of infection
             make_rel(tx, row, with_node=p, code_field_name='PlaceOfInfection_EN', lookup_dict=dims['countries'],
-                         relation_name="PlaceOfInfection",
-                         rel_node_label="Country")
+                     relation_name="PlaceOfInfection",
+                     rel_node_label="Country")
 
             # Nursing home
             make_rel(tx, row, with_node=p, code_field_name='Plejehjemsnavn', lookup_dict=dims['nursing_homes'],
-                         relation_name="RESIDENT_OF", rel_node_label="NursingHome")
+                     relation_name="RESIDENT_OF", rel_node_label="NursingHome")
 
             # Occupation branche
             make_rel(tx, row, with_node=p, code_field_name='branche1', lookup_dict=dims['branches'],
-                         relation_name="OcccupationBranche", rel_node_label="Branche")
+                     relation_name="OcccupationBranche", rel_node_label="Branche")
 
             # Occupation branche
             make_rel(tx, row, with_node=p, code_field_name='branche2', lookup_dict=dims['branches'],
-                         relation_name="OcccupationBranche", rel_node_label="Branche")
+                     relation_name="OcccupationBranche", rel_node_label="Branche")
 
             # Occupation branche
             make_rel(tx, row, with_node=p, code_field_name='branche3', lookup_dict=dims['branches'],
-                         relation_name="OcccupationBranche", rel_node_label="Branche")
+                     relation_name="OcccupationBranche", rel_node_label="Branche")
 
     # add clade info for persons in global assignment
     for clade in clade_dict.keys():
         if clade not in dims['strains'].keys():
-            log_field_error('Clade',-1, 'Missing clade {} in clade dictionary'.format(clade), logwriter)
+            log_field_error('Clade', -1, 'Missing clade {} in clade dictionary'.format(clade), logwriter)
             continue
         clade_node = dims['strains'][clade]['node']
         for ssi_id in clade_dict[clade]['cases']:
             if ssi_id in persons.keys():
                 tx.create(Relationship(persons[ssi_id], "HasStrain", clade_node))
             else:
-                log_field_error('Clade person',-1, 'Missing person {} in person dictionary {}'.format(ssi_id, persons.keys()), logwriter)
-                
+                log_field_error('Clade person', -1,
+                                'Missing person {} in person dictionary {}'.format(ssi_id, persons.keys()), logwriter)
 
     tx.commit()
     print("loaded data")
@@ -276,17 +276,18 @@ def get_global_clades(cladefile, logwriter):
         for row in reader:
             i += 1
             if 'strain' not in row:
-                logwriter.writerow({'MessageType': 'Error', 'ErrorType': 'FATAL', 'Details': 'Could not find strain field in row {}'.format(row)})
+                logwriter.writerow({'MessageType': 'Error', 'ErrorType': 'FATAL',
+                                    'Details': 'Could not find strain field in row {}'.format(row)})
                 continue
             if row['strain'].startswith(DK_PREFIX):
-                ID = row['strain'].replace(DK_PREFIX,'')
-                ID = ID.replace('/2020','')
-                if ID.startswith('SSI') and not ID.startswith('SSI-'):
-                    ID = ID.replace('SSI','SSI-')
-                if ID.startswith('HH') and not ID.startswith('HH-'):
-                    ID = ID.replace('HH','HH-')
+                ssi_id = row['strain'].replace(DK_PREFIX, '')
+                ssi_id = ssi_id.replace('/2020', '')
+                if ssi_id.startswith('SSI') and not ssi_id.startswith('SSI-'):
+                    ssi_id = ssi_id.replace('SSI', 'SSI-')
+                if ssi_id.startswith('HH') and not ssi_id.startswith('HH-'):
+                    ssi_id = ssi_id.replace('HH', 'HH-')
             else:
-                ID = None
+                ssi_id = None
 
             country = row['strain'].split('/')[0]
             if country == 'Wuhan':
@@ -299,34 +300,48 @@ def get_global_clades(cladefile, logwriter):
                 parent = '/'.join(clade.split('/')[:-1])
             # if len(row) > 2:
             #    parent = row['parent clades'] if row['parent clades'] != '--' else None
-            clade_details = clades[clade] if clade in clades.keys() else {'countries': set(), 'parent': parent, 'cases': set()}
+            clade_details = clades[clade] if clade in clades.keys() else {'countries': set(), 'parent': parent,
+                                                                          'cases': set()}
             clade_details['countries'].add(country)
             clade_details['parent'] = parent if parent is not None else clade_details['parent']
-            if ID is not None:
-                clade_details['cases'].add(ID)
+            if ssi_id is not None:
+                clade_details['cases'].add(ssi_id)
             clades[clade] = clade_details
 
-    logwriter.writerow({'MessageType': 'Info', 'ErrorType': '', 'Details': 'Finished parsing {} rows from {} resulting in {} clades'.format(i, cladefile, len(clades))})
+    logwriter.writerow({'MessageType': 'Info', 'ErrorType': '',
+                        'Details': 'Finished parsing {} rows from {} resulting in {} clades'.format(i, cladefile,
+                                                                                                    len(clades))})
 
     return clades
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='load a metadata file to neo4j')
-    parser.add_argument('infile', type=str, help='path to the metadata file to be checked')
-    parser.add_argument('globfile', type=str, help='path to the global clade file to be checked')
-    parser.add_argument('errfile', type=str, help='path to the error file to be created')
+    parser.add_argument('config_file', type=str,
+                        help='path to the config file, see template config.json.template in this folder')
     args = parser.parse_args()
-    infile = check_file(args.infile)
+    config_file = check_file(args.config_file)
+    with open(config_file) as f:
+        config = json.load(f)
+
+    with open('config.json.template') as f:
+        expected_config = json.load(f)
+
+    for k in expected_config.keys():
+        if k not in config.keys():
+            print("Error: expected {} in config file {} but could not find such a key".format(k, config_file))
+    args = parser.parse_args()
+    infile = check_file(config['staged_metadata_file'])
     print('Validated infile as {}'.format(infile))
-    gfile = check_file(args.globfile)
+    gfile = check_file(config['global_clade_assignment_file'])
     print('Validated global clade file as {}'.format(gfile))
-    errfile = check_file(args.errfile, True)
-    print('Validated errfile as {}'.format(errfile))
+    errfile = check_file(config['graph_load_log_file'], True)
+    print('Validated log file as {}'.format(errfile))
     with open(errfile, 'w') as csvfile:
         writer = csv.DictWriter(csvfile, ['MessageType', 'Row', 'ErrorType', 'Details'])
         writer.writeheader()
         writer.writerow({'MessageType': 'Info', 'ErrorType': '', 'Details': 'Started {}'.format(infile)})
-        graph = connect()
+        graph = connect(config)
         clades = get_global_clades(gfile, writer)
         load_data(graph, infile, writer, clades)
         writer.writerow({'MessageType': 'Info', 'ErrorType': '', 'Details': 'Finished {}'.format(infile)})

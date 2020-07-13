@@ -303,7 +303,7 @@ if __name__ == '__main__':
     parser.add_argument('config_file', type=str, help='path to the config file containing the file locations, '
                                                       'see config.json.template in this directory')
     args = parser.parse_args()
-    config_file = check_file(args.infile)
+    config_file = check_file(args.config_file)
     with open(config_file) as f:
         config = json.load(f)
 
