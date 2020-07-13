@@ -1,6 +1,8 @@
 import csv
 import os
 import argparse
+import json
+
 from datetime import date
 # import xlrd
 # import csv
@@ -298,16 +300,26 @@ def check_errors(datafile, outfile, errfilewriter):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='review a metadata file to check for errors')
-    parser.add_argument('infile', type=str, help='path to the file to be checked')
-    parser.add_argument('outfile', type=str, help='path to the clean file to be created')
-    parser.add_argument('errfile', type=str, help='path to the error file to be created')
+    parser.add_argument('config_file', type=str, help='path to the config file containing the file locations, '
+                                                      'see config.json.template in this directory')
     args = parser.parse_args()
-    infile = check_file(args.infile)
+    config_file = check_file(args.infile)
+    with open(config_file) as f:
+        config = json.load(f)
+
+    with open('config.json.template') as f:
+        expected_config = json.load(f)
+
+    for k in expected_config.keys():
+        if k not in config.keys():
+            print("Error: expected {} in config file {} but could not find such a key".format(k, config_file))
+
+    infile = check_file(config['sequenced_metadata_file'])
     print('Validated infile as {}'.format(infile))
-    outfile = check_file(args.outfile, True)
+    outfile = check_file(config['staged_metadata_file'], True)
     print('Validated outfile as {}'.format(outfile))
-    errfile = check_file(args.errfile, True)
-    print('Validated errfile as {}'.format(errfile))
+    errfile = check_file(config['cleansing_log_file'], True)
+    print('Validated log file as {}'.format(errfile))
     with open(errfile, 'w') as csvfile:
         writer = csv.DictWriter(csvfile, ['MessageType', 'Row', 'ErrorType', 'Details'])
         writer.writeheader()
