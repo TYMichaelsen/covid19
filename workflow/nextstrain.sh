@@ -102,7 +102,9 @@ rm -rf $OUTDIR/split_align; mkdir $OUTDIR/split_align
 split -d -l 40 --additional-suffix=.fasta $OUTDIR/raw.fasta $OUTDIR/split_fasta/
 FASTAFILES=`ls $OUTDIR/split_fasta` 
 
-parallel -j$THREADS \
+echo "HALLO" $FASTAFILES  $OUTDIR $REF/ref/MN908947.3.gb
+
+parallel -j$THREADS --progress \
          '
 augur align \
 --sequences {2}/split_fasta/{1} \
