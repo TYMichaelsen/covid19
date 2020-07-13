@@ -144,7 +144,7 @@ def add_data(cnxn, filepath):
             sex = row['Sex'] if row['Sex'] in ['M', 'F'] else None
             pc = int(row['Parishcode']) if len(row['Parishcode']) > 0 else None
             data_person = [row['ssi_id'], age, ag, sex, cv_stat, pc, row['lineage']]
-            boolean_field_data = [int(row[f]) if len(row[f]) > 0 else None for f in BOOL_FIELDS]
+            boolean_field_data = [row[f] if len(row[f]) > 0 else None for f in BOOL_FIELDS]
             date_field_data = [get_date(row, df) for df in DATE_FIELDS]
             data_person.extend(boolean_field_data)
             data_person.extend(date_field_data)
