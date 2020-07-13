@@ -324,7 +324,7 @@ if __name__ == '__main__':
     with open(config_file) as f:
         config = json.load(f)
 
-    with open('config.json.template') as f:
+    with open('../bi_system/config.json.template') as f:
         expected_config = json.load(f)
 
     for k in expected_config.keys():
