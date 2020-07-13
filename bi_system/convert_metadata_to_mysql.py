@@ -85,6 +85,8 @@ def create_schema(cnxn):
                 if table_name == 'Persons':
                     for df in DATE_FIELDS:
                         table_description += "{} date,".format(df)
+                    for df in BOOL_FIELDS:
+                        table_description += "{} varchar(3),".format(df)
                     table_description = table_description[:-1]
                     table_description += ") ENGINE=InnoDB"
                 cursor.execute(table_description)
@@ -156,6 +158,8 @@ def add_data(cnxn, filepath):
             except mysql.connector.Error as err:
                 print(err)
                 print("Failed data: {}".format(data_person))
+                print("Insert statement:")
+                print(add_person)
 
     cnxn.commit()
     print("Loaded all data from {}".format(filepath))
