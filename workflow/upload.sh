@@ -51,49 +51,30 @@ if [ ! -f $SEQS ]; then echo "-s does not exist."; exit 1; fi
 
 ### Code.----------------------------------------------------------------------
 
+#META=/srv/rbd/covid19/upload/2020-07-16-08-49_upload/tmp_metadata.tsv
+#SEQS=/srv/rbd/covid19/genomes/2020-07-16-08-49_export/sequences.fasta
+#WORKFLOW_PATH=/srv/rbd/covid19/git/covid19/workflow
+
 WORKFLOW_PATH="$(dirname "$(readlink -f "$0")")"
+OUTDIR=/srv/rbd/covid19/upload/$DT
 
 # Set dependent directories/data.
-ARTICDIR=( processing/CJ*/processing )
+ARTICDIR=( /srv/rbd/covid19/processing/CJ*/processing )
 HUMANREF=$WORKFLOW_PATH/dependencies/human_g1k_v37.fasta
 
 # Make time-stamped export subfolder.
-mkdir -p upload/$DT
-mkdir -p upload/$DT/mapped_fastq
+mkdir -p $OUTDIR
+mkdir -p $OUTDIR/mapped_fastq
 
-# Import metadata.
-awk -F '\t' 'NR == 1 {for (i=1; i<=NF; i++) ix[$i] = i} NR > 1 {print $ix["gisaid_id"]"\t"$ix["library_id"]"\t"$ix["curate_exclude"]"\t"$ix["SampleDate"]}' $META | # Get the right columns.
-awk -F '\t' '$2 != "" && $1 != ""' - > upload/$DT/tmp_all.txt
-awk -F '\t' '$3 != "" {print}' upload/$DT/tmp_all.txt > upload/$DT/tmp_exclude.txt
-awk -F '\t' '$3 == "" {print}' upload/$DT/tmp_all.txt > upload/$DT/tmp_pass.txt
-
-# Export only ones not exported before. 
-if [ -f upload/exported.txt ]; then
-  comm -13 <(sort -u <(cut -f2 upload/exported.txt)) <(sort -u <(cut -f2 upload/$DT/tmp_pass.txt)) > upload/$DT/tmp_toexport.txt # Find LIB-IDs that have not been exported.
-else
-  cut -f2 upload/$DT/tmp_pass.txt > upload/$DT/tmp_toexport.txt
-  echo -e "ssi_id\tlibrary_id\tfinal_id" > upload/exported.txt
-fi
-  
-if [ ! -s upload/$DT/tmp_toexport.txt ]; then
-  echo "All sequences specified in -m has already been exported. Exiting."
-  exit 1
-fi
-
-# Print out what to export.
-EXPORTED=$(comm -13 <(sort -u upload/$DT/tmp_toexport.txt) <(sort -u <(cut -f2 upload/$DT/tmp_pass.txt)) | wc -l | sed 's/ .*//')
-echo "$EXPORTED of the sequences in -m has been exported before." 
-echo "Start exporting $(wc -l upload/$DT/tmp_toexport.txt | sed 's/ .*//') of the $(wc -l upload/$DT/tmp_pass.txt | sed 's/ .*//') sequences in -m passing manual QC."
-
-# Subset to ones not exported before.
-awk -F'\t' 'FNR == NR {seqs[$1]=$0; next} {if ($2 in seqs) {print $0}}' upload/$DT/tmp_toexport.txt upload/$DT/tmp_pass.txt > tmp && mv tmp upload/$DT/tmp_toexport.txt
+# Reorder columns in metadata.
+awk -F '\t' 'NR == 1 {for (i=1; i<=NF; i++) ix[$i] = i} NR > 1 {print $ix["ssi_id"]"\t"$ix["library_id"]"\t"$ix["gisaid_id"]"\t"$ix["sample_date"]}' $META > tmp && mv tmp $META
 
 # Subset seqs to metadata.
 awk '{ if ((NR>1)&&($0~/^>/)) { printf("\n%s", $0); } else if (NR==1) { printf("%s", $0); } else { printf("\t%s", $0); } }' $SEQS | # tabularize.
-awk -F'\t' 'FNR == NR {seqs[$1]=$0; next} {if (">"$1 in seqs) {print seqs[">"$1]} else {print $0" had no matching sequence, excluding." > "/dev/stderr"}}' - upload/$DT/tmp_toexport.txt | # Subset to ones in metadata.
-tr "\t" "\n" > upload/$DT/sequences.fasta # de-tabularize.
+awk -F'\t' 'FNR == NR {seqs[$1]=$2; next} {if (">"$1 in seqs) {print ">"$3"\t"seqs[">"$1]} else {print $0" had no matching sequence, excluding." > "/dev/stderr"}}' - $META | # Subset to ones in metadata.
+tr "\t" "\n" > $OUTDIR/sequences.fasta # de-tabularize.
 
-echo "Continuing with $(grep ">" -c upload/$DT/sequences.fasta) sequences."
+echo "Continuing with $(grep ">" -c $OUTDIR/sequences.fasta) sequences."
 
 ###############################################################################
 # Remove human reads.
@@ -103,31 +84,28 @@ echo "Output .fastq file for each genome"
 # List all available files.
 for i in "${ARTICDIR[@]}"; do
   for j in $i/articminion/*.consensus.fasta; do echo $j; done
-done | sed 's/.consensus.fasta/.sorted.bam/' - > upload/$DT/tmp_bamfiles
+done | sed 's/.consensus.fasta/.sorted.bam/' - > $OUTDIR/tmp_bamfiles
 
 # Make input file to parallel.
-awk -F'\t' -v outdir=upload/$DT -v human=$HUMANREF '{print $1":"$2":"outdir":"human}' upload/$DT/tmp_toexport.txt > upload/$DT/tmp_toparallel.txt
+awk -F'\t' -v outdir=$OUTDIR -v human=$HUMANREF 'NR > 1 {print $3":"$2":"outdir":"human}' $OUTDIR/tmp_metadata.tsv > $OUTDIR/tmp_toparallel.txt
 
 # Run in singularity.
 SINGIMG="/srv/rbd/thecontainer/covid19_latest.sif"
-singularity --silent exec -B /srv/rbd:/srv/rbd $SINGIMG bash -c "DT=$DT; THREADS=$THREADS; . $WORKFLOW_PATH/parallel.snipet.sh"
+singularity --silent exec -B /srv/rbd:/srv/rbd $SINGIMG bash -c "OUTDIR=$OUTDIR; THREADS=$THREADS; . $WORKFLOW_PATH/parallel.snipet.sh"
 
 echo "md5 checksum"
 
 # md5 checksum.
-md5sum upload/$DT/mapped_fastq/*fastq.gz | 
+md5sum $OUTDIR/mapped_fastq/*fastq.gz | 
 awk '{n = split($2, a, "/"); print $1"\t"a[n]}' - | # remove file path.
-awk -F '\t' '{$3=$2; sub(/.fastq.gz/,"",$3); gsub(/_/,"/",$3); print $3"\t"$1"\t"$2"\t"}' - > upload/$DT/tmp_md5sums.tsv # make ID column.  
+awk -F '\t' '{$3=$2; sub(/.fastq.gz/,"",$3); gsub(/_/,"/",$3); print $3"\t"$1"\t"$2"\t"}' - > $OUTDIR/tmp_md5sums.tsv # make ID column.  
 
 ###############################################################################
 # Dump metadata.
 ###############################################################################
 
-echo -e "gisaid_id\tsample_date\tmd5sum\tfastq_file" > upload/$DT/metadata.tsv
-join <(awk -F'\t' '{ print $1"\t"$4 }' upload/$DT/tmp_toexport.txt | sort) <(sort upload/$DT/tmp_md5sums.tsv) -t $'\t' >> upload/$DT/metadata.tsv
-
-# Write the passed gisaid_id and library_id to "exported.txt".
-cut -f 1,2 upload/$DT/tmp_toexport.txt >> upload/exported.txt
+echo -e "gisaid_id\tsample_date\tmd5sum\tfastq_file" > $OUTDIR/metadata.tsv
+join <(awk -F'\t' '{ print $3"\t"$4 }' $OUTDIR/tmp_metadata.tsv | sort) <(sort $OUTDIR/tmp_md5sums.tsv) -t $'\t' >> $OUTDIR/metadata.tsv
 
 # Clean-up folder.
-rm upload/$DT/tmp_* 
+rm $OUTDIR/tmp_* 
