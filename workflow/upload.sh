@@ -87,7 +87,7 @@ for i in "${ARTICDIR[@]}"; do
 done | sed 's/.consensus.fasta/.sorted.bam/' - > $OUTDIR/tmp_bamfiles
 
 # Make input file to parallel.
-awk -F'\t' -v outdir=$OUTDIR -v human=$HUMANREF 'NR > 1 {print $3":"$2":"outdir":"human}' $OUTDIR/tmp_metadata.tsv > $OUTDIR/tmp_toparallel.txt
+awk -F'\t' -v outdir=$OUTDIR -v human=$HUMANREF '{print $3":"$2":"outdir":"human}' $OUTDIR/tmp_metadata.tsv > $OUTDIR/tmp_toparallel.txt
 
 # Run in singularity.
 SINGIMG="/srv/rbd/thecontainer/covid19_latest.sif"
