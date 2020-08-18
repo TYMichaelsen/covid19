@@ -46,8 +46,8 @@ REF="${DEPEND_DIR}/ref"
 
 #THREADS=100
 
-#META=/srv/rbd/covid19/genomes/2020-07-08-20-29_export/metadata.tsv
-#SEQS=/srv/rbd/covid19/genomes/2020-07-08-20-29_export/sequences.fasta
+#META=/srv/rbd/covid19/genomes/2020-08-17-11-59_export/metadata.tsv
+#SEQS=/srv/rbd/covid19/genomes/2020-08-17-11-59_export/sequences.fasta
 
 ############################################################
 
@@ -86,108 +86,29 @@ GISAID_META=$(findTheLatest "${DISTDIR}/global_data/*tsv")
 Rscript ${THISDIR}/merge_clean_metadata.R -l $META -g $GISAID_META -o $OUTDIR
 
 ###############################################################################
-# Merge sequences and QC.------------------------------------------------------
+# Merge sequences.-------------------------------------------------------------
 ###############################################################################
 
-MAXN=5000
-MINLENGT=25000
-
-# GISAID data -----------------------------------------------------------------  
 GISAID_FASTA=$(findTheLatest "${DISTDIR}/global_data/*fasta")
-  
-if [ ! -z "$(grep "AlignMasked" <<< $GISAID_FASTA)" ]; then
-  echo ""
-  echo "GISAID sequences has already been QC'ed, aligned and masked. Skipping that..."
-  echo "" 
-  
-  GISAID_FASTA_OUT=$GISAID_FASTA
-  GISAID_FILTER_OUT=$(sed 's/_AlignMasked.fasta/_filtered.txt/' <<< $GISAID_FASTA_OUT)
-  
-else
-  echo ""
-  echo "QC'ing, align and mask the GISAID sequences..."
-  echo ""
-  
-  GISAID_FASTA_OUT=$(sed 's/.fasta/_AlignMasked.fasta/' <<< $GISAID_FASTA)
-  GISAID_FILTER_OUT=$(sed 's/.fasta/_filtered.txt/' <<< $GISAID_FASTA)
-  
-  touch $GISAID_FILTER_OUT
-  
-  # Filter bad sequences.
-  cat $GISAID_FASTA | 
-  awk '/^>/ {printf("\n%s\n",$0);next; } { printf("%s",$0);}  END {printf("\n");}' - | awk 'NR > 1' - | # make one-line fasta.
-  awk -v THR=$MAXN -v LEN=$MINLENGTH -v filtfile=$GISAID_FILTER_OUT '!/^>/ { next } { getline seq; seq2=seq; Nn=gsub(/N/,"",seq) }; {if (length(seq2) > LEN && Nn <= THR) { print $0 "\n" seq2 } else {sub(/^>/,"",$0); print $0 >> filtfile}}' - > $GISAID_FASTA_OUT # Tidy header.
-    
-  # Align and mask bases.
-  SINGIMG="/srv/rbd/thecontainer/covid19_latest.sif"
-  singularity --silent exec -B /srv/rbd:/srv/rbd $SINGIMG bash -c "$THISDIR/AlignMask.sh ${DISTDIR}/global_data $GISAID_FASTA_OUT $REF/MN908947.3.gb $DEPEND_DIR $THREADS" 
-  
-  # Cleanup and rename.
-  rm ${DISTDIR}/global_data/aligned*
-  rm ${DISTDIR}/global_data/log.out
-  mv ${DISTDIR}/global_data/masked.fasta $GISAID_FASTA_OUT
-  
-fi
-
-echo "$(wc -l $GISAID_FILTER_OUT | sed 's/ .*//') genomes in GISAID data failed QC and will also be removed from metadata, see $OUTDIR/filtered.txt"
-
-# In-house data ---------------------------------------------------------------
-echo ""
-echo "QC'ing, align and mask the in-house sequences..."
-echo ""
-
-# Filter bad sequences.
-touch $OUTDIR/filtered.txt
-
-cat $SEQS | 
-awk '/^>/ {printf("\n%s\n",$0);next; } { printf("%s",$0);}  END {printf("\n");}' - | awk 'NR > 1' - | # make one-line fasta.
-awk -v THR=$MAXN -v LEN=$MINLENGTH -v outdir=$OUTDIR '!/^>/ { next } { getline seq; seq2=seq; Nn=gsub(/N/,"",seq) }; {if (length(seq2) > LEN && Nn <= THR) { print $0 "\n" seq2 } else {sub(/^>/,"",$0); print $0 >> outdir"/filtered.txt"}}' - > tmp && mv tmp $OUTDIR/seqs.fasta # Tidy header.
-
-# Align and mask bases.
-SINGIMG="/srv/rbd/thecontainer/covid19_latest.sif"
-singularity --silent exec -B /srv/rbd:/srv/rbd $SINGIMG bash -c "$THISDIR/AlignMask.sh $OUTDIR $OUTDIR/seqs.fasta $REF/MN908947.3.gb $DEPEND_DIR $THREADS" 
-
-echo "$(wc -l $OUTDIR/filtered.txt | sed 's/ .*//') genomes in in-house data failed QC and will also be removed from metadata, see $OUTDIR/filtered.txt"
-
-# Merge the SSI and GISAID filtered sequences.
-cat $GISAID_FILTER_OUT $OUTDIR/filtered.txt > tmp && mv tmp $OUTDIR/filtered.txt
-
-# Merge sequences and filter from metadata ------------------------------------
 
 # Merge GISAID and SSI sequences.
-cat $OUTDIR/masked.fasta $GISAID_FASTA_OUT > tmp && mv tmp $OUTDIR/masked.fasta
+cat $SEQS $GISAID_FASTA |
+awk '/^>/ {printf("\n%s\n",$0);next; } { printfw("%s",$0);}  END {printf("\n");}' - | awk 'NR > 1' - > $OUTDIR/masked.fasta # make one-line fasta.
 
-# Subset to ones in metadata.
+# List the sequences to include.
 awk 'NR > 1 {print $1}' $OUTDIR/metadata_nextstrain.tsv > $OUTDIR/include.txt
 
+# Subset sequences.
 cat $OUTDIR/masked.fasta | 
 awk '/^>/ {printf("\n%s\n",$0);next; } { printf("%s",$0);}  END {printf("\n");}' - | awk 'NR > 1' - | # make one-line fasta.
 awk '{ if ((NR>1)&&($0~/^>/)) { printf("\n%s", $0); } else if (NR==1) { printf("%s", $0); } else { printf("\t%s", $0); } }' - | # tabularize.
 awk -F'\t' 'FNR == NR {seqs[$1]=$0; next} {if (">"$1 in seqs) {print seqs[">"$1]} else {print $0" had no matching sequence, excluding." > "/dev/stderr"}}' - $OUTDIR/include.txt | # Subset to ones in metadata.
 tr "\t" "\n" > tmp && mv tmp $OUTDIR/masked.fasta # de-tabularize.
 
-# Subset metadata to remove filtered sequences. 
-grep -vf $OUTDIR/filtered.txt $OUTDIR/metadata_nextstrain.tsv > tmp && mv tmp $OUTDIR/metadata_nextstrain.tsv
-
-exit 1
-
-
 ###############################################################################
-# Run nextstrain - DK only.----------------------------------------------------
+# Run nextstrain 
 ###############################################################################
 
-# [RUN FOR ONLY DK SAMPLES AND GET THE CLADE ASSIGNMENT, DUMP "clades.tsv" IN OUTPUT FOLDER]
-
-###############################################################################
-# Run nextstrain - global.-----------------------------------------------------
-###############################################################################
-
-# [RUN FOR DK + GLOBAL SUBSET, USE "clades.tsv" TO ASSIGN CLADES]
-
-###############################################################################
-# Add clades to metadata.------------------------------------------------------
-###############################################################################
-
-# [RUN SOME SCRIPT THAT ADDS CLADES TO ALL SEQUENCES IN "seqs.fasta" AND APPENDS TO METADATA]
+# [EXEC VANG CODE HERE]
 
 
