@@ -65,6 +65,7 @@ local_meta <- rename(local_meta,
     region  = "Europe",
     country = "Denmark",
     division = swapDKlet(division),
+    location = swapDKlet(location),
     sex     = ifelse(sex == "M","Male","Female"),
     date_submitted = local_date)
 
