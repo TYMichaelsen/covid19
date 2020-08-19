@@ -53,10 +53,11 @@ REF="${DEPEND_DIR}/ref"
 
 # Check missing arguments
 MISSING="is missing but required. Exiting."
-if [ -z ${META+x} ]; then echo "-s $MISSING"; echo "$USAGE"; exit 1; fi;
-if [ -z ${SEQS+x} ]; then echo "-s $MISSING"; echo "$USAGE"; exit 1; fi;
-if [ -z ${OUTDIR+x} ]; then OUTDIR=$PWD/$(date +%Y-%m-%d)_nextstrain; fi;
-if [ -z ${THREADS+x} ]; then THREADS=50; fi;
+# if [ -z ${META+x} ]; then echo "-s $MISSING"; echo "$USAGE"; exit 1; fi;
+# if [ -z ${SEQS+x} ]; then echo "-s $MISSING"; echo "$USAGE"; exit 1; fi;
+if [ -z ${OUTDIR+x} ]; then OUTDIR=${NEXTSTRAINOUT}/$(date +%Y-%m-%d)_nextstrain; fi;
+# if [ -z ${OUTDIR+x} ]; then OUTDIR=$PWD/$(date +%Y-%m-%d)_nextstrain; fi;
+if [ -z ${THREADS+x} ]; then THREADS=64; fi;
 
 ### Code.----------------------------------------------------------------------
 
@@ -76,39 +77,82 @@ source ${THISDIR}/utils.sh
 #fi
 
 mkdir -p $OUTDIR
+OUTDIR=$(readlink -f $OUTDIR) # Convert to absolute path
+mkdir -p $OUTDIR/data
 
-###############################################################################
-# Merge the metadata with GISAID metadata.-------------------------------------
-###############################################################################
+if [ -z ${META+x} ]; then
+    META=$(findTheLatest "${DISTDIR}/genomes/*export")/metadata.tsv
+    echo "WARNING: -m not provided, will use the latest one for nextstrain:"
+    echo $META
+fi
+if [ -z ${SEQS+x} ]; then
+    SEQS=$(findTheLatest "${DISTDIR}/genomes/*export")/sequences.fasta
+    echo "WARNING: -s not provided, will use the latest sequences in :"
+    echo $SEQS
+fi
 
-GISAID_META=$(findTheLatest "${DISTDIR}/global_data/*tsv")
 
-Rscript ${THISDIR}/merge_clean_metadata.R -l $META -g $GISAID_META -o $OUTDIR
+if [ ! -f $OUTDIR/data/metadata_nextstrain.tsv ]; then
 
-###############################################################################
-# Merge sequences.-------------------------------------------------------------
-###############################################################################
+    ###############################################################################
+    # Merge the metadata with GISAID metadata.-------------------------------------
+    ###############################################################################
 
-GISAID_FASTA=$(findTheLatest "${DISTDIR}/global_data/*fasta")
+    GISAID_META=$(findTheLatest "${DISTDIR}/global_data/*tsv")
 
-# Merge GISAID and SSI sequences.
-cat $SEQS $GISAID_FASTA |
-awk '/^>/ {printf("\n%s\n",$0);next; } { printfw("%s",$0);}  END {printf("\n");}' - | awk 'NR > 1' - > $OUTDIR/masked.fasta # make one-line fasta.
+    Rscript ${THISDIR}/merge_clean_metadata.R -l $META -g $GISAID_META -o $OUTDIR
+fi
+if [ ! -f $OUTDIR/data/masked.fasta ]; then
 
-# List the sequences to include.
-awk 'NR > 1 {print $1}' $OUTDIR/metadata_nextstrain.tsv > $OUTDIR/include.txt
+    ###############################################################################
+    # Merge sequences.-------------------------------------------------------------
+    ###############################################################################
 
-# Subset sequences.
-cat $OUTDIR/masked.fasta | 
-awk '/^>/ {printf("\n%s\n",$0);next; } { printf("%s",$0);}  END {printf("\n");}' - | awk 'NR > 1' - | # make one-line fasta.
-awk '{ if ((NR>1)&&($0~/^>/)) { printf("\n%s", $0); } else if (NR==1) { printf("%s", $0); } else { printf("\t%s", $0); } }' - | # tabularize.
-awk -F'\t' 'FNR == NR {seqs[$1]=$0; next} {if (">"$1 in seqs) {print seqs[">"$1]} else {print $0" had no matching sequence, excluding." > "/dev/stderr"}}' - $OUTDIR/include.txt | # Subset to ones in metadata.
-tr "\t" "\n" > tmp && mv tmp $OUTDIR/masked.fasta # de-tabularize.
+    GISAID_FASTA=$(findTheLatest "${DISTDIR}/global_data/*fasta")
+
+
+    # Merge GISAID and SSI sequences.
+    cat $SEQS $GISAID_FASTA |
+        awk '/^>/ {printf("\n%s\n",$0);next; } { printf("%s",$0);}  END {printf("\n");}' - | awk 'NR > 1' - > $OUTDIR/masked.fasta # make one-line fasta.
+
+    # List the sequences to include.
+    awk 'NR > 1 {print $1}' $OUTDIR/metadata_nextstrain.tsv > $OUTDIR/include.txt
+
+    # Subset sequences.
+    cat $OUTDIR/masked.fasta | 
+        awk '/^>/ {printf("\n%s\n",$0);next; } { printf("%s",$0);}  END {printf("\n");}' - | awk 'NR > 1' - | # make one-line fasta.
+        awk '{ if ((NR>1)&&($0~/^>/)) { printf("\n%s", $0); } else if (NR==1) { printf("%s", $0); } else { printf("\t%s", $0); } }' - | # tabularize.
+        awk -F'\t' 'FNR == NR {seqs[$1]=$0; next} {if (">"$1 in seqs) {print seqs[">"$1]} else {print $0" had no matching sequence, excluding." > "/dev/stderr"}}' - $OUTDIR/include.txt | # Subset to ones in metadata.
+        tr "\t" "\n" > tmp && mv tmp $OUTDIR/masked.fasta # de-tabularize.
+
+    # Move stuff to /data.
+    mv $OUTDIR/masked.fasta $OUTDIR/data/masked.fasta
+    mv $OUTDIR/metadata_full.tsv $OUTDIR/data/metadata_full.tsv
+    mv $OUTDIR/metadata_nextstrain.tsv $OUTDIR/data/metadata_nextstrain.tsv
+    mv $OUTDIR/include.txt $OUTDIR/data/include.txt
+
+fi
 
 ###############################################################################
 # Run nextstrain 
 ###############################################################################
 
-# [EXEC VANG CODE HERE]
+NCOV_ROOT="/srv/rbd/bin/ncov.1308"
+AUGUR_ENV="/srv/rbd/bin/conda/envs/augur"
 
+# cd $OUTDIR
+# rsync -avzp --exclude .git --exclude benmarks --exclude .snakemake --exclude .github  $NCOV_ROOT/ ./
 
+cd $NCOV_ROOT
+source activate  $AUGUR_ENV
+snakemake --cores $THREADS --profile my_profiles/denmark --config metadata=$OUTDIR/data/metadata_nextstrain.tsv sequences=$OUTDIR/data/masked.fasta 
+
+# Move results and auspice directories to $OUTDIR when snakemake finishes successfully
+if [ $? -eq 0 ]; then
+    cp -r results auspice $OUTDIR
+    $NCOV_ROOT/scripts/assign_clades.py --nthreads $THREADS  \
+                                       --alignment $OUTDIR/results/masked.fasta \
+                                       --clades $OUTDIR/results/DenmarkOnly/temp_subclades.tsv \
+                                       --chunk-size  $THREADS \
+                                       --output $OUTDIR/results/global_clades_assignment.tsv
+fi
