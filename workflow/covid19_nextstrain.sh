@@ -3,7 +3,7 @@ VERSION=0.1.0
 
 ### Description ----------------------------------------------------------------
 
-USAGE="$(basename "$0") [-h] [-m file -s file -o dir -t int] 
+USAGE="$(basename "$0") [-h] [-m file -s file -o dir -t int]
 -- COVID-19 pipeline for nextstrain visualization and basic genomic analysis v. $VERSION:  
 
 Arguments:
@@ -13,11 +13,14 @@ Arguments:
     -o  (Develop only) Specify output directory.
     -t  (Develop only) Number of threads.
     -f  (Develop only) Force override existing output directory. 
+    -p  (Develop only) Pull ncov from github
+    -k  (Develop only) Additional snakemake arguments given in quotes
+
 "
 ### Terminal Arguments ---------------------------------------------------------
 
 # Import user arguments
-while getopts ':hfm:s:o:t:' OPTION; do
+while getopts ':hfpm:s:o:t:k:' OPTION; do
   case $OPTION in
     h) echo "$USAGE"; exit 1;;
     m) META=$OPTARG;;
@@ -25,6 +28,8 @@ while getopts ':hfm:s:o:t:' OPTION; do
     o) OUTDIR=$OPTARG;;
     t) THREADS=$OPTARG;;
     f) FORCE=1;;
+    p) PULL_GITHUB=1;;
+    k) SNAKE_ADD=$OPTARG;;
     :) printf "missing argument for -$OPTARG\n" >&2; exit 1;;
     \?) printf "invalid option for -$OPTARG\n" >&2; exit 1;;
   esac
@@ -86,10 +91,18 @@ mkdir -p $OUTDIR/data
 GISAID_META=$(findTheLatest "${DISTDIR}/global_data/*tsv")
 GISAID_FASTA=$(findTheLatest "${DISTDIR}/global_data/*fasta")
 NCOV_ROOT="/opt/nextstrain/ncov-aau"
-ARGSTR="--cores $THREADS --profile my_profiles/denmark --config metadata=$OUTDIR/data/metadata_nextstrain.tsv sequences=$OUTDIR/data/masked.fasta"
+ARGSTR="--cores $THREADS --profile my_profiles/denmark --config metadata=$OUTDIR/data/metadata_nextstrain.tsv sequences=$OUTDIR/data/masked.fasta ${SNAKE_ADD}"
 
 # Run nextstrain 
 ###############################################################################
+
+if [ -d $OUTDIR -a x${PULL_GITHUB} != x  ]; then
+    cd $OUTDIR
+    wget https://github.com/biocyberman/ncov/archive/aau.zip
+    unzip aau.zip && rm aau.zip
+    cd -
+fi
+
 CONDA_RUN=0 # preserve conda-based setup for convenience. 
 
 if [ $CONDA_RUN -eq 1 ]; then
@@ -172,7 +185,9 @@ fi
 ###############################################################################
 # Run nextstrain 
 ###############################################################################
-cp -r $NCOV_ROOT $OUTDIR
+if [ ! -d $OUTDIR/ncov-aau ]; then
+   cp -r $NCOV_ROOT $OUTDIR
+fi
 cd $OUTDIR/ncov-aau
 snakemake ${ARGSTR}
 
