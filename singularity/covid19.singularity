@@ -86,3 +86,9 @@ From: covid19_1.5.sif
 
   # Seqtk: lightweight and inspired by AWK for fastX sequence manipulation
   conda install -c bioconda seqtk
+
+  # Install customized augur
+  cd /opt/nextstrain 
+  conda run -n nextstrain pip install git+https://github.com/biocyberman/augur.git@aau
+  wget https://github.com/biocyberman/ncov/archive/aau.zip
+  unzip aau.zip && rm aau.zip
