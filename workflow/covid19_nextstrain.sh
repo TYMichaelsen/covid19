@@ -33,23 +33,6 @@ done
 # Setup directories.
 THISDIR=$(dirname $(readlink -f $0))
 DISTDIR="/srv/rbd/covid19"
-DEPEND_DIR="${THISDIR}/dependencies"
-REF="${DEPEND_DIR}/ref"
-
-
-### TESTING ################################################
-#THISDIR=/srv/rbd/covid19/git/covid19/workflow
-#DISTDIR="/srv/rbd/tym/test-nextstrain"
-#OUTDIR=testing
-#DEPEND_DIR="${THISDIR}/dependencies"
-#REF="${DEPEND_DIR}/ref"
-
-#THREADS=100
-
-#META=/srv/rbd/covid19/genomes/2020-08-17-11-59_export/metadata.tsv
-#SEQS=/srv/rbd/covid19/genomes/2020-08-17-11-59_export/sequences.fasta
-
-############################################################
 
 # Check missing arguments
 MISSING="is missing but required. Exiting."
@@ -60,9 +43,29 @@ if [ -z ${OUTDIR+x} ]; then OUTDIR=${NEXTSTRAINOUT}/$(date +%Y-%m-%d)_nextstrain
 if [ -z ${THREADS+x} ]; then THREADS=64; fi;
 
 ### Code.----------------------------------------------------------------------
-
 # Source utility functions
 source ${THISDIR}/utils.sh
+
+IMGDIR="/srv/rbd/thecontainer"
+SINGIMG=$(findTheLatest "${IMGDIR}/*sif")
+# SINGIMG=singularity/covid19_latest.sif
+echo Using Singularity image: $SINGIMG
+# DISTDIR="/srv/rbd/covid19/current"
+
+if [ -z ${META+x} ]; then
+    META=$(findTheLatest "${DISTDIR}/genomes/*export")/metadata.tsv
+    echo "WARNING: -m not provided, will use the latest one for nextstrain:"
+    echo $META
+fi
+if [ -z ${SEQS+x} ]; then
+    SEQS=$(findTheLatest "${DISTDIR}/genomes/*export")/sequences.fasta
+    echo "WARNING: -s not provided, will use the latest sequences in :"
+    echo $SEQS
+fi
+
+
+GENOMEDIR=$(dirname $SEQS)
+METADIR=$(dirname $META)
 
 # setup output folders.
 #if [ -d $OUTDIR -a  x$FORCE == x  ]; then
@@ -80,79 +83,108 @@ mkdir -p $OUTDIR
 OUTDIR=$(readlink -f $OUTDIR) # Convert to absolute path
 mkdir -p $OUTDIR/data
 
-if [ -z ${META+x} ]; then
-    META=$(findTheLatest "${DISTDIR}/genomes/*export")/metadata.tsv
-    echo "WARNING: -m not provided, will use the latest one for nextstrain:"
-    echo $META
-fi
-if [ -z ${SEQS+x} ]; then
-    SEQS=$(findTheLatest "${DISTDIR}/genomes/*export")/sequences.fasta
-    echo "WARNING: -s not provided, will use the latest sequences in :"
-    echo $SEQS
-fi
+GISAID_META=$(findTheLatest "${DISTDIR}/global_data/*tsv")
+GISAID_FASTA=$(findTheLatest "${DISTDIR}/global_data/*fasta")
+NCOV_ROOT="/opt/nextstrain/ncov-aau"
+ARGSTR="--cores $THREADS --profile my_profiles/denmark --config metadata=$OUTDIR/data/metadata_nextstrain.tsv sequences=$OUTDIR/data/masked.fasta"
 
+# Run nextstrain 
+###############################################################################
+CONDA_RUN=0 # preserve conda-based setup for convenience. 
+
+if [ $CONDA_RUN -eq 1 ]; then
+
+    NCOV_ROOT="/srv/rbd/bin/ncov.1308"
+    AUGUR_ENV="/srv/rbd/bin/conda/envs/augur"
+
+    # cd $OUTDIR
+    # rsync -avzp --exclude .git --exclude benmarks --exclude .snakemake --exclude .github  $NCOV_ROOT/ ./
+    if [ ! -f $OUTDIR/data/metadata_nextstrain.tsv ]; then
+        ###############################################################################
+        # Merge the metadata with GISAID metadata.-------------------------------------
+        ###############################################################################
+
+        Rscript --vanilla --no-environ ${THISDIR}/merge_clean_metadata.R -l $META -g $GISAID_META -o $OUTDIR
+        mv $OUTDIR/metadata_nextstrain.tsv $OUTDIR/data/metadata_nextstrain.tsv
+        mv $OUTDIR/metadata_full.tsv $OUTDIR/data/metadata_full.tsv
+    fi
+    if [ ! -f $OUTDIR/data/masked.fasta ]; then
+        ###############################################################################
+        # Merge sequences.-------------------------------------------------------------
+        ###############################################################################
+
+        # Merge GISAID and SSI sequences.
+        # List the sequences to include.
+        awk 'NR > 1 {print \$1}' $OUTDIR/data/metadata_nextstrain.tsv > $OUTDIR/include.txt
+        cat $SEQS $GISAID_FASTA | seqtk subseq  - $OUTDIR/include.txt > $OUTDIR/masked.fasta
+
+        # Move stuff to /data.
+        mv $OUTDIR/masked.fasta $OUTDIR/data/masked.fasta
+        mv $OUTDIR/include.txt $OUTDIR/data/include.txt
+    fi
+
+    cd $NCOV_ROOT
+    source activate  $AUGUR_ENV
+    snakemake ${ARGSTR}
+
+    # Move results and auspice directories to $OUTDIR when snakemake finishes successfully
+    if [ $? -eq 0 ]; then
+        cp -r results auspice $OUTDIR
+        $NCOV_ROOT/scripts/assign_clades.py --nthreads $THREADS  \
+                                            python $NCOV_ROOT/scripts/assign_clades.py --nthreads $THREADS  \
+                                            --alignment $OUTDIR/results/masked.fasta \
+                                            --clades $OUTDIR/results/DenmarkOnly/temp_subclades.tsv \
+                                            --chunk-size  $THREADS \
+                                            --output $OUTDIR/results/global_clades_assignment.tsv
+    fi
+else
+    singularity exec  -B /srv/rbd:/srv/rbd \
+                -B $HOME:$HOME \
+                $SINGIMG bash <<HEREDOC
+source activate nextstrain
+
+# Source utility functions
+source ${THISDIR}/utils.sh
 
 if [ ! -f $OUTDIR/data/metadata_nextstrain.tsv ]; then
-
     ###############################################################################
     # Merge the metadata with GISAID metadata.-------------------------------------
     ###############################################################################
-
-    GISAID_META=$(findTheLatest "${DISTDIR}/global_data/*tsv")
-
-    Rscript ${THISDIR}/merge_clean_metadata.R -l $META -g $GISAID_META -o $OUTDIR
+    Rscript --vanilla --no-environ ${THISDIR}/merge_clean_metadata.R -l $META -g $GISAID_META -o $OUTDIR
+    mv $OUTDIR/metadata_nextstrain.tsv $OUTDIR/data/metadata_nextstrain.tsv
+    mv $OUTDIR/metadata_full.tsv $OUTDIR/data/metadata_full.tsv
 fi
 if [ ! -f $OUTDIR/data/masked.fasta ]; then
-
     ###############################################################################
     # Merge sequences.-------------------------------------------------------------
     ###############################################################################
 
-    GISAID_FASTA=$(findTheLatest "${DISTDIR}/global_data/*fasta")
-
-
     # Merge GISAID and SSI sequences.
-    cat $SEQS $GISAID_FASTA |
-        awk '/^>/ {printf("\n%s\n",$0);next; } { printf("%s",$0);}  END {printf("\n");}' - | awk 'NR > 1' - > $OUTDIR/masked.fasta # make one-line fasta.
-
     # List the sequences to include.
-    awk 'NR > 1 {print $1}' $OUTDIR/metadata_nextstrain.tsv > $OUTDIR/include.txt
-
-    # Subset sequences.
-    cat $OUTDIR/masked.fasta | 
-        awk '/^>/ {printf("\n%s\n",$0);next; } { printf("%s",$0);}  END {printf("\n");}' - | awk 'NR > 1' - | # make one-line fasta.
-        awk '{ if ((NR>1)&&($0~/^>/)) { printf("\n%s", $0); } else if (NR==1) { printf("%s", $0); } else { printf("\t%s", $0); } }' - | # tabularize.
-        awk -F'\t' 'FNR == NR {seqs[$1]=$0; next} {if (">"$1 in seqs) {print seqs[">"$1]} else {print $0" had no matching sequence, excluding." > "/dev/stderr"}}' - $OUTDIR/include.txt | # Subset to ones in metadata.
-        tr "\t" "\n" > tmp && mv tmp $OUTDIR/masked.fasta # de-tabularize.
+    awk 'NR > 1 {print \$1}' $OUTDIR/data/metadata_nextstrain.tsv > $OUTDIR/include.txt
+    cat $SEQS $GISAID_FASTA | seqtk subseq - $OUTDIR/include.txt > $OUTDIR/masked.fasta
 
     # Move stuff to /data.
     mv $OUTDIR/masked.fasta $OUTDIR/data/masked.fasta
-    mv $OUTDIR/metadata_full.tsv $OUTDIR/data/metadata_full.tsv
-    mv $OUTDIR/metadata_nextstrain.tsv $OUTDIR/data/metadata_nextstrain.tsv
     mv $OUTDIR/include.txt $OUTDIR/data/include.txt
 
 fi
-
 ###############################################################################
 # Run nextstrain 
 ###############################################################################
-
-NCOV_ROOT="/srv/rbd/bin/ncov.1308"
-AUGUR_ENV="/srv/rbd/bin/conda/envs/augur"
-
-# cd $OUTDIR
-# rsync -avzp --exclude .git --exclude benmarks --exclude .snakemake --exclude .github  $NCOV_ROOT/ ./
-
-cd $NCOV_ROOT
-source activate  $AUGUR_ENV
-snakemake --cores $THREADS --profile my_profiles/denmark --config metadata=$OUTDIR/data/metadata_nextstrain.tsv sequences=$OUTDIR/data/masked.fasta 
+cp -r $NCOV_ROOT $OUTDIR
+cd $OUTDIR/ncov-aau
+snakemake ${ARGSTR}
 
 # Move results and auspice directories to $OUTDIR when snakemake finishes successfully
 if [ $? -eq 0 ]; then
     cp -r results auspice $OUTDIR
-    $NCOV_ROOT/scripts/assign_clades.py --nthreads $THREADS  \
+    python $NCOV_ROOT/scripts/assign_clades.py --nthreads $THREADS  \
                                        --alignment $OUTDIR/results/masked.fasta \
                                        --clades $OUTDIR/results/DenmarkOnly/temp_subclades.tsv \
                                        --chunk-size  $THREADS \
                                        --output $OUTDIR/results/global_clades_assignment.tsv
+fi
+HEREDOC
+
 fi
