@@ -192,8 +192,10 @@ cd $OUTDIR/ncov-aau
 snakemake ${ARGSTR}
 
 # Move results and auspice directories to $OUTDIR when snakemake finishes successfully
-if [ $? -eq 0 ]; then
+if [ -f auspice/ncov_DenmarkGlobal.json  ]; then
+    echo Copying output to $OUTDIR ...
     cp -r results auspice $OUTDIR
+    echo Running assign_clades ...
     python $NCOV_ROOT/scripts/assign_clades.py --nthreads $THREADS  \
                                        --alignment $OUTDIR/results/masked.fasta \
                                        --clades $OUTDIR/results/DenmarkOnly/temp_subclades.tsv \
