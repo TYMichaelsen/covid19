@@ -38,6 +38,7 @@ done
 # Setup directories.
 THISDIR=$(dirname $(readlink -f $0))
 DISTDIR="/srv/rbd/covid19"
+NEXTSTRAINOUT="${DISTDIR}/nextstrain"
 
 # Check missing arguments
 MISSING="is missing but required. Exiting."
