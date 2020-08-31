@@ -1,4 +1,11 @@
 #!/usr/bin/env Rscript
+
+## Fix library resoultion problem
+## Exclude user's library
+my_home = Sys.getenv("HOME")
+libvec = .libPaths()
+.libPaths(libvec[!grepl(my_home, libvec)])
+
 library(tidyverse)
 library(optparse)
 library(stringr)
