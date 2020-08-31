@@ -41,7 +41,7 @@ if [ -z ${DT+x} ]; then DT=$(date +%Y_%m_%d_%H-%M)"_export"; fi;
 GITDIR="$(dirname "$(readlink -f "$0")")"
 
 # How the header should look like.
-NAMESTRING="hCoV-19/DK/ALAB-@/2020"
+NAMESTRING="@"
 
 # Make time-stamped export subfolder.
 mkdir -p genomes
@@ -85,7 +85,7 @@ tr "\t" "\n" > tmp && mv tmp genomes/$DT/sequences.fasta # de-tabularize.
 # Dump metadata.
 ###############################################################################
 
-echo -e "library_id\tssi_id\tgisaid_id" > genomes/$DT/idmapping.tsv
+echo -e "library_id\tssi_id\tseq_id" > genomes/$DT/idmapping.tsv
 cat genomes/$DT/tmp_toexport.txt >> genomes/$DT/idmapping.tsv
 
 # Also remove duplicates from id-mapping.

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-source activate artic-ncov2019-medaka
+source activate artic-ncov2019
 
 # for each mapping, run sanitizeme.
-cat upload/$DT/tmp_toparallel.txt | parallel -j $THREADS --colsep ':' --bar \
+cat $OUTDIR/tmp_toparallel.txt | parallel -j $THREADS --colsep ':' --bar \
                                              '
 # Get the corresponding .bam file.
 BAMFILE=$(grep {2}_ {3}/tmp_bamfiles)

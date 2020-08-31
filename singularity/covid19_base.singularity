@@ -69,7 +69,7 @@ From: nvidia/cuda:10.2-base-ubuntu18.04
     r-base-dev=${R_BASE_VERSION}* \
     r-base-html=${R_BASE_VERSION}* \
     r-recommended=${R_BASE_VERSION}*
-  R -e "install.packages('BiocManager', Ncpus = 100); BiocManager::install(c('data.table', 'tidyverse', 'rmarkdown', 'httr', 'knitr', 'ggtree', 'kableExtra', 'rjson', 'ape'), ask = FALSE, version = '3.10', Ncpus = 100)"
+  R -e "install.packages('BiocManager', Ncpus = 100); BiocManager::install(c('optparse', 'data.table', 'tidyverse', 'rmarkdown', 'httr', 'knitr', 'ggtree', 'kableExtra', 'rjson', 'ape'), ask = FALSE, version = '3.10', Ncpus = 100)"
   conda install -y pandoc==2.2.3.2 #pandoc from conda is more up to date
 
   #install GUPPY (3.6.0) (with GPU support)
@@ -119,7 +119,7 @@ From: nvidia/cuda:10.2-base-ubuntu18.04
   wget -O- https://mirror.oxfordnanoportal.com/apt/ont-repo.pub | apt-key add - 
   echo "deb http://mirror.oxfordnanoportal.com/apt bionic-stable non-free" | tee /etc/apt/sources.list.d/nanoporetech.sources.list 
   apt-get update 
-  apt-get install -y --no-install-recommends --no-install-suggests minion-nc=19.12.5-1*
+  apt-get install -y --no-install-recommends --no-install-suggests minion-nc
 
   #install covid-util
   pip install covid-util==0.0.4

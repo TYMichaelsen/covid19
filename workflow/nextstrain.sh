@@ -286,6 +286,7 @@ augur export v2 \
       --node-data $OUTDIR/branch_lengths.json $OUTDIR/nt_muts.json $OUTDIR/aa_muts.json $OUTDIR/highres_clades.json \
       --auspice-config ${NCOVDIR}/auspice_config_AAU.json \
       --color-by-metadata $cols \
+      --colors ${NCOVDIR}/colours.tsv \
       --lat-longs $OUTDIR/latlongs.tsv \
       --output $OUTDIR/auspice/ncov_custom.json
 

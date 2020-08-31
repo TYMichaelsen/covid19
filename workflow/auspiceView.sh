@@ -12,9 +12,10 @@ if [ x"$1" ==  "x-h" -o x"$1" == "x--help" ]; then
 fi
 
 
-SINGIMG="/srv/rbd/thecontainer/covid19_latest.sif"
 MYPORT=$(shuf -i 4001-6500 -n 1)
 MYPORT=${2:-$MYPORT}
+SINGIMG=${3:-"/srv/rbd/thecontainer/covid19_latest.sif"}
+
 
 THISDIR=$(dirname $(readlink -f $0))
 
