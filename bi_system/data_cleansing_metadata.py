@@ -149,7 +149,7 @@ def check_errors(datafile, outfile, errfilewriter):
             outrow = {}
             # Integrity checks
             # duplicates
-            pk = row['ssi_id']
+            pk = row['strain']
             if pk not in primary_keys:
                 primary_keys.add(pk)
                 outrow['ssi_id'] = pk

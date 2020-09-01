@@ -16,6 +16,7 @@ TABLES = {'Persons': ("CREATE TABLE `Persons` ("
                       "  `sex` enum('M','F'),"
                       "  `COVID19_Status` enum('0','1','2') NOT NULL,"
                       "  `Parishcode` INTEGER,"
+                      "  `MunicipalityCode` INTEGER"
                       "  `lineage` VARCHAR(10),"
                       , '', ['ssi_id', 'age', 'age_group', 'sex', 'COVID19_Status', 'Parishcode', 'lineage']),
           'Countries': (
@@ -131,8 +132,8 @@ def add_data(cnxn, filepath):
     date_field_names = ','.join(DATE_FIELDS)
     df_ss = ', '.join(['%s' for fl in DATE_FIELDS])
     add_person = ("INSERT INTO Persons "
-                  "(ssi_id, age, age_group, sex, COVID19_Status, Parishcode, lineage, {}, {}) "
-                  "VALUES (%s, %s, %s, %s, %s, %s, %s, {}, {})".format(bool_field_names, date_field_names, bf_ss,
+                  "(ssi_id, age, age_group, sex, COVID19_Status, Parishcode, MunicipalityCode, lineage, {}, {}) "
+                  "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, {}, {})".format(bool_field_names, date_field_names, bf_ss,
                                                                        df_ss))
 
     with open(filepath) as csvfile:
@@ -144,7 +145,8 @@ def add_data(cnxn, filepath):
             ag = row['ReportAgeGrp']
             sex = row['Sex'] if row['Sex'] in ['M', 'F'] else None
             pc = int(row['Parishcode']) if len(row['Parishcode']) > 0 else None
-            data_person = [row['ssi_id'], age, ag, sex, cv_stat, pc, row['lineage']]
+            mc = int(row['MunicipalityCode']) if len(row['MunicipalityCode']) > 0 else None
+            data_person = [row['ssi_id'], age, ag, sex, cv_stat, pc, mc, row['lineage']]
             boolean_field_data = [row[f] if len(row[f]) > 0 else None for f in BOOL_FIELDS]
             date_field_data = [get_date(row, df) for df in DATE_FIELDS]
             data_person.extend(boolean_field_data)
