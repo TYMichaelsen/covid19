@@ -16,7 +16,7 @@ TABLES = {'Persons': ("CREATE TABLE `Persons` ("
                       "  `sex` enum('M','F'),"
                       "  `COVID19_Status` enum('0','1','2') NOT NULL,"
                       "  `Parishcode` INTEGER,"
-                      "  `MunicipalityCode` INTEGER"
+                      "  `MunicipalityCode` INTEGER,"
                       "  `lineage` VARCHAR(10),"
                       , '', ['ssi_id', 'age', 'age_group', 'sex', 'COVID19_Status', 'Parishcode', 'lineage']),
           'Countries': (
