@@ -16,8 +16,13 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/srv/rbd/covid
 
 start()
 {
+    TARGET_DIR="$1"
 		log_action_msg "Starting Auspice..."
-		auspiceView.sh default 4000 &
+    if [ -n "$TARGET_DIR" ]; then
+		    auspiceView.sh "$TARGET_DIR" 4000 &
+    else
+		    auspiceView.sh default 4000 &
+    fi
 
 }
 
@@ -35,7 +40,11 @@ stop()
 
 case "$1" in
 	start)
-		start
+      if [ -n "$2" ]; then
+          start "$2"
+      else
+          start
+      fi
 	;;
 	stop)
 		stop
