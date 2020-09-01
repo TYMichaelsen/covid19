@@ -10,7 +10,7 @@ import argparse
 DB_NAME = 'covid19'
 DIM_PATH = 'stable_dims'
 TABLES = {'Persons': ("CREATE TABLE `Persons` ("
-                      "  `ssi_id` varchar(16) NOT NULL PRIMARY KEY,"
+                      "  `ssi_id` varchar(50) NOT NULL PRIMARY KEY,"
                       "  `age` int(11),"
                       "  `age_group` varchar(16),"
                       "  `sex` enum('M','F'),"
