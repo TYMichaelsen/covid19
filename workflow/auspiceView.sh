@@ -32,4 +32,6 @@ fi
 
 DATDIR=$(readlink -f $DATDIR)
 
+echo  "Starting Auspice at $DATDIR ..."
 singularity exec -B $DATDIR:$DATDIR -B /srv/rbd:/srv/rbd $SINGIMG bash -c "source activate nextstrain; PORT=$MYPORT auspice view --datasetDir $DATDIR" 
+
