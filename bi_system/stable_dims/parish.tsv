@@ -23,8 +23,8 @@ code	name
 8051	Søvind,Horsens
 7459	Selsø,Frederikssund
 7429	Nødebo,Hillerød
-8204	S Onsild,Mariagerfj
-7988	Gl Rye,Skanderborg
+8204	S  Onsild,Mariagerfj
+7988	Gl  Rye,Skanderborg
 7994	Brædstrup,Horsens
 7629	Kappel,Lolland
 8615	Asmild,Viborg
@@ -39,7 +39,7 @@ code	name
 8871	Ølgod,Varde
 7413	Ganløse,Egedal
 7445	Grønholt,Fredensb
-8366	Vor Frelsers,Aalborg
+8366	Vor  Frelsers,Aalborg
 8940	Seest,Kolding
 8878	Kvong,Varde
 8942	Grindsted,Billund
@@ -53,17 +53,17 @@ code	name
 8388	Ferslev,Aalborg
 8282	Farsø,Vesthimmerland
 8381	Sulsted,Aalborg
-9191	Vive-Hadsund, Mariag
+9191	Vive-Hadsund,  Mariag
 8117	Møllevang,Aarhus
 8335	Støvring,Rebild
 8372	Vejgård,Aalborg
 8374	Hasseris,Aalborg
 7167	Ågerup,Roskilde
-7206	Sankt Nicolai,Køge
+7206	Sankt  Nicolai,Køge
 7286	Soderup,Holbæk
-9105	Karlslunde Str,Greve
+9105	Karlslunde  Str,Greve
 8087	Odder,Odder
-9162	Holsted, Næstved
+9162	Holsted,  Næstved
 7272	Årby,Kalundborg
 7537	Bjæverskov,Køge
 8110	Malling,Aarhus
@@ -76,9 +76,9 @@ code	name
 7506	Hammer,Næstved
 7160	Himmelev,Roskilde
 8611	Funder,Silkeborg
-8115	Vor Frue,Aarhus
+8115	Vor  Frue,Aarhus
 8250	Egå,Aarhus
-8118	Skt Pauls,Aarhus
+8118	Skt  Pauls,Aarhus
 9088	Ellevang,Aarhus
 8078	Skovby,Skanderborg
 8109	Beder,Aarhus
@@ -87,21 +87,21 @@ code	name
 8102	Holme,Aarhus
 8213	Kristrup,Randers
 9158	Skæring,Aarhus
-8120	Skt Johannes,Aarhus
+8120	Skt  Johannes,Aarhus
 8789	Herning,Herning
 8100	Viby,Aarhus
-8116	Skt Markus,Aarhus
+8116	Skt  Markus,Aarhus
 8114	Domkirkens,Aarhus
 8534	Dollerup,Viborg
 8019	Alderslyst,Silkebg
-8132	Skt Lukas,Aarhus
+8132	Skt  Lukas,Aarhus
 8800	Sunds,Herning
 7114	Dyssegård,Gentofte
 7116	Skovshoved,Gentofte
-9185	Vesterbro Sogn,Kbhvn
+9185	Vesterbro  Sogn,Kbhvn
 7028	Aalholm,Kbhvn
 7107	Mariendals,Frberg
-7127	Ny Holte,Rudersdal
+7127	Ny  Holte,Rudersdal
 7112	Jægersborg,Gentofte
 9074	Lindehøj,Herlev
 7110	Helleruplund,Gentoft
@@ -111,16 +111,16 @@ code	name
 7423	Græse,Frederikssund
 7433	Mårum,Gribskov
 9164	Fredens-Nazaret,Kbh
-8680	Ø Jølby,Morsø
+8680	Ø  Jølby,Morsø
 7307	Gunderslev,Næstved
 7477	Udby,Vordingborg
 7142	Strandmarks,Hvidovre
 7057	Hyltebjerg,Kbhvn
 7156	Domkirkens,Roskilde
 9165	Sydhavn,København
-9190	Valby Søndre,Kbhvn
+9190	Valby  Søndre,Kbhvn
 7108	Godthåbs,Frberg
-7781	Skt Hans,Odense
+7781	Skt  Hans,Odense
 7504	Vejlø,Næstved
 7212	Ørsted,Roskilde
 7053	Kingo-Samuel,Kbhvn
@@ -128,37 +128,37 @@ code	name
 7856	Bogense,Nordfyns
 7469	Vordingbg,Vordingbg
 7497	Strøby,Stevns
-9999	Ukendt (Sogn)
+9999	Ukendt  (Sogn)
 8012	Hørning,Skanderborg
 7875	Dalby,Kerteminde
-7178	Kr Sonnerup,Lejre
-9161	Blågården, Københ
+7178	Kr  Sonnerup,Lejre
+9161	Blågården,  Københ
 7056	Sions,Kbhvn
 8018	Mariehøj,Silkeborg
 9178	Tønder,Tønder
-7338	Munke Bjergby,Sorø
+7338	Munke  Bjergby,Sorø
 8496	Balle,Silkeborg
 8943	Grene,Billund
-7774	Skt Knuds,Odense
+7774	Skt  Knuds,Odense
 7473	Snesere,Næstved
 9012	Løjt,Aabenraa
 7823	Middelfart,Middelfrt
 7495	Magleby,Stevns
 7203	Solrød,Solrød
 7778	Munkebjerg,Odense
-7754	N Broby,Faab-Midtfyn
+7754	N  Broby,Faab-Midtfyn
 7177	Rye,Lejre
 7379	Haslev,Faxe
 7759	Sandh-Lynde,Fa-Midtf
-8969	S Starup,Haderslev
+8969	S  Starup,Haderslev
 7214	Borup,Køge
 7235	Finderup,Kalundborg
 9135	Skjoldhøj,Aarhus
-8905	Vor Frelsers,Esbjerg
-7510	Skt Peders,Næstved
-7942	S Bjert,Kolding
+8905	Vor  Frelsers,Esbjerg
+7510	Skt  Peders,Næstved
+7942	S  Bjert,Kolding
 7579	Idestrup,Guldborgsun
-7927	Sct Nicolai,Kolding
+7927	Sct  Nicolai,Kolding
 7689	Thurø,Svendborg
 8107	Ormslev,Aarhus
 7784	Paarup,Odense
@@ -166,7 +166,7 @@ code	name
 7105	Flintholm,Frberg
 9181	Frederiksberg,Frberg
 8108	Kolt,Aarhus
-7348	Skt Povls,Slagelse
+7348	Skt  Povls,Slagelse
 7123	Lundtofte,Lyngby-T
 7070	Husumvold,Kbhvn
 7144	Brøndbyvester,Brøndb
@@ -174,7 +174,7 @@ code	name
 9103	Mørdrup,Helsingør
 8766	Vorgod,Ringk-Skjern
 8815	Nørrelands,Holstebro
-8385	Vester Hassing,Aalbo
+8385	Vester  Hassing,Aalbo
 7115	Ordrup,Gentofte
 8122	Åby,Aarhus
 8490	Aidt,Favrskov
@@ -194,12 +194,12 @@ code	name
 7060	Grøndals,Kbhvn
 8803	Rind,Herning
 8573	Resen,Skive
-7159	Skt Jørgensbj,Roskld
+7159	Skt  Jørgensbj,Roskld
 9144	Nørrevangs,Slagelse
 8090	Nølev,Odder
 7331	Fuglebjerg,Næstved
 7628	Vestenskov,Lolland
-9084	Brøndby Str,Brøndby
+9084	Brøndby  Str,Brøndby
 7146	Avedøre,Hvidovre
 8572	Skive,Skive
 8246	Skødstrup,Aarhus
@@ -217,8 +217,8 @@ code	name
 7540	Herfølge,Køge
 7259	Rørvig,Odsherred
 7363	Ringsted,Ringsted
-7119	Kgs Lyngby,Lyngby-T
-7227	Ruds Vedby,Sorø
+7119	Kgs  Lyngby,Lyngby-T
+7227	Ruds  Vedby,Sorø
 7207	Ølsemagle,Køge
 7064	Bispebjerg,Kbhvn
 7210	Gadstrup,Roskilde
@@ -229,9 +229,9 @@ code	name
 7467	Ullerød,Hillerød
 9080	Rungsted,Hørsholm
 8330	Frejlev,Aalborg
-7603	V Ulslev,Guldborgsun
+7603	V  Ulslev,Guldborgsun
 7118	Maglegaards,Gentofte
-7274	Skt Nikolai,Holbæk
+7274	Skt  Nikolai,Holbæk
 7431	Gilleleje,Gribskov
 7189	Skovlunde,Ballerup
 8365	Ansgars,Aalborg
@@ -247,7 +247,7 @@ code	name
 7455	Skibby,Frederikssund
 8416	Jerslev,Brønderslev
 7117	Hellerup,Gentofte
-7511	Skt Mortens,Næstved
+7511	Skt  Mortens,Næstved
 7494	Havnelev,Stevns
 7481	Kalvehave,Vordingbor
 7314	Sørbymagle,Slagelse
@@ -255,8 +255,8 @@ code	name
 7396	Annisse,Gribskov
 7131	Søborggård,Gladsaxe
 7782	Fredens,Odense
-7436	Frborg Slots,Hlrød
-7675	Vor Frue,Svendborg
+7436	Frborg  Slots,Hlrød
+7675	Vor  Frue,Svendborg
 7787	Dalum,Odense
 7691	Landet,Svendborg
 8123	Vejlby,Aarhus
@@ -265,21 +265,21 @@ code	name
 7058	Vanløse,Kbhvn
 7724	Nyborg,Nyborg
 7888	Norup,Nordfyns
-7697	Vester Åby,Faa-Midtf
+7697	Vester  Åby,Faa-Midtf
 8073	Elsted,Aarhus
 7686	Stenstrup,Svendborg
-7347	Skt Peders,Slagelse
+7347	Skt  Peders,Slagelse
 7410	Stenløse,Egedal
-7777	Thomas Kingos,Odense
+7777	Thomas  Kingos,Odense
 7728	Ullerslev,Nyborg
 8393	Brovst,Jammerbugt
-7345	Skt Mikkels,Slagelse
+7345	Skt  Mikkels,Slagelse
 7451	Hørsholm,Hørsholm
 7771	Øksendrup,Nyborg
-8373	Hans Egedes,Aalborg
+8373	Hans  Egedes,Aalborg
 7721	Gudme,Svendborg
 8637	Viskum,Viborg
-8455	Skt Hans,Hjørring
+8455	Skt  Hans,Hjørring
 9072	Buddinge,Gladsaxe
 8476	Frederikshavn,Frhavn
 7766	Ringe,Faab-Midtfyn
@@ -288,8 +288,8 @@ code	name
 9187	Romdrup-Klarup,Aalbo
 7139	Islev,Rødovre
 7803	Kærum,Assens
-7677	Skt Jørgens,Svendbg
-7275	Tveje Merløse,Holbæk
+7677	Skt  Jørgens,Svendbg
+7275	Tveje  Merløse,Holbæk
 7873	Mesinge,Kerteminde
 7195	Hundige-Kildebrønde
 8044	Ørridslev,Horsens
@@ -297,14 +297,14 @@ code	name
 9118	Broholm,Assens
 7166	Svogerslev,Roskilde
 7200	Karlslunde,Greve
-7268	Vor Frue,Kalundborg
+7268	Vor  Frue,Kalundborg
 7536	Lidemark,Køge
 7844	Lumby,Odense
 7024	Valby,Kbhvn
 7541	Sædder,Køge
 8082	Framlev,Aarhus
 9107	Godthåb,Aalborg
-7044	Skt Jakobs,Kbhvn
+7044	Skt  Jakobs,Kbhvn
 9169	Simeon-Skt.Johan.Kbh
 7085	Allehelgens,Kbhvn
 9145	Kokkedal,Hørsholm
@@ -336,17 +336,17 @@ code	name
 8315	Øls,Mariagerfjord
 7130	Gladsaxe,Gladsaxe
 7002	Helligånds,Kbhvn
-7437	Skt Olai,Helsingør
-9318	Nordvestfalster, Gul
-7359	Kr Stillinge,Slagels
-7699	V Skerninge,Svendbor
+7437	Skt  Olai,Helsingør
+9318	Nordvestfalster,  Gul
+7359	Kr  Stillinge,Slagels
+7699	V  Skerninge,Svendbor
 7133	Stengård,Gladsaxe
 7134	Mørkhøj,Gladsaxe
 9070	Halskov,Slagelse
 7919	Mølholm,Vejle
 7793	Verninge,Assens
 7124	Tårbæk,Lyngby-T
-7128	Gl Holte,Rudersdal
+7128	Gl  Holte,Rudersdal
 7309	Eggeslevmagle,Slagel
 7418	Frederikssund,Frsund
 7043	Rosenvængets,Kbhvn
@@ -382,33 +382,33 @@ code	name
 8799	Gjellerup,Herning
 7103	Solbjerg,Frberg
 7126	Vedbæk,Rudersdal
-7192	St Magleby,Dragør
+7192	St  Magleby,Dragør
 8516	Hornbæk,Randers
-8369	Skt Markus,Aalborg
-8962	Gl Haderslev,Hadersl
+8369	Skt  Markus,Aalborg
+8962	Gl  Haderslev,Hadersl
 7102	Sct.Lukas,Frberg
-7080	Islands Brygge,Kbhvn
-7548	St Heddinge,Stevns
+7080	Islands  Brygge,Kbhvn
+7548	St  Heddinge,Stevns
 7450	Lillerød,Allerød
 9239	Hareskov,Furesø
-7106	Skt Thomas,Frberg
+7106	Skt  Thomas,Frberg
 7026	Timotheus,Kbhvn
 7086	Filips,Kbhvn
 7402	Alsønderup,Hillerød
 9068	Søborgmagle,Gladsaxe
 7500	Rønnebæk,Næstved
-9174	Vor Frue,Kbhvn
+9174	Vor  Frue,Kbhvn
 7104	Lindevang,Frberg
 7186	Smørum,Egedal
-7046	Hans Egedes,Kbhvn
+7046	Hans  Egedes,Kbhvn
 9140	Skelgårds,Tårnby
 7125	Søllerød,Rudersdal
-7039	Skt Pauls,Kbhvn
+7039	Skt  Pauls,Kbhvn
 9083	Hedehusene,H-Taastru
 9134	Opstandelsesk.,Alb.
 7055	Kildevælds,Kbhvn
 7059	Adventskirkens,Kbhvn
-7089	Simon Peters,Kbhvn
+7089	Simon  Peters,Kbhvn
 9311	Birkerød,Ruderdals
 7187	Ballerup,Ballerup
 7224	Hallenslev,Kalundbor
@@ -425,7 +425,7 @@ code	name
 8314	Vebbestrup,Mariagerf
 8359	Kornum,Vesthimmerlan
 8167	Hoed,Norddjurs
-7676	Skt Nikolai,Svendbg
+7676	Skt  Nikolai,Svendbg
 7218	Højelse,Køge
 8414	Vrå,Hjørring
 7795	Brylle,Assens
@@ -439,11 +439,11 @@ code	name
 7827	Asperup,Middelfart
 8427	Hjallerup,Brønd.
 7880	Allerup,Odense
-7783	Hans Tausens,Odense
+7783	Hans  Tausens,Odense
 7788	Sanderum,Odense
 9293	Kerteminde-Drigstrup
 8692	Nykøbing,Morsø
-9197	Øster Hassing-Gåser
+9197	Øster  Hassing-Gåser
 7955	Hornum,Hedensted
 9142	Dyrup,Odense
 8377	Lindholm,Aalborg
@@ -456,7 +456,7 @@ code	name
 7257	Sejerø,Kalundborg
 9312	Viskinge-Avnsø,Kalun
 8747	Vinding,Herning
-7670	Skt Nikolai,Lolland
+7670	Skt  Nikolai,Lolland
 7163	Herslev,Lejre
 7261	Højby,Odsherred
 7169	Jyllinge,Roskilde
@@ -466,7 +466,7 @@ code	name
 7528	Karise,Faxe
 7154	Værløse,Furesø
 8017	Silkeborg,Silkeborg
-7173	Kr Hvalsø,Lejre
+7173	Kr  Hvalsø,Lejre
 7357	Lundforlund,Slagelse
 7384	Pedersborg,Sorø
 7598	Fjelde,Guldborgsund
@@ -476,13 +476,13 @@ code	name
 7998	Them,Silkeborg
 9096	Ravnsbjerg,Aarhus
 7349	Tårnborg,Slagelse
-7152	Høje Taastrup,H-Taas
+7152	Høje  Taastrup,H-Taas
 8215	Essenbæk,Randers
 7775	Ansgars,Odense
 9173	Falslev-Vindblæs,Mar
 7199	Tune,Greve
 7295	Gislinge,Holbæk
-8454	Skt Catharinæ,Hjørrg
+8454	Skt  Catharinæ,Hjørrg
 7422	Uvelse,Hillerød
 8765	Skjern,Ringkø-Skjern
 7619	Købelev,Lolland
@@ -490,23 +490,23 @@ code	name
 7003	Trinitatis,Kbhvn
 8792	Aulum,Herning
 7648	Domkirkens,Lolland
-8370	S Tranders,Aalborg
+8370	S  Tranders,Aalborg
 9098	Sthens,Helsingør
 7136	Præstebro,Herlev
 7733	Vindinge,Nyborg
 8328	Vokslev,Aalborg
-7175	Kr Såby,Lejre
-8371	N Tranders,Aalborg
+7175	Kr  Såby,Lejre
+8371	N  Tranders,Aalborg
 8791	Fredens,Herning
 9076	Skalborg,Aalborg
 7063	Tagensbo,Kbhvn
 9121	Gjesing,Esbjerg
-7895	Skt Johannes,Vejle
+7895	Skt  Johannes,Vejle
 9113	Islebjerg,Frsund
 7941	Dalby,Kolding
 7867	Søndersø,Nordfyns
 7407	Melby,Halsnæs
-7238	Kr Helsinge,Kalundbo
+7238	Kr  Helsinge,Kalundbo
 7776	Bolbro,Odense
 7236	Gørlev,Kalundborg
 7732	Refsvindinge,Nyborg
@@ -516,33 +516,33 @@ code	name
 8445	Torslev,Frederikshav
 7428	Esbønderup,Gribskov
 7148	Herstedøster,Alblund
-7153	Taastrup Nkr,H-Taast
+7153	Taastrup  Nkr,H-Taast
 7553	Knudsker,Bornholm
 7068	Brønshøj,Kbhvn
 9133	Tingbjerg,København
 7090	Solvang,København
 7054	Aldersro,Kbhvn
-7051	Skt Stefans,Kbhvn
+7051	Skt  Stefans,Kbhvn
 7011	Bethlehems,Kbhvn
 7191	Kastrup,Tårnby
 9143	Sejs-Svejbæk,Silkebg
 7596	Toreby,Guldborgsund
 7915	Taulov,Fredericia
 8311	Astrup,Mariagerfjord
-8271	Vester Hornum,Vesthi
+8271	Vester  Hornum,Vesthi
 8350	Ranum,Vesthimmerland
 8130	Tilst,Aarhus
 8466	Tornby,Hjørring
 8460	Astrup,Hjørring
 8478	Abildgård,Frhavn
 8291	Durup,Rebild
-8614	Viborg Søndre,Viborg
+8614	Viborg  Søndre,Viborg
 8301	Skørping,Rebild
-8418	Ø Brønderslev,Brønd.
+8418	Ø  Brønderslev,Brønd.
 8458	Tårs,Hjørring
 7516	Fensmark,Næstved
-7179	Kr Hyllinge,Lejre
-8888	Skt Katharine,Esbjer
+7179	Kr  Hyllinge,Lejre
+8888	Skt  Katharine,Esbjer
 9073	Grundtvigs,Esbjerg
 8886	Domkirkens,Esbjerg
 8412	Tolstrup,Brønderslev
@@ -551,7 +551,7 @@ code	name
 9138	Hjerting,Esbjerg
 8907	Treenigheds,Esbjerg
 8906	Zions,Esbjerg
-8879	N Nebel,Varde
+8879	N  Nebel,Varde
 8908	Jerne,Esbjerg
 7940	Vonsild,Kolding
 9010	Aabenraa,Aabenraa
@@ -567,7 +567,7 @@ code	name
 7690	Bregninge,Svendborg
 8003	Tørring,Hedensted
 7906	Hover,Vejle
-7893	Skt Nikolai,Vejle
+7893	Skt  Nikolai,Vejle
 7672	Stormarks,Lolland
 8480	Skagen,Frederikshavn
 7586	Horreby,Guldborgsund
@@ -595,7 +595,7 @@ code	name
 7444	Asminderød,Fredensb
 8730	Vang,Thisted
 7216	Ejby,Køge
-7221	St Fuglede,Kalundbor
+7221	St  Fuglede,Kalundbor
 7038	Frederiks,Kbhvn
 7538	Vollerslev,Køge
 7556	Nyker,Bornholm
@@ -609,35 +609,35 @@ code	name
 7135	Herlev,Herlev
 7037	Garnisons,Kbhvn
 8281	Strandby,Vesthimmerl
-8842	N Nissum,Lemvig
+8842	N  Nissum,Lemvig
 9006	Dybbøl,Sønderborg
 7442	Hellebæk,Helsingør
-7932	Nørre Bjert,Kolding
+7932	Nørre  Bjert,Kolding
 9051	Højer,Tønder
 9104	Ry,Skanderborg
 9079	Vestervang,Viborg
 7464	Sandby,Næstved
 7308	Skælskør,Slagelse
-7217	N Dalby,Køge
-9163	Lyng, Fredericia
+7217	N  Dalby,Køge
+9163	Lyng,  Fredericia
 9202	Vinderup,Holstebro
 7730	Ellinge,Nyborg
 8946	Gram,Haderslev
 8794	Vildbjerg,Herning
-7082	Vor Frelsers,Kbhvn
+7082	Vor  Frelsers,Kbhvn
 7269	Raklev,Kalundborg
 8474	Harritslv,Hjørring
 9206	Ellebæk,Holstebro
 7967	Tyrsted,Horsens
 8926	Brørup,Vejen
 8052	Klostersogn,Horsens
-9316	Hadsten, Favrskov
+9316	Hadsten,  Favrskov
 9091	Hedeager,Herning
 8127	Lisbjerg,Aarhus
 8934	Bække,Vejen
 9248	Langø,Lolland
 7155	Herstedvest,Alblund
-7493	Ll Heddinge,Stevns
+7493	Ll  Heddinge,Stevns
 7290	Undløse,Holbæk
 9175	Davids,Kbhvn
 8119	Langenæs,Aarhus
@@ -645,8 +645,8 @@ code	name
 7411	Veksø,Egedal
 7829	Brenderup,Middelfart
 8804	Snejbjerg,Herning
-8808	S Felding,Herning
-9116	Simon Peters,Kolding
+8808	S  Felding,Herning
+9116	Simon  Peters,Kolding
 7830	Fjelsted,Middelfart
 9087	Hannerup,Fredericia
 7328	Tystrup,Næstved
@@ -656,7 +656,7 @@ code	name
 8854	Humlum,Struer
 7977	Thyregod,Vejle
 7440	Tikøb,Helsingør
-8790	Skt Johannes,Herning
+8790	Skt  Johannes,Herning
 8956	Agerskov,Tønder
 8327	Nibe,Aalborg
 7916	Gauerslund,Vejle
@@ -668,7 +668,7 @@ code	name
 8917	Tjæreborg,Esbjerg
 9123	Isenvad,Ikast-Brande
 8325	Storvorde,Aalborg
-8740	S Nissum,Holstebro
+8740	S  Nissum,Holstebro
 8310	Valsgård,Mariagerfjo
 7913	Erritsø,Fredericia
 9176	Hjembæk-Svinninge
@@ -678,7 +678,7 @@ code	name
 9017	Hellevad,Aabenraa
 7299	Jyderup,Holbæk
 8690	Ørum,Thisted
-7989	S Vissing,Horsens
+7989	S  Vissing,Horsens
 8610	Kragelund,Silkeborg
 8612	Engesvang,Ikast-Bran
 7534	Kongsted,Faxe
@@ -686,7 +686,7 @@ code	name
 8841	Nørlem,Lemvig
 7466	Præstø,Vordingborg
 8768	Herborg,Ringk-Skjern
-9192	Tuse Næs,Holbæk
+9192	Tuse  Næs,Holbæk
 7168	Kirkerup,Roskilde
 8362	Farstrup,Aalborg
 9152	Fonnesbæk,Ikast-Bran
@@ -700,13 +700,13 @@ code	name
 7930	Eltang,Kolding
 7193	Dragør,Dragør
 8376	Hvorup,Aalborg
-7836	N Åby,Middelfart
+7836	N  Åby,Middelfart
 8093	Hundslund,Odder
 8724	Sjørring,Thisted
-9078	Skt Andreas,Randers
+9078	Skt  Andreas,Randers
 8812	Bording,Ikast-Brande
 7392	Blistrup,Gribskov
-8368	Vor Frue,Aalborg
+8368	Vor  Frue,Aalborg
 7492	Lellinge,Køge
 8105	Mårslet,Aarhus
 8600	Vinderslev,Silkeborg
@@ -725,13 +725,13 @@ code	name
 7234	Gierslev,Kalundborg
 7912	Christians,Frcia
 8777	Borris,Ringkø-Skjern
-7109	Skt Markus,Frbg
+7109	Skt  Markus,Frbg
 7966	Torsted,Horsens
 8795	Nøvling,Herning
 7688	Kværndrup,Faab-Midtf
 8348	Løgstør,Vesthimmerla
-9111	Skt Jørgens,Næstved
-7263	N Asmindrup,Odsherre
+9111	Skt  Jørgens,Næstved
+7263	N  Asmindrup,Odsherre
 7342	Stenmagle,Sorø
 9167	Ørnhøj,Herning
 7513	Aversi,Næstved
@@ -746,7 +746,7 @@ code	name
 7265	Grevinge,Odsherred
 7874	Viby,Kerteminde
 7430	Søborg,Gribskov
-7341	Kr Flinterup,Sorø
+7341	Kr  Flinterup,Sorø
 7337	Fyrendal,Næstved
 8732	Hansted,Thisted
 8447	Albæk-Lyngså,Fr.Havn
@@ -761,7 +761,7 @@ code	name
 9101	Bistrup,Hjørring
 8787	Strellev,Varde
 7735	Ørbæk,Nyborg
-8736	V Vandet,Thisted
+8736	V  Vandet,Thisted
 7594	Majbølle,Guldborgsun
 8973	Hammelev,Haderslev
 9100	Bredballe,Vejle
@@ -769,10 +769,10 @@ code	name
 8380	Biersted,Jammerbugt
 8316	Hørby,Mariagerfjord
 7441	Hornbæk,Helsingør
-7779	Vor Frue,Odense
+7779	Vor  Frue,Odense
 8944	Vorbasse,Billund
 7609	Torkilstrup,Guldborg
-8129	Sønder Årslev,Aarhus
+8129	Sønder  Årslev,Aarhus
 7657	Fuglse,Lolland
 8023	Voldby,Favrskov
 7522	Faxe,Faxe
@@ -780,14 +780,14 @@ code	name
 9029	Bov,Aabenraa
 7406	Gørløse,Hillerød
 7453	Gerlev,Frederikssund
-7943	S Stenderup,Kolding
+7943	S  Stenderup,Kolding
 7443	Egebæksvang,Helsingø
-7438	Skt Mariæ,Helsingør
+7438	Skt  Mariæ,Helsingør
 7791	Stenløse,Odense
 8265	Vivild,Norddjurs
 8459	Sindal,Hjørring
 8435	Flade,Frederikshavn
-8456	Skt Olai,Hjørring
+8456	Skt  Olai,Hjørring
 8428	Mosbjerg,Hjørring
 8429	Bindslev,Hjørring
 7296	Kundby,Holbæk
@@ -804,3 +804,69 @@ code	name
 9217	Terndrup,Rebild
 8426	Gjøl,Jammerbugt
 9184	Arden,Mariagerfjord
+8411	Thise,Brønderslev
+8479	Bangsbostrand,Frhavn
+7401	Tjæreby,Hillerød
+7499	Toksværd,Næstved
+8734	Nors,Thisted
+8675	Solbjerg,Morsø
+7936	Almind,Kolding
+7979	S  Omme,Billund
+7755	S  Broby,Faab-Midtfyn
+8672	Bjergby,Morsø
+8270	Haubro,Vesthimmerlan
+9077	Sønderbro,Horsens
+8464	Asdal,Hjørring
+8468	Skallerup,Hjørring
+8182	Skt  Peders,Randers
+7983	Give,Vejle
+7404	Ll  Lyngby,Hillerød
+8279	Brorstrup,Rebild
+8405	Hæstrup,Hjørring
+8354	Vilsted,Vesthimmerla
+7209	Glim,Lejre
+7563	Ibsker,Bornholm
+7557	Hasle,Bornholm
+8757	Hover,Ringkøb-Skjern
+7271	Tømmerup,Kalundborg
+8344	N  Kongerslev,Aalborg
+9151	Enghøj,Randers
+8817	Gimsing,Struer
+8874	Janderup,Varde
+7515	Herlufmagle,Næstved
+7566	Gudhjem,Bornholm
+8989	Christians,Sønderbg
+9149	Houlkær,Viborg
+8644	Sennels,Thisted
+7253	Værslev,Kalundborg
+7911	Skt  Michaelis,Frcia
+8125	Hasle,Aarhus
+7350	Sønderup,Slagelse
+8071	Trige,Aarhus
+8066	Sabro,Aarhus
+8334	Ø  Hornum,Rebild
+8927	Holsted,Vejen
+8931	Vejen,Vejen
+9147	Skelager,Aarhus
+8075	Sjelle,Skanderborg
+8032	Låsby,Skanderborg
+8992	Ulkebøl,Sønderborg
+7719	Oure,Svendborg
+8720	Arup,Thisted
+7394	Tibirke,Gribskov
+8467	Vidstrup,Hjørring
+7388	Alsted,Sorø
+7794	Tommerup,Assens
+7635	Ryde,Lolland
+9238	Sørup,Rebild
+8156	Gassum,Randers
+7470	Kastrup,Vordingborg
+8231	Grenaa,Norddjurs
+8097	Halling,Odder
+9132	Virklund,Silkeborg
+8785	Ådum,Ringkøb-Skjern
+8146	Vorup,Randers
+7505	V  Egesborg,Næstved
+8403	Serritslev,Brønd.
+7884	S  Nærå,Faab-Midtfyn
+8451	Dronninglund,Brønd
