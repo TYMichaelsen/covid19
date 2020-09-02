@@ -33,7 +33,7 @@ TABLES = {'Persons': ("CREATE TABLE `Persons` ("
               "CREATE TABLE NUTS3_Regions(code CHAR(5) PRIMARY KEY, `name` VARCHAR(20))", "nuts3_regions.tsv",
               ['code', 'name']),
           'Parishes': (
-              "CREATE TABLE Parishes(code INTEGER PRIMARY KEY, `name` VARCHAR(20))", "parish.tsv", ['code', 'name'])}
+              "CREATE TABLE Parishes(code INTEGER PRIMARY KEY, `name` VARCHAR(35))", "parish.tsv", ['code', 'name'])}
 
 BOOL_FIELDS = ['Diabet', 'Neuro', 'Cancer', 'Adipos', 'Nyre', 'Haem_c', 'Card_dis', 'Resp_dis', 'Immu_dis',
                'Other_risk', 'Pregnancy', 'Doctor', 'Nurse']
