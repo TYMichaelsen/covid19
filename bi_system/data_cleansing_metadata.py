@@ -23,7 +23,7 @@ from datetime import date
 
 TRUE_VALUE = 'Yes'
 FALSE_VALUE = 'No'
-FIELD_TESTS = dict(SampleDate=['date'], sequenced=['yes'], Sex=['vals:F_M'], Travel=['yes'], ContactWithCase=['yes'],
+FIELD_TESTS = dict(date=['date'], sequenced=['yes'], Sex=['vals:F_M'], Travel=['yes'], ContactWithCase=['yes'],
                    EpilprResp_start=['date'], EpilprResp=['yes'], EpilprVent_start=['date'], EpilprVent=['yes'],
                    EpilprECMO_start=['date'], EpilprECMO=['yes'], EpilprHeart=['yes'], EpilprHeart_start=['date'],
                    Diabet=['yes'], Neuro=['yes'], Cancer=['yes'], Adipos=['yes'], Nyre=['yes'], Haem_c=['yes'],

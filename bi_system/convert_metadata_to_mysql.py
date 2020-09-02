@@ -37,7 +37,7 @@ TABLES = {'Persons': ("CREATE TABLE `Persons` ("
 
 BOOL_FIELDS = ['Diabet', 'Neuro', 'Cancer', 'Adipos', 'Nyre', 'Haem_c', 'Card_dis', 'Resp_dis', 'Immu_dis',
                'Other_risk', 'Pregnancy', 'Doctor', 'Nurse']
-DATE_FIELDS = ['SampleDate', 'COVID19_EndDate', 'SymptomsStartDate']
+DATE_FIELDS = ['date', 'COVID19_EndDate', 'SymptomsStartDate']
 
 
 def get_connection(config_dict):
