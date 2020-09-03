@@ -33,7 +33,10 @@ TABLES = {'Persons': ("CREATE TABLE `Persons` ("
               "CREATE TABLE NUTS3_Regions(code CHAR(5) PRIMARY KEY, `name` VARCHAR(20), `latitude` varchar(15), `longitude` varchar(15) )", "nuts3_regions.tsv",
               ['code', 'name', 'latitude', 'longitude' ]),
           'Parishes': (
-              "CREATE TABLE Parishes(code INTEGER PRIMARY KEY, `name` VARCHAR(35))", "parish.tsv", ['code', 'name'])}
+              "CREATE TABLE Parishes(code INTEGER PRIMARY KEY, `name` VARCHAR(35))", "parish.tsv", ['code', 'name']),
+          'Clade_assignment': ("CREATE TABLE Clade_assignment(`ssi_id` varchar(50) NOT NULL PRIMARY KEY,"
+                               "`low_res_clade` varchar(15),"
+                               "`high_res_clade`  varchar(45))",'', ['ssi_id','low_res_clade','high_res_clade'])}
 
 BOOL_FIELDS = ['Diabet', 'Neuro', 'Cancer', 'Adipos', 'Nyre', 'Haem_c', 'Card_dis', 'Resp_dis', 'Immu_dis',
                'Other_risk', 'Pregnancy', 'Doctor', 'Nurse']
@@ -103,12 +106,12 @@ def create_schema(cnxn):
             exit(-1)
 
 
-def add_data(cnxn, filepath):
+def add_data(cnxn, filepath, clade_filepath):
     cursor = cnxn.cursor()
 
     # Dimensions
     for table_name, definition in TABLES.items():
-        if table_name == 'Persons':
+        if table_name == 'Persons' or table_name == 'Calde_assignment':
             continue
         create_string, dim_filepath, field_list = definition
         field_list_str = ','.join(field_list)
@@ -136,6 +139,7 @@ def add_data(cnxn, filepath):
                   "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, {}, {})".format(bool_field_names, date_field_names, bf_ss,
                                                                        df_ss))
 
+    people = set()
     with open(filepath) as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
@@ -152,6 +156,7 @@ def add_data(cnxn, filepath):
             data_person.extend(boolean_field_data)
             data_person.extend(date_field_data)
             data_person = tuple(data_person)
+            people.add(data_person[0])
 
             # COVID19_EndDate=row['COVID19_EndDate'], isPregnant=(row['Pregnancy'] == '1'), sequenced=(row['sequenced'] == 'Yes'))
             try:
@@ -162,8 +167,38 @@ def add_data(cnxn, filepath):
                 print("Insert statement:")
                 print(add_person)
 
+    # Clade assignment
+    add_clade =  ("INSERT INTO Clade_assignment(ssi_id, low_res_clade, high_res_clade) VALUES (%s, %s, %s)")
+    with open(clade_filepath) as tsvfile:
+        reader = csv.DictReader(tsvfile, delimiter='\t')
+        for row in reader:
+            pid = row['name']
+            if pid is None or pid not in people:
+                continue
+            pc_arr = row['parent clades'].split(', ')
+            if len(pc_arr)==1:
+                high_res =  pc_arr[0]
+            elif len(pc_arr)>=2:
+                high_res =  pc_arr[1]
+            else :
+                high_res = row['clade']
+
+            data_clade = (pid, row['clade'], high_res)
+            try:
+                cursor.execute(add_clade, data_clade)
+            except mysql.connector.Error as err:
+                print(err)
+                print("Failed data: {}".format(data_clade))
+                print("Insert statement:")
+                print(add_clade)
+
+
+
     cnxn.commit()
     print("Loaded all data from {}".format(filepath))
+
+
+
 
 
 def get_date(row, field_name):
@@ -207,6 +242,6 @@ if __name__ == '__main__':
 
     cnx = get_connection(config)
     create_schema(cnx)
-    add_data(cnx, config['staged_metadata_file'])
+    add_data(cnx, config['staged_metadata_file'], config['global_clade_assignment_file'])
     create_fk()
     cnx.close()
