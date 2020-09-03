@@ -1,1 +1,4 @@
-sql = 'SELECT FROM Municipalities M JOIN Persons P ON P.MunicipalityCode=M.muni_code' # TBD
+sql = 'SELECT week(date), lineage, R.name, count(*) ' \
+      'FROM Persons P JOIN Municipalities M ON P.MunicipalityCode=M.code JOIN NUTS3_Regions R ON M.region=R.code ' \
+      'GROUP BY week(date), lineage, R.name' \
+      ';' # TBD
