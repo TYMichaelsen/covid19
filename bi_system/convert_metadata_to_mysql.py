@@ -36,7 +36,7 @@ TABLES = {'Persons': ("CREATE TABLE `Persons` ("
               "CREATE TABLE Parishes(code INTEGER PRIMARY KEY, `name` VARCHAR(35))", "parish.tsv", ['code', 'name']),
           'Clade_assignment': ("CREATE TABLE Clade_assignment(`ssi_id` varchar(50) NOT NULL PRIMARY KEY,"
                                "`low_res_clade` varchar(45),"
-                               "`high_res_clade`  varchar(45))",'', ['ssi_id','low_res_clade','high_res_clade'])}
+                               "`high_res_clade`  varchar(100))",'', ['ssi_id','low_res_clade','high_res_clade'])}
 
 BOOL_FIELDS = ['Diabet', 'Neuro', 'Cancer', 'Adipos', 'Nyre', 'Haem_c', 'Card_dis', 'Resp_dis', 'Immu_dis',
                'Other_risk', 'Pregnancy', 'Doctor', 'Nurse']
