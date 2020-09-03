@@ -30,7 +30,7 @@ TABLES = {'Persons': ("CREATE TABLE `Persons` ("
           'AgeGroups': ("CREATE TABLE AgeGroups (age_group VARCHAR(5) PRIMARY KEY, meta_group VARCHAR(8))",
                         "age_groups.tsv", ['age_group', 'meta_group']),
           'NUTS3_Regions': (
-              "CREATE TABLE NUTS3_Regions(code CHAR(5) PRIMARY KEY, `name` VARCHAR(20), `latitude` FLOAT, `longitude` FLOAT )", "nuts3_regions.tsv",
+              "CREATE TABLE NUTS3_Regions(code CHAR(5) PRIMARY KEY, `name` VARCHAR(20), `latitude` varchar(15), `longitude` varchar(35) )", "nuts3_regions.tsv",
               ['code', 'name']),
           'Parishes': (
               "CREATE TABLE Parishes(code INTEGER PRIMARY KEY, `name` VARCHAR(35))", "parish.tsv", ['code', 'name'])}
