@@ -177,13 +177,13 @@ def add_data(cnxn, filepath, clade_filepath):
                 continue
             pc_arr = row['parent clades'].split(', ')
             if len(pc_arr)==1:
-                high_res =  pc_arr[0]
+                low_res =  pc_arr[0]
             elif len(pc_arr)>=2:
-                high_res =  pc_arr[1]
+                low_res =  pc_arr[1]
             else :
-                high_res = row['clade']
+                low_res = row['clade']
 
-            data_clade = (pid, row['clade'], high_res)
+            data_clade = (pid, low_res, row['clade'])
             try:
                 cursor.execute(add_clade, data_clade)
             except mysql.connector.Error as err:
