@@ -35,7 +35,7 @@ TABLES = {'Persons': ("CREATE TABLE `Persons` ("
           'Parishes': (
               "CREATE TABLE Parishes(code INTEGER PRIMARY KEY, `name` VARCHAR(35))", "parish.tsv", ['code', 'name']),
           'Clade_assignment': ("CREATE TABLE Clade_assignment(`ssi_id` varchar(50) NOT NULL PRIMARY KEY,"
-                               "`low_res_clade` varchar(15),"
+                               "`low_res_clade` varchar(45),"
                                "`high_res_clade`  varchar(45))",'', ['ssi_id','low_res_clade','high_res_clade'])}
 
 BOOL_FIELDS = ['Diabet', 'Neuro', 'Cancer', 'Adipos', 'Nyre', 'Haem_c', 'Card_dis', 'Resp_dis', 'Immu_dis',
@@ -175,11 +175,11 @@ def add_data(cnxn, filepath, clade_filepath):
             pid = row['name']
             if pid is None or pid not in people:
                 continue
-            pc_arr = row['parent clades'].split(', ')
+            pc_arr = row['parent clades'].split(',')
             if len(pc_arr)==1:
-                low_res =  pc_arr[0]
-            elif len(pc_arr)>=2:
-                low_res =  pc_arr[1]
+                low_res = pc_arr[0]
+            elif len(pc_arr) >= 2:
+                low_res = pc_arr[1]
             else :
                 low_res = row['clade']
 
