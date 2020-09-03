@@ -1,13 +1,20 @@
+import csv
 from random import randint, choice
 
 from .convert_metadata_to_mysql import get_connection
 from mysql.connector import Error
 
 
+# con_dict = {
+#     'db_user' : 'mirop',
+#     'db_password' : '6Xk7p6ErTSnb',
+#     'mariadb_server' : '132.75.249.84'
+# }
+
 con_dict = {
-    'db_user' : 'mirop',
-    'db_password' : '6Xk7p6ErTSnb',
-    'mariadb_server' : '132.75.249.84'
+    'db_user' : 'covid19',
+    'db_password' : 'covid19Pass',
+    'mariadb_server' : '172.21.232.156'
 }
 
 def select(con, query):
@@ -48,10 +55,11 @@ for idx,e in enumerate(result):
       }
       data.append(data_obj)
 
-df = pd.DataFrame(data)
-print(df.head())
-
 output_filename = "./bi_system/stable_dims/microreact.tsv"
 
 with open(output_filename, "w") as f:
-    f.write(df.to_csv(sep="\t", index=False))
+      writer = csv.DictWriter(f,
+            fieldnames=["ID", "sample_date", "epi_week", "country", "region", "lineage", "latitude", "longitude", "cases", "day", "month", "year"])
+      writer.writeheader()
+      for data_obj in data:
+            writer.writerow(data_obj)
