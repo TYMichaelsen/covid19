@@ -178,6 +178,8 @@ def add_data(cnxn, filepath, clade_filepath):
             pc_arr = row['parent clades'].split(',')
             if len(pc_arr)==1:
                 low_res = pc_arr[0].strip(' ')
+                if len(low_res) == 0:
+                    low_res = row['clade'].strip(' ')
             elif len(pc_arr) >= 2:
                 low_res = pc_arr[1].strip(' ')
             else :
