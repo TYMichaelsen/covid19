@@ -111,7 +111,7 @@ def add_data(cnxn, filepath, clade_filepath):
 
     # Dimensions
     for table_name, definition in TABLES.items():
-        if table_name == 'Persons' or table_name == 'Calde_assignment':
+        if table_name == 'Persons' or table_name == 'Clade_assignment':
             continue
         create_string, dim_filepath, field_list = definition
         field_list_str = ','.join(field_list)
