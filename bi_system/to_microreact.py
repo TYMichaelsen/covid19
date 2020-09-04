@@ -41,10 +41,10 @@ for idx,e in enumerate(result):
       data_obj = {
             "ID":idx+1,
             "sample_date":e[0],
-            "epi_week":e[0] - 9, #when is start of the epidemic?
+            "epi_week":e[0] - 9,
             "country":"DK01",
             "region":e[2],
-            "lineage":e[1],
+            "lineage__autocolor":e[1],
             "latitude":e[5],
             "longitude":e[4],
             "cases":e[3] if e[3] >= 3 else 3,
@@ -59,7 +59,7 @@ output_filename = "./bi_system/stable_dims/microreact.tsv"
 
 with open(output_filename, "w") as f:
       writer = csv.DictWriter(f,
-            fieldnames=["ID", "sample_date", "epi_week", "country", "region", "lineage", "latitude", "longitude", "cases", "day", "month", "year"])
+            fieldnames=["ID", "sample_date", "epi_week", "country", "region", "lineage__autocolor", "latitude", "longitude", "cases", "day", "month", "year"])
       writer.writeheader()
       for data_obj in data:
             writer.writerow(data_obj)
