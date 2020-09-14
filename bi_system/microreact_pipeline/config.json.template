@@ -1,0 +1,14 @@
+{
+    "cleansing_log_file":"/srv/rbd/covid19/bisystem/staging/cleansing.log",
+    "raw_ssi_file": "covid19/metadata/raw-ssi-metadata/Lineliste_040920.xlsx",
+    "sequenced_metadata_file": "/srv/rbd/covid19/nextstrain/2020-07-01-18-35_nextstrain/metadata_w_clade.tsv",
+    "staged_metadata_file":"/srv/rbd/covid19/bisystem/staging/danish_metadata.tsv",
+    "global_clade_assignment_file": "/srv/rbd/covid19/testing/gisaid/ncov/results/denmark/clade_assignment.tsv",
+    "clade_tree_path" : "/srv/rbd/covid19/testing/gisaid/ncov/results/denmark/clades.nwk"
+    "neo4j_server": "10.23.0.9", "noe4j_server_password":"redacted",
+    "graph_load_log_file": "/srv/rbd/covid19/bisystem/staging/load_neo4j.log",
+    "mariadb_server": "172.21.232.156", "db_user":"covid19", "db_password":"redacted",
+    "relational_load_log_file": "/srv/rbd/covid19/bisystem/staging/load_rel.log",
+    "out_react_tsv": "/srv/rbd/covid19/bisystem/staging/microreact.tsv",
+    "out_react_nwk": "/srv/rbd/covid19/bisystem/staging/microreact.nwk"
+}
