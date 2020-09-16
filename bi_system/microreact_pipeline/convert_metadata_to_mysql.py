@@ -171,7 +171,7 @@ def add_data(cnxn, filepath, clade_filepath):
     with open(clade_filepath) as tsvfile:
         reader = csv.DictReader(tsvfile, delimiter='\t')
         for row in reader:
-            pid = row['name']
+            pid = row['strain']
             if pid is None or pid not in people:
                 continue
 
