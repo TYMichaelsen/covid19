@@ -7,7 +7,7 @@ from pandas import read_excel
 from datetime import date, datetime, timedelta
 from enum import Enum
 
-LOGGER = logging.getLogger("to mysql")
+LOGGER = logging.getLogger("to microreact")
 
 QUERY =     'SELECT P.ssi_id, date, C.low_res_clade, R.code, R.longitude, R.latitude, day(date), month(date), year(date)' \
             'FROM Persons P LEFT OUTER JOIN Municipalities M ON P.MunicipalityCode=M.code LEFT OUTER JOIN NUTS3_Regions R ON M.region=R.code ' \
