@@ -83,7 +83,7 @@ def create_schema(cnxn):
                 # TODO: drop them all like this: SELECT concat('DROP TABLE IF EXISTS `', table_name, '`;')
                 # FROM information_schema.tables
                 # WHERE table_schema = 'MyDatabaseName';
-                LOGGER.info("Creating table {}: ".format(table_name), end='')
+                LOGGER.info("Creating table {}: ".format(table_name))
                 cursor.execute("DROP TABLE IF EXISTS {}".format(table_name))
                 if table_name == 'Persons':
                     for df in DATE_FIELDS:
