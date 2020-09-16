@@ -1,10 +1,13 @@
 import os
 import json
 import pathlib
+import logging
 
 from datetime import datetime
 from data_cleansing_metadata import check_file
 from shutil import copyfile
+
+LOGGER = logging.getLogger("config controller")
 
 def get_config(config_filepath):
     config_filepath = check_file(config_filepath)
@@ -17,6 +20,7 @@ def get_config(config_filepath):
     for k in expected_config.keys():
         if k not in config.keys():
             err = 'Error: expected {} in config file {} but could not find such a key.'.format(k, config_filepath)
+            LOGGER.error(err)
             raise KeyError(err)
     return config
 
@@ -46,14 +50,14 @@ def update_latest_nextstrain(config):
                 source_path = '{}/{}_nextstrain/{}'.format(common_path_prefix, date_str, suffix)
                 target_path = '{}/latest/{}'.format(common_path_prefix, suffix)
                 
-                print("Copying {} to latest...".format(source_path))
+                LOGGER.info("Copying {} to latest...".format(source_path))
                 if os.path.exists(os.path.dirname(target_path)) == False:
                     os.makedirs(os.path.dirname(target_path))
                 copyfile(source_path, target_path)
-            print("Done.")
+            LOGGER.info("Done.")
             return
         except:
-            print("Unable to copy {} to latest. Retrying earlier date...".format(source_path))
+            LOGGER.warning("Unable to copy {} to latest. Retrying earlier date...".format(source_path))
 
 def _get_replacement_config_path(path, date_str, date_folder_suffix):
     prefix, _, suffix = _split_path(path)
@@ -80,7 +84,7 @@ def _get_nextstrain_date_list(path):
             date = datetime.strptime(date_str, date_format)
             dates.append(date)
         except:
-            print('Unrecognized date format of date string: {}'.format(date_str))
+            LOGGER.error('Unrecognized date format of date string: {}'.format(date_str))
     return dates
 
 def _split_path(path):

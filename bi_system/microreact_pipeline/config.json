@@ -10,5 +10,6 @@
     "relational_load_log_file": "/srv/rbd/covid19/bisystem/staging/load_rel.log",
     "line_list":"./bi_system/stable_dims/Lineliste_040920.xlsx",
     "microreact_output":"./bi_system/stable_dims/microreact_new.tsv",
-    "clade_tree_path":"./bi_system/stable_dims/tree_raw.nwk"
+    "clade_tree_path":"./bi_system/stable_dims/tree_raw.nwk",
+    "microreact_log_path":"./bi_system/microreact_pipeline/microreact.log"
 }

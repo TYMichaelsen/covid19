@@ -2,6 +2,7 @@ import csv
 import os
 import argparse
 import json
+import logging
 
 from datetime import date
 # import xlrd
@@ -20,6 +21,8 @@ from datetime import date
 #
 # if __name__ == "__main__":
 #     csv_from_excel(sys.argv[1])
+
+LOGGER = logging.getLogger("metadata")
 
 TRUE_VALUE = 'Yes'
 FALSE_VALUE = 'No'
@@ -76,7 +79,7 @@ def check_file(filepath, create=False):
     :return: absolute filepath if it does, print error message and exit otherwise
     """
     if len(filepath) == 0:
-        print("invalid filepath")
+        LOGGER.error("invalid filepath")
         exit(-1)
 
     if not os.path.exists(filepath):
@@ -84,7 +87,7 @@ def check_file(filepath, create=False):
             with open(filepath, 'w'):
                 pass
         else:
-            print("Invalid filepath: {}".format(filepath))
+            LOGGER.error("Invalid filepath: {}".format(filepath))
             exit(-1)
 
     return filepath
@@ -168,10 +171,10 @@ def check_errors(datafile, outfile, errfilewriter):
             for field_name in row.keys():
                 if field_name in FIELD_TESTS:
                     if field_name not in row.keys():
-                        print("Missing field, expected {}".format(field_name))
+                        LOGGER.warning("Missing field, expected {}".format(field_name))
                         continue
                     if row[field_name] is None:
-                        print("Warning, none value in row {}, field {}".format(rows_read, field_name))
+                        LOGGER.warning("None value in row {}, field {}".format(rows_read, field_name))
                         continue
                     val: str = row[field_name].strip()
                     for test in FIELD_TESTS[field_name]:
@@ -229,7 +232,7 @@ def check_errors(datafile, outfile, errfilewriter):
                                                             "dimension key in {}"
                                                             .format(val, dim_name), errfilewriter)
                                             if field_name=='Parishcode':
-                                                print("{}\t{}".format(row['Parishcode'], row['ParishName']))
+                                                LOGGER.debug("{}\t{}".format(row['Parishcode'], row['ParishName']))
                                 else:
                                     outrow[field_name] = val
                                     # if field_name == 'Parishcode':
@@ -288,7 +291,7 @@ def check_errors(datafile, outfile, errfilewriter):
 
             validated_rows.append(outrow)
 
-    print("Finished processing {} rows of which {} where ommitted due to irrecoverable errors".format(rows_read,
+    LOGGER.info("Finished processing {} rows of which {} where ommitted due to irrecoverable errors".format(rows_read,
                                                                                                       rows_omitted))
     with open(outfile, 'w') as csvfile:
         header = ['ssi_id'] + [k for k in FIELD_TESTS.keys()]
