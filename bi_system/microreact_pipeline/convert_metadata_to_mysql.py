@@ -2,10 +2,13 @@ import json
 from datetime import date
 import csv
 import os
+import logging
 
 import mysql.connector
 from mysql.connector import errorcode
 import argparse
+
+LOGGER = logging.getLogger("to mysql")
 
 DB_NAME = 'covid19'
 DIM_PATH = 'stable_dims'
@@ -42,7 +45,6 @@ BOOL_FIELDS = ['Diabet', 'Neuro', 'Cancer', 'Adipos', 'Nyre', 'Haem_c', 'Card_di
                'Other_risk', 'Pregnancy', 'Doctor', 'Nurse']
 DATE_FIELDS = ['date', 'COVID19_EndDate', 'SymptomsStartDate']
 
-
 def get_connection(config_dict):
     try:
         cnxn = mysql.connector.connect(user=config_dict['db_user'], password=config_dict['db_password'],
@@ -50,14 +52,13 @@ def get_connection(config_dict):
                                        database=DB_NAME)
     except mysql.connector.Error as err:
         if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-            print("Something is wrong with your user name or password")
+            LOGGER.error("Something is wrong with your user name or password")
         elif err.errno == errorcode.ER_BAD_DB_ERROR:
-            print("Database does not exist")
+            LOGGER.error("Database does not exist")
         else:
-            print(err)
+            LOGGER.error(err)
     else:
         return cnxn
-
 
 def check_file(filepath):
     """
@@ -67,11 +68,10 @@ def check_file(filepath):
     :return: absolute filepath if it does, print error message and exit otherwise
     """
     if len(filepath) == 0 or not os.path.exists(filepath):
-        print("file not found")
+        LOGGER.error("file not found")
         exit(-1)
     else:
         return filepath
-
 
 def create_schema(cnxn):
     cursor = cnxn.cursor()
@@ -83,7 +83,7 @@ def create_schema(cnxn):
                 # TODO: drop them all like this: SELECT concat('DROP TABLE IF EXISTS `', table_name, '`;')
                 # FROM information_schema.tables
                 # WHERE table_schema = 'MyDatabaseName';
-                print("Creating table {}: ".format(table_name), end='')
+                LOGGER.info("Creating table {}: ".format(table_name), end='')
                 cursor.execute("DROP TABLE IF EXISTS {}".format(table_name))
                 if table_name == 'Persons':
                     for df in DATE_FIELDS:
@@ -95,16 +95,15 @@ def create_schema(cnxn):
                 cursor.execute(table_description)
             except mysql.connector.Error as err:
                 if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
-                    print("already exists.")
+                    LOGGER.error("already exists.")
                 else:
-                    print(err.msg)
+                    LOGGER.error(err.msg)
             else:
-                print("Created the schema")
+                LOGGER.info("Created the schema")
     except mysql.connector.Error as err:
         if err.errno == errorcode.ER_BAD_DB_ERROR:
-            print("Database {} does not exists.".format(DB_NAME))
+            LOGGER.error("Database {} does not exists.".format(DB_NAME))
             exit(-1)
-
 
 def add_data(cnxn, filepath, clade_filepath):
     cursor = cnxn.cursor()
@@ -125,9 +124,9 @@ def add_data(cnxn, filepath, clade_filepath):
                 try:
                     cursor.execute(insert_string, data)
                 except mysql.connector.Error as err:
-                    print(err)
-                    print("Failed data: {} for insert statement: {}".format(data, insert_string))
-        print("Finished loading {}".format(table_name))
+                    LOGGER.error(err)
+                    LOGGER.error("Failed data: {} for insert statement: {}".format(data, insert_string))
+        LOGGER.info("Finished loading {}".format(table_name))
 
     # Persons
     bool_field_names = ','.join(BOOL_FIELDS)
@@ -162,10 +161,10 @@ def add_data(cnxn, filepath, clade_filepath):
             try:
                 cursor.execute(add_person, data_person)
             except mysql.connector.Error as err:
-                print(err)
-                print("Failed data: {}".format(data_person))
-                print("Insert statement:")
-                print(add_person)
+                LOGGER.error(err)
+                LOGGER.error("Failed data: {}".format(data_person))
+                LOGGER.error("Insert statement:")
+                LOGGER.error(add_person)
 
     # Clade assignment
     add_clade =  ("INSERT INTO Clade_assignment(ssi_id, low_res_clade, high_res_clade) VALUES (%s, %s, %s)")
@@ -187,19 +186,15 @@ def add_data(cnxn, filepath, clade_filepath):
             try:
                 cursor.execute(add_clade, data_clade)
             except mysql.connector.Error as err:
-                print(err)
-                print("Failed data: {}".format(data_clade))
-                print("Insert statement:")
-                print(add_clade)
+                LOGGER.error(err)
+                LOGGER.error("Failed data: {}".format(data_clade))
+                LOGGER.error("Insert statement:")
+                LOGGER.error(add_clade)
 
 
 
     cnxn.commit()
-    print("Loaded all data from {}".format(filepath))
-
-
-
-
+    LOGGER.info("Loaded all data from {}".format(filepath))
 
 def get_date(row, field_name):
     enddate_arr = row[field_name].split('-')  # e.g. '2020-03-22'.split('-')
@@ -211,13 +206,12 @@ def get_date(row, field_name):
         else:
             enddate = None
     except ValueError as err:
-        print(err)
-        print("Failed data: {} year {} month {} day {} ".format(enddate_arr, int(enddate_arr[0]),
+        LOGGER.error(err)
+        LOGGER.error("Failed data: {} year {} month {} day {} ".format(enddate_arr, int(enddate_arr[0]),
                                                                 int(enddate_arr[1]), int(enddate_arr[2])))
         enddate = None
     return enddate
 
-
 def create_fk():
     # TODO
-    print("Warning: Foreign keys were not created (Not implemented).")
+    LOGGER.warning("Warning: Foreign keys were not created (Not implemented).")

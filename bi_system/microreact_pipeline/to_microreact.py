@@ -44,6 +44,8 @@ def convert_to_sql(config):
     connection.close()
 
 def convert_to_microreact(config):
+    logger = logging.getLogger("to microreact")
+
     connection = get_connection(config)
     data = execute_query(connection, QUERY)
     data = convert_to_microreact_format(data)
@@ -57,7 +59,7 @@ def convert_to_microreact(config):
 
     save_csv(config, data)
     save_tree(config, tree)
-    print("Processed {}/{}".format(len(data) - len(skipped_ids), len(data)))
+    logger.info("Processed {}/{}".format(len(data) - len(skipped_ids), len(data)))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -75,5 +77,5 @@ if __name__ == '__main__':
     update_latest_nextstrain(config)
     config = set_config_nextstrain(config, date_str, date_suffix)
     create_metadata_files(config)
-    # convert_to_sql(config)
-    # convert_to_microreact(config)
+    convert_to_sql(config)
+    convert_to_microreact(config)

@@ -1,12 +1,13 @@
 import csv
 import uuid
 import re
+import logging 
 
 from pandas import read_excel
 from datetime import date, datetime, timedelta
 from enum import Enum
 
-CONFIG_FILEPATH = "/srv/rbd/mp/covid19/bi_system/config.json"
+LOGGER = logging.getLogger("to mysql")
 
 QUERY =     'SELECT P.ssi_id, date, C.low_res_clade, R.code, R.longitude, R.latitude, day(date), month(date), year(date)' \
             'FROM Persons P LEFT OUTER JOIN Municipalities M ON P.MunicipalityCode=M.code LEFT OUTER JOIN NUTS3_Regions R ON M.region=R.code ' \
@@ -59,7 +60,7 @@ def convert_to_microreact_format(data):
 
 def save_tree(config, tree):
       path = config['out_react_nwk']
-      print('Saving tree to {}'.format(path))
+      LOGGER.info('Saving tree to {}'.format(path))
       with open(path, "w") as f:
             f.write(tree)
 
@@ -75,7 +76,7 @@ def replace_tree_ids(data, tree):
 
         match_idx = _find_replacement_idx(tree, original_id)
         if match_idx == -1:
-            print("Failed to find and replace ID: {}".format(original_id))
+            LOGGER.warning("Failed to find and replace ID: {}".format(original_id))
             continue
 
         tree = tree[:match_idx] + replacement_id + tree[match_idx + len(original_id):]
@@ -88,7 +89,7 @@ def filter_data_by_min_cases(data, config, min_cases=3):
       for example in data:
             match = cases.loc[(cases['Week'] == example[FIELD.sample_date]) & (cases['NUTS3Code'] == example[FIELD.region])]
             if len(match.index) != 1:
-                  print("Cases did not properly match the example, continuing... (cases: {}, id: {})".format(len(match.index), example[FIELD.orig_id]))
+                  LOGGER.warning("Cases did not properly match the example, continuing... (cases: {}, id: {})".format(len(match.index), example[FIELD.orig_id]))
                   skipped_ids.append(example[FIELD.ID])
                   continue
             if match['Cases'].iloc[0] < min_cases:
@@ -128,7 +129,7 @@ def add_empty_records(data, skipped_ids):
 
 def save_csv(config, data):
       path = config['out_react_tsv']
-      print('Saving data to {}'.format(path))
+      LOGGER.info('Saving data to {}'.format(path))
       with open(path, "w") as f:
             writer = csv.DictWriter(f,
                   fieldnames=[FIELD.ID, FIELD.sample_date, FIELD.epi_week, FIELD.country, FIELD.region, FIELD.lineage, FIELD.latitude, FIELD.longitude, 
