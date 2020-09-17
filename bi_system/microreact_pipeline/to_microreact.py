@@ -46,7 +46,10 @@ def convert_to_sql(config):
 
 def get_data(config):
     query = 'SELECT P.ssi_id, P.gisaid_id, date, C.low_res_clade, R.code, R.longitude, R.latitude, day(date), month(date), year(date)' \
-            'FROM Persons P LEFT OUTER JOIN Municipalities M ON P.MunicipalityCode=M.code LEFT OUTER JOIN NUTS3_Regions R ON M.region=R.code ' \
+            'FROM Persons P ' \
+            'LEFT OUTER JOIN Municipalities M ON P.MunicipalityCode=M.code ' \
+            'LEFT OUTER JOIN NUTS3_Regions R3 ON M.region=R3.code ' \
+            'JOIN NUTS2_Regions R ON R3.nuts2_region=R.code ' \
             'JOIN Clade_assignment C ON P.ssi_id =  C.ssi_id ' \
             ';'
     connection = get_connection(config)
