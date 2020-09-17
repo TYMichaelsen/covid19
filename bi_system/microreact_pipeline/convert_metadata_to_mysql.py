@@ -14,6 +14,7 @@ DB_NAME = 'covid19'
 DIM_PATH = 'stable_dims'
 TABLES = {'Persons': ("CREATE TABLE `Persons` ("
                       "  `ssi_id` varchar(50) NOT NULL PRIMARY KEY,"
+                      "  `gisaid_id` varchar(50) NOT NULL,"
                       "  `age` int(11),"
                       "  `age_group` varchar(16),"
                       "  `sex` enum('M','F'),"
@@ -21,7 +22,7 @@ TABLES = {'Persons': ("CREATE TABLE `Persons` ("
                       "  `Parishcode` INTEGER,"
                       "  `MunicipalityCode` INTEGER,"
                       "  `lineage` VARCHAR(10),"
-                      , '', ['ssi_id', 'age', 'age_group', 'sex', 'COVID19_Status', 'Parishcode', 'lineage']),
+                      , '', ['ssi_id', 'gisaid_id', 'age', 'age_group', 'sex', 'COVID19_Status', 'Parishcode', 'lineage']),
           'Countries': (
               "CREATE TABLE `Countries` (`country` varchar(35) PRIMARY KEY, population INTEGER COMMENT '(2020)',"
               " `land_area` INTEGER COMMENT '(Km²)', `density` INTEGER COMMENT '(P/Km²)')",

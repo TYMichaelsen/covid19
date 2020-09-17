@@ -1,12 +1,13 @@
 import csv
 import argparse
 import logging
+import sys
 
 from config_controller import get_config, set_config_nextstrain, update_latest_nextstrain
 from data_cleansing_metadata import check_file, check_errors
 from convert_metadata_to_mysql import get_connection, create_schema, add_data, create_fk
-from convert_to_microreact_files import QUERY, execute_query, convert_to_microreact_format, get_tree, replace_tree_ids, filter_data_by_min_cases
-from convert_to_microreact_files import get_unmatched_ids_in_tree, add_empty_records, save_csv, save_tree
+from convert_to_microreact_files import execute_query, convert_to_microreact_format, get_tree, replace_tree_ids, filter_data_by_min_cases
+from convert_to_microreact_files import get_unmatched_ids_in_tree, add_empty_records, save_csv, save_tree, replace_data_ids, get_linelist
 
 def set_logging(config):
     logging.basicConfig(level=logging.DEBUG, filename=config['microreact_log_path'], filemode='w')
@@ -43,16 +44,31 @@ def convert_to_sql(config):
     create_fk() 
     connection.close()
 
+def get_data(config):
+    query = 'SELECT P.ssi_id, P.gisaid_id, date, C.low_res_clade, R.code, R.longitude, R.latitude, day(date), month(date), year(date)' \
+            'FROM Persons P LEFT OUTER JOIN Municipalities M ON P.MunicipalityCode=M.code LEFT OUTER JOIN NUTS3_Regions R ON M.region=R.code ' \
+            'JOIN Clade_assignment C ON P.ssi_id =  C.ssi_id ' \
+            ';'
+    connection = get_connection(config)
+    data = execute_query(connection, query)
+    connection.close()
+    return data
+
 def convert_to_microreact(config):
     logger = logging.getLogger("to microreact")
 
-    connection = get_connection(config)
-    data = execute_query(connection, QUERY)
+    data = get_data(config)
+    print(data[0:3])
+    sys.exit()
+
     data = convert_to_microreact_format(data)
-    connection.close()
 
     tree = get_tree(config)
     tree = replace_tree_ids(data, tree)
+
+    linelist = get_linelist(config) 
+    replace_data_ids(data, linelist)
+    sys.exit()
 
     data, skipped_ids = filter_data_by_min_cases(data,config, min_cases=3)
     data = add_empty_records(data, skipped_ids)
@@ -74,8 +90,8 @@ if __name__ == '__main__':
     date_suffix = args.date_folder_suffix
 
     set_logging(config)
-    update_latest_nextstrain(config)
+    # update_latest_nextstrain(config)
     config = set_config_nextstrain(config, date_str, date_suffix)
-    create_metadata_files(config)
-    convert_to_sql(config)
+    # create_metadata_files(config)
+    # convert_to_sql(config)
     convert_to_microreact(config)

@@ -9,11 +9,6 @@ from enum import Enum
 
 LOGGER = logging.getLogger("to microreact")
 
-QUERY =     'SELECT P.ssi_id, date, C.low_res_clade, R.code, R.longitude, R.latitude, day(date), month(date), year(date)' \
-            'FROM Persons P LEFT OUTER JOIN Municipalities M ON P.MunicipalityCode=M.code LEFT OUTER JOIN NUTS3_Regions R ON M.region=R.code ' \
-            'JOIN Clade_assignment C ON P.ssi_id =  C.ssi_id ' \
-            ';'
-
 class FIELD():
       ID = "ID"
       orig_id = "orig_id"
@@ -82,8 +77,12 @@ def replace_tree_ids(data, tree):
         tree = tree[:match_idx] + replacement_id + tree[match_idx + len(original_id):]
     return tree
 
+def replace_data_ids(data, linelist):
+      for _, row in linelist.iterrows():
+            LOGGER.debug(row['gisaid_id'])
+
 def filter_data_by_min_cases(data, config, min_cases=3):
-      cases = _get_cases_per_region_week(config['raw_ssi_file'])
+      cases = _get_cases_per_region_week(config)
       filtered_data = []
       skipped_ids = []
       for example in data:
@@ -139,6 +138,11 @@ def save_csv(config, data):
                   del data_obj[FIELD.orig_id]
                   writer.writerow(data_obj)
 
+def get_linelist(config):
+      linelist = read_excel(config['raw_ssi_file'])
+      assert linelist.empty == False
+      return linelist
+
 def _get_first_day_of_week(date):
       return date - timedelta(days=date.weekday())
 
@@ -152,10 +156,9 @@ def _get_epi_start_date(data):
 
 def _datestr_to_week_func():
       return lambda date: datetime.strptime(date, '%Y-%m-%d').isocalendar()[1]
-
-def _get_cases_per_region_week(linelist_filepath):
-      linelist=read_excel(linelist_filepath)
-      assert linelist.empty == False
+      
+def _get_cases_per_region_week(config):
+      linelist = get_linelist(config)
       linelist['Week']=linelist['SampleDate'].apply(_datestr_to_week_func())
       return linelist.groupby(['Week', 'NUTS3Code']).size().reset_index(name="Cases")
 
