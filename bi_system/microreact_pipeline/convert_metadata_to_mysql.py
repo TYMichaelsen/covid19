@@ -37,7 +37,7 @@ TABLES = {'Persons': ("CREATE TABLE `Persons` ("
                        "age_groups.tsv", 
                        ['age_group', 'meta_group']),
           
-          'NUTS2_Regions': ("CREATE TABLE NUTS2_Regions (`code` varchar(4) not null primary key, `name` varchar(20), `latitude` varchar(20), `longitude` varchar(20))", 
+          'NUTS2_Regions': ("CREATE TABLE NUTS2_Regions (`code` CHAR(5) PRIMARY KEY, `name` varchar(20), `latitude` varchar(15), `longitude` varchar(15))", 
                            "nuts2_regions.tsv",
                            ['code', 'name', 'latitude', 'longitude']),
           
