@@ -1,5 +1,4 @@
 import csv
-import uuid
 import re
 import logging 
 
@@ -35,17 +34,17 @@ def convert_to_microreact_format(data):
       formatted_data = []
       epidemic_start_date = _get_epi_start_date(data)
       for e in data:
-            week_start_date = _get_first_day_of_week(e[1])
+            week_start_date = _get_first_day_of_week(e[2])
             data_obj = {
-                  FIELD.ID:str(uuid.uuid4()),
+                  FIELD.ID:e[1],
                   FIELD.orig_id:e[0],
-                  FIELD.sample_date:e[1].isocalendar()[1],
-                  FIELD.epi_week:_get_epi_week(e[1], epidemic_start_date),
+                  FIELD.sample_date:e[2].isocalendar()[1],
+                  FIELD.epi_week:_get_epi_week(e[2], epidemic_start_date),
                   FIELD.country:"DK01",
-                  FIELD.region:e[3],
-                  FIELD.lineage:e[2],
-                  FIELD.latitude:e[5],
-                  FIELD.longitude:e[4],
+                  FIELD.region:e[4],
+                  FIELD.lineage:e[3],
+                  FIELD.latitude:e[6],
+                  FIELD.longitude:e[5],
                   FIELD.day:week_start_date.day,
                   FIELD.month:week_start_date.month,
                   FIELD.year:week_start_date.year
