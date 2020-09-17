@@ -37,7 +37,7 @@ FIELD_TESTS = dict(date=['date'], sequenced=['yes'], Sex=['vals:F_M'], Travel=['
                    CountryOfTravel=['dim:countries.tsv'], SymptomsStartDate=['date'], CodR_DateOfDeath=['date'],
                    Symptoms=['str'], branche1=['str'], branche2=['str'], branche3=['str'], CitizenshipCode=['str'],
                    Death60Days_final=['yes'], Death30Days_final=['yes'], CPR_DateOfDeath=['date'],
-                   DateOfDeath_final=['date'], ZipCodeCity=['str'], Plejehjemsnavn=['str'], gisaid_id=['str']  # TODDOconvert to dim
+                   DateOfDeath_final=['date'], ZipCodeCity=['str'], Plejehjemsnavn=['str']  # TODDOconvert to dim
                    )
 
 """
