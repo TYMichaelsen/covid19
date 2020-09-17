@@ -160,6 +160,7 @@ def _datestr_to_week_func():
 def _get_cases_per_region_week(config):
       linelist = get_linelist(config)
       linelist['Week']=linelist['SampleDate'].apply(_datestr_to_week_func())
+      linelist['NUTS3Code'] = linelist['NUTS3Code'].apply(lambda nut3: nut3[:-1])
       return linelist.groupby(['Week', 'NUTS3Code']).size().reset_index(name="Cases")
 
 def _find_replacement_idx(tree, key):
