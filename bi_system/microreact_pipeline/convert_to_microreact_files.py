@@ -1,6 +1,7 @@
 import csv
 import re
 import logging 
+import uuid
 
 from pandas import read_excel
 from datetime import date, datetime, timedelta
@@ -36,7 +37,7 @@ def convert_to_microreact_format(data):
       for e in data:
             week_start_date = _get_first_day_of_week(e[2])
             data_obj = {
-                  FIELD.ID:e[1],
+                  FIELD.ID:uuid.uuid4(),
                   FIELD.orig_id:e[0],
                   FIELD.sample_date:e[2].isocalendar()[1],
                   FIELD.epi_week:_get_epi_week(e[2], epidemic_start_date),
