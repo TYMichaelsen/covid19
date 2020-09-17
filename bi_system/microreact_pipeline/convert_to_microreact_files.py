@@ -151,7 +151,7 @@ def _get_epi_week(infected_date, epidemic_start_date):
       return (_get_first_day_of_week(w_start_infected) - _get_first_day_of_week(w_start_epidemic)).days / 7
 
 def _get_epi_start_date(data): 
-      return min(e[1] for e in data)
+      return min(e[2] for e in data)
 
 def _datestr_to_week_func():
       return lambda date: datetime.strptime(date, '%Y-%m-%d').isocalendar()[1]
