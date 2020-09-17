@@ -150,7 +150,7 @@ def add_data(cnxn, filepath, clade_filepath):
             sex = row['Sex'] if row['Sex'] in ['M', 'F'] else None
             pc = int(row['Parishcode']) if len(row['Parishcode']) > 0 else None
             mc = int(row['MunicipalityCode']) if len(row['MunicipalityCode']) > 0 else None
-            data_person = [row['ssi_id'], age, ag, sex, cv_stat, pc, mc, row['lineage']]
+            data_person = [row['ssi_id'], row['gisaid_id'] age, ag, sex, cv_stat, pc, mc, row['lineage']]
             boolean_field_data = [row[f] if len(row[f]) > 0 else None for f in BOOL_FIELDS]
             date_field_data = [get_date(row, df) for df in DATE_FIELDS]
             data_person.extend(boolean_field_data)
