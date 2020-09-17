@@ -22,25 +22,36 @@ TABLES = {'Persons': ("CREATE TABLE `Persons` ("
                       "  `Parishcode` INTEGER,"
                       "  `MunicipalityCode` INTEGER,"
                       "  `lineage` VARCHAR(10),"
-                      , '', ['ssi_id', 'gisaid_id', 'age', 'age_group', 'sex', 'COVID19_Status', 'Parishcode', 'lineage']),
-          'Countries': (
-              "CREATE TABLE `Countries` (`country` varchar(35) PRIMARY KEY, population INTEGER COMMENT '(2020)',"
-              " `land_area` INTEGER COMMENT '(Km²)', `density` INTEGER COMMENT '(P/Km²)')",
-              'countries.tsv', ['country', 'population', 'land_area', 'density']),
-          'Municipalities': ("CREATE TABLE Municipalities (code INTEGER PRIMARY KEY, name VARCHAR (35), "
-                             "administrative_center VARCHAR(40), area FLOAT, population INTEGER COMMENT '(2012-01-01)', "
-                             "region CHAR(5))", "municipalities.tsv", ['code', 'name', 'administrative_center',
-                                                                       'area', 'population', 'region']),
-          'AgeGroups': ("CREATE TABLE AgeGroups (age_group VARCHAR(5) PRIMARY KEY, meta_group VARCHAR(8))",
-                        "age_groups.tsv", ['age_group', 'meta_group']),
-          'NUTS3_Regions': (
-              "CREATE TABLE NUTS3_Regions(code CHAR(5) PRIMARY KEY, `name` VARCHAR(20), `latitude` varchar(15), `longitude` varchar(15) )", "nuts3_regions.tsv",
-              ['code', 'name', 'latitude', 'longitude' ]),
-          'Parishes': (
-              "CREATE TABLE Parishes(code INTEGER PRIMARY KEY, `name` VARCHAR(35))", "parish.tsv", ['code', 'name']),
-          'Clade_assignment': ("CREATE TABLE Clade_assignment(`ssi_id` varchar(50) NOT NULL PRIMARY KEY,"
-                               "`low_res_clade` varchar(45),"
-                               "`high_res_clade`  varchar(100))",'', ['ssi_id','low_res_clade','high_res_clade'])}
+                      , ''
+                      , ['ssi_id', 'gisaid_id', 'age', 'age_group', 'sex', 'COVID19_Status', 'Parishcode', 'lineage']),
+          
+          'Countries': ("CREATE TABLE `Countries` (`country` varchar(35) PRIMARY KEY, population INTEGER COMMENT '(2020)', `land_area` INTEGER COMMENT '(Km²)', `density` INTEGER COMMENT '(P/Km²)')",
+                      'countries.tsv', 
+                      ['country', 'population', 'land_area', 'density']),
+          
+          'Municipalities': ("CREATE TABLE Municipalities (code INTEGER PRIMARY KEY, name VARCHAR (35), administrative_center VARCHAR(40), area FLOAT, population INTEGER COMMENT '(2012-01-01)', region CHAR(5))", 
+                            "municipalities.tsv", 
+                            ['code', 'name', 'administrative_center','area', 'population', 'region']),
+          
+          'AgeGroups': ("CREATE TABLE AgeGroups (age_group VARCHAR(5) PRIMARY KEY, meta_group VARCHAR(8))", 
+                       "age_groups.tsv", 
+                       ['age_group', 'meta_group']),
+          
+          'NUTS2_Regions': ("CREATE TABLE NUTS2_Regions (`code` varchar(4) not null primary key, `name` varchar(20), `latitude` varchar(20), `longitude` varchar(20))", 
+                           "nuts2_regions.tsv",
+                           ['code', 'name', 'latitude', 'longitude']),
+          
+          'NUTS3_Regions': ("CREATE TABLE NUTS3_Regions(code CHAR(5) PRIMARY KEY, `name` VARCHAR(20), `latitude` varchar(15), `longitude` varchar(15), `nuts2_region` varchar(4))", 
+                           "nuts3_regions.tsv",
+                           ['code', 'name', 'latitude', 'longitude', 'nuts2_region']),
+          
+          'Parishes': ("CREATE TABLE Parishes(code INTEGER PRIMARY KEY, `name` VARCHAR(35))", 
+                      "parish.tsv", 
+                      ['code', 'name']),
+          
+          'Clade_assignment': ("CREATE TABLE Clade_assignment(`ssi_id` varchar(50) NOT NULL PRIMARY KEY, `low_res_clade` varchar(45), `high_res_clade`  varchar(100))",
+                              '', 
+                              ['ssi_id','low_res_clade','high_res_clade'])}
 
 BOOL_FIELDS = ['Diabet', 'Neuro', 'Cancer', 'Adipos', 'Nyre', 'Haem_c', 'Card_dis', 'Resp_dis', 'Immu_dis',
                'Other_risk', 'Pregnancy', 'Doctor', 'Nurse']
