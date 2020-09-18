@@ -47,7 +47,7 @@ def convert_to_sql(config):
     connection.close()
 
 def get_data(config):
-    query = 'SELECT P.ssi_id, P.gisaid_id, date, C.low_res_clade, R.code, R.longitude, R.latitude, day(date), month(date), year(date), P.age_group' \
+    query = 'SELECT P.ssi_id, P.gisaid_id, date, C.low_res_clade, R.code, R.longitude, R.latitude, day(date), month(date), year(date), P.age_group ' \
             'FROM Persons P ' \
             'LEFT OUTER JOIN Municipalities M ON P.MunicipalityCode=M.code ' \
             'LEFT OUTER JOIN NUTS3_Regions R3 ON M.region=R3.code ' \
