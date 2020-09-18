@@ -21,7 +21,7 @@ data = [
     {'code':'DK032', 'name':'Sydjylland', 'latitude':'55.56316692', 'longitude':'9.02846054', 'nuts2_region':'DK03'},
     {'code':'DK041', 'name':'Vestjylland', 'latitude':'56.18780543', 'longitude':'8.73661729', 'nuts2_region':'DK04'},
     {'code':'DK042', 'name':'Østjylland', 'latitude':'56.1071088', 'longitude':'9.81621671', 'nuts2_region':'DK04'},
-    {'code':'DK043', 'name':'Nordjylland', 'latitude':'57.30715928', 'longitude':'10.11282907', 'nuts2_region':'DK05'}
+    {'code':'DK051', 'name':'Nordjylland', 'latitude':'57.30715928', 'longitude':'10.11282907', 'nuts2_region':'DK05'}
 ]
 save_csv(path, data, fields)
 
