@@ -157,10 +157,13 @@ def _get_epi_start_date(data):
 def _datestr_to_week_func():
       return lambda date: datetime.strptime(date, '%Y-%m-%d').isocalendar()[1]
       
+def _nut3_to_nut2_func():
+      return  lambda nut3: nut3[:-1] if type(nut3) is str else ''
+
 def _get_cases_per_region_week(config):
       linelist = get_linelist(config)
       linelist['Week']=linelist['SampleDate'].apply(_datestr_to_week_func())
-      linelist['NUTS3Code'] = linelist['NUTS3Code'].apply(lambda nut3: nut3[:-1])
+      linelist['NUTS3Code'] = linelist['NUTS3Code'].apply(_nut3_to_nut2_func())
       return linelist.groupby(['Week', 'NUTS3Code']).size().reset_index(name="Cases")
 
 def _find_replacement_idx(tree, key):
