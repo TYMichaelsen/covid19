@@ -137,7 +137,7 @@ def save_csv(config, data):
                         FIELD.day, FIELD.month, FIELD.year])
             writer.writeheader()
             for data_obj in data:
-                  del data_obj[FIELD.orig_id]
+                  del data_obj[FIELD.orig_id, FIELD.age_group]
                   writer.writerow(data_obj)
 
 def get_linelist(config):
