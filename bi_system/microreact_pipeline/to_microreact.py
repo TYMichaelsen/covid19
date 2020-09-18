@@ -8,6 +8,8 @@ from data_cleansing_metadata import check_file, check_errors
 from convert_metadata_to_mysql import get_connection, create_schema, add_data, create_fk
 from convert_to_microreact_files import execute_query, convert_to_microreact_format, get_tree, replace_tree_ids, filter_data_by_min_cases
 from convert_to_microreact_files import get_unmatched_ids_in_tree, add_empty_records, save_csv, save_tree, replace_data_ids
+from to_website_data_files import get_seq_grouped_byt_week
+
 
 def set_logging(config):
     logging.basicConfig(level=logging.DEBUG, filename=config['microreact_log_path'], filemode='w')
@@ -69,9 +71,12 @@ def convert_to_microreact(config):
     data, skipped_ids = filter_data_by_min_cases(data,config, min_cases=3)
     data = add_empty_records(data, skipped_ids)
 
+    logger.info("Processed {}/{}".format(len(data) - len(skipped_ids), len(data)))
+    return data, tree
+
+def save_micro_react_files(config, data, tree):
     save_csv(config, data)
     save_tree(config, tree)
-    logger.info("Processed {}/{}".format(len(data) - len(skipped_ids), len(data)))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -80,7 +85,6 @@ if __name__ == '__main__':
     parser.add_argument('--date_folder_suffix', type=str, default="nextstrain", help="date folder suffix (e.g. 'nextstrain' in '2020-05-10_nextstrain')")
     args = parser.parse_args()
 
-    
     config = get_config(args.config_filepath)
     date_str = args.date
     date_suffix = args.date_folder_suffix
@@ -90,4 +94,7 @@ if __name__ == '__main__':
     config = set_config_nextstrain(config, date_str, date_suffix)
     create_metadata_files(config)
     convert_to_sql(config)
-    convert_to_microreact(config)
+    data, tree = convert_to_microreact(config)
+    save_micro_react_files(config, data, tree)
+
+    get_seq_grouped_byt_week(data)
