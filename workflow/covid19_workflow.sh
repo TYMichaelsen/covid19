@@ -71,7 +71,6 @@ OUT_DIR=$(readlink -f "$OUT_DIR")
 
 # Create output folder
 mkdir -p $OUT_DIR
-mkdir -p $OUT_DIR/final_output
 
 # Copy sample_sheet.csv to output folder
 if [ ! -f "${OUT_DIR}/sample_sheet.csv" ]; then
@@ -142,14 +141,25 @@ else
         $SAMPLE_SHEET \
         $OUT_DIR/demultiplexed \
         $THREADS \
-        $SCHEME
+        $SCHEME;
+      retn_code=$?;
+      if [ \$retn_code == 123 ]; then echo 'missing barcodes, exit.'; exit 123; fi
       "
 fi
 
+if [ -s $OUT_DIR/demultiplexed/missing.txt ]; then 
+  echo "The following barcodes were in $SAMPLE_SHEET but not in barcodes.csv:"
+  echo $(awk '{print}' ORS=' ' $OUT_DIR/demultiplexed/missing.txt)  
+  rm -r $OUT_DIR/demultiplexed
+  exit
+fi
+exit
 
 ###############################################################################
 # Generate genomes
 ###############################################################################
+
+mkdir -p $OUT_DIR/final_output
 
 echo ""
 echo "[$(date +"%T")] Generating genomes with ARTIC medaka pipeline"
