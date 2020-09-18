@@ -55,6 +55,41 @@ echo "Command: $0 $*" >> $LOG_NAME
 exec &> >(tee -a "$LOG_NAME")
 exec 2>&1
 
+# Compile barcode file
+rm -f $OUT_DIR/missing.txt
+touch $OUT_DIR/missing.txt
+
+gawk \
+  -F "," \
+  -v RUN_ID="$RUN_ID" \
+  -v OUT_DIR="$OUT_DIR" \
+  '
+    FNR==NR {  
+      BARCODE[$1]=$2
+      next 
+    }
+    {
+      if ($2 in BARCODE){
+        print ">" RUN_ID "_" $1 "_" $2
+        print BARCODE[$2]
+      }   
+      else 
+      {
+        print $2 >> OUT_DIR"/missing.txt"
+      }
+    }
+  ' \
+  $AAU_COVID19_PATH/dependencies/demultiplex/barcodes.csv \
+  $METADATA \
+  > $OUT_DIR/barcodes_used.fasta
+ 
+if [ -s $OUT_DIR/missing.txt ]; then 
+  exit 123
+else
+  echo "All barcodes in $METADATA were legit, continue workflow..."
+fi
+
+  
 # Trim end adaptors and filter by length
 #-- 20 bp of each terminal adaptor is targeted
 #-- Outer adaptors are searched for together with cutadapt <ADP1_outer>...<ADP2_outer>
@@ -79,29 +114,6 @@ cutadapt \
   -g $ADP12_OUTER \
   -o $OUT_DIR/reads_trim.fq \
   -
-
-# Compile barcode file
-echo ""
-echo "[$(date +"%T")] Compiling used barcode file for $RUN_ID from $METADATA"
-echo ""
-gawk \
-  -F "," \
-  -v RUN_ID="$RUN_ID" \
-  '
-    FNR==NR {  
-      LIB_NAME[$2]=">" RUN_ID "_" $1 "_" $2
-      next 
-    }
-    {
-      if ($1 in LIB_NAME){
-        print LIB_NAME[$1]
-        print $2
-      } 
-    }
-  ' \
-  $METADATA \
-  $AAU_COVID19_PATH/dependencies/demultiplex/barcodes.csv \
-  > $OUT_DIR/barcodes_used.fasta
 
 # Demultiplex based
 #-- Dual barcode demultiplexing requires i7i5 adaptor orientation
