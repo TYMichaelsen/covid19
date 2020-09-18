@@ -6,9 +6,9 @@ import sys
 from config_controller import get_config, set_config_nextstrain, update_latest_nextstrain
 from data_cleansing_metadata import check_file, check_errors
 from convert_metadata_to_mysql import get_connection, create_schema, add_data, create_fk
-from convert_to_microreact_files import execute_query, convert_to_microreact_format, get_tree, replace_tree_ids, filter_data_by_min_cases
+from convert_to_microreact_files import FIELD, execute_query, convert_to_microreact_format, get_tree, replace_tree_ids, filter_data_by_min_cases
 from convert_to_microreact_files import get_unmatched_ids_in_tree, add_empty_records, save_csv, save_tree, replace_data_ids
-from to_website_data_files import get_seq_grouped_byt_week
+from to_website_data_files import get_seq_grouped_byt_week, get_seq_grouped_by_region, get_seq_grouped_by_age
 
 
 def set_logging(config):
@@ -47,7 +47,7 @@ def convert_to_sql(config):
     connection.close()
 
 def get_data(config):
-    query = 'SELECT P.ssi_id, P.gisaid_id, date, C.low_res_clade, R.code, R.longitude, R.latitude, day(date), month(date), year(date)' \
+    query = 'SELECT P.ssi_id, P.gisaid_id, date, C.low_res_clade, R.code, R.longitude, R.latitude, day(date), month(date), year(date), P.age_group' \
             'FROM Persons P ' \
             'LEFT OUTER JOIN Municipalities M ON P.MunicipalityCode=M.code ' \
             'LEFT OUTER JOIN NUTS3_Regions R3 ON M.region=R3.code ' \
@@ -97,4 +97,6 @@ if __name__ == '__main__':
     data, tree = convert_to_microreact(config)
     save_micro_react_files(config, data, tree)
 
-    get_seq_grouped_byt_week(data)
+    get_seq_grouped_byt_week(data, FIELD)
+    get_seq_grouped_by_region(data, FIELD)
+    get_seq_grouped_by_age(data, FIELD)

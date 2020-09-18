@@ -22,6 +22,7 @@ class FIELD():
       day="day"
       month="month"
       year="year"
+      age_group="age_group"
 
 def execute_query(connection, query):
       cursor = connection.cursor()
@@ -48,7 +49,8 @@ def convert_to_microreact_format(data):
                   FIELD.longitude:e[5],
                   FIELD.day:week_start_date.day,
                   FIELD.month:week_start_date.month,
-                  FIELD.year:week_start_date.year
+                  FIELD.year:week_start_date.year,
+                  FIELD.age_group:e[7]
             }
             formatted_data.append(data_obj)
       return formatted_data
