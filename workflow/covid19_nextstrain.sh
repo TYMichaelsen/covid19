@@ -42,10 +42,6 @@ NEXTSTRAINOUT="${DISTDIR}/nextstrain"
 
 # Check missing arguments
 MISSING="is missing but required. Exiting."
-# if [ -z ${META+x} ]; then echo "-s $MISSING"; echo "$USAGE"; exit 1; fi;
-# if [ -z ${SEQS+x} ]; then echo "-s $MISSING"; echo "$USAGE"; exit 1; fi;
-if [ -z ${OUTDIR+x} ]; then OUTDIR=${NEXTSTRAINOUT}/$(date +%Y-%m-%d)_nextstrain; fi;
-# if [ -z ${OUTDIR+x} ]; then OUTDIR=$PWD/$(date +%Y-%m-%d)_nextstrain; fi;
 if [ -z ${THREADS+x} ]; then THREADS=64; fi;
 
 ### Code.----------------------------------------------------------------------
@@ -69,6 +65,9 @@ if [ -z ${SEQS+x} ]; then
     echo $SEQS
 fi
 
+if [ -z ${OUTDIR+x} ]; then 
+  OUTDIR=$(basename -s _export $(findTheLatest "${DISTDIR}/genomes/*export"))_nextstrain
+fi
 
 GENOMEDIR=$(dirname $SEQS)
 METADIR=$(dirname $META)
