@@ -153,7 +153,6 @@ if [ -s $OUT_DIR/demultiplexed/missing.txt ]; then
   rm -r $OUT_DIR/demultiplexed
   exit
 fi
-exit
 
 ###############################################################################
 # Generate genomes
