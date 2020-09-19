@@ -25,7 +25,7 @@ while [ -s /srv/rbd/covid19/processing/missing.txt ]; do
     
     echo "[$(date +"%T")] Wait to check if it is static. Check again in 1 minute."
     
-    sleep 2 
+    sleep 1m 
     
     new_files=$(find $DIR)
     
@@ -48,6 +48,6 @@ done
 
 echo "[$(date +"%T")] No new batches found. Check again in 30 minutes." 
 
-sleep 2
+sleep 30m
 
 done
