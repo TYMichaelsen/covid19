@@ -97,6 +97,6 @@ if __name__ == '__main__':
     data, tree = convert_to_microreact(config)
     save_micro_react_files(config, data, tree)
 
-    get_seq_grouped_byt_week(data, FIELD)
+    get_seq_grouped_by_week(data, FIELD)
     get_seq_grouped_by_region(data, FIELD)
     get_seq_grouped_by_age(data, FIELD)

@@ -123,7 +123,8 @@ def add_empty_records(data, skipped_ids):
                   FIELD.longitude:None,
                   FIELD.day:None,
                   FIELD.month:None,
-                  FIELD.year:None
+                  FIELD.year:None,
+                  FIELD.age_group:None
             }
             data.append(empty_data_obj)
       return data
