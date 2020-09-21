@@ -398,7 +398,7 @@ p <- ggtree(ntree_trim) %<+% d_tree
 
 p1 <- p + geom_treescale() +
     geom_tiplab(align = T, linesize = .25, size = 3, aes(color = genome_qc), 
-                offset = 0.0003, fontface = "bold", hjust = 1) +
+                offset = 0.00015, fontface = "bold", hjust = 1) +
     scale_color_manual(values = c("#2ca25f", "darkred"), name = "Genome Quality") +
     guides(colour = guide_legend(override.aes = list(size = 4))) +
     geom_tippoint(aes(color = genome_qc), size = 2) +
@@ -423,7 +423,7 @@ snv_heat2 <- snv_heat %>%
 
 rownames(snv_heat2) <-snv_heat$library_id
 
-gheatmap(p1, snv_heat2, colnames_angle = 90, hjust = 1, font.size = 2, offset = 0.00004, width = 0.8) +
+gheatmap(p1, snv_heat2, colnames_angle = 90, hjust = 1, font.size = 2, offset = 0.00008, width = 0.8) +
   scale_fill_manual(values = c("#33a02c", "#1f78b4", "grey30", "#de2d26", "grey80", "orange"),  
                     name = "Variant", breaks = c("A", "C", "G", "T", "N", "-")) +
   theme(legend.position = c(0.1,0.65))
