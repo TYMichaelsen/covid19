@@ -279,7 +279,7 @@ if (nrow(meta_sub) > 0){
 
 ## Primer pool coverage 
 
-```{r, fig.height = 3}
+```{r}
 tmp <- group_by(d,library_id) %>%
   summarise(coverage_1 = median(coverage_1),coverage_2 = median(coverage_2)) %>%
   pivot_longer(cols = starts_with("coverage"),names_to = "Pool") %>%
@@ -390,10 +390,10 @@ ggplot(tmp,aes(x = Pool,y = value)) +
 d_tree <- filter(d, sample_type == "sample" & genome_qc != "Fail")
 ntree_trim <- drop.tip(ntree, ntree$tip.label[!(ntree$tip.label %in% d_tree$library_id)]) 
 
-figh <- length(ntree_trim$tip.label)
+figh <- length(ntree_trim$tip.label)*0.2
 ```
 
-```{r, fig.height = 14}
+```{r, fig.height = figh}
 p <- ggtree(ntree_trim) %<+% d_tree
 
 p1 <- p + geom_treescale() +
@@ -405,7 +405,6 @@ p1 <- p + geom_treescale() +
     theme(legend.position = c(0.1,0.75))
 
 hq <- filter(d, genome_qc == "HQ")
-
 
 #Take SNV's seen in at least 2 genomes in the HQ subset ()
 snv_filter <- filter(snv, library_id %in% hq$library_id) %>%
