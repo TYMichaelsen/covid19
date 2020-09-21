@@ -3,11 +3,10 @@ import re
 import logging 
 import uuid
 
-from pandas import read_excel
 from datetime import date, datetime, timedelta
 from enum import Enum
 
-from utilities import datestr_to_week_func, nut3_to_nut2_func
+from utilities import datestr_to_week_func, nut3_to_nut2_func, get_linelist
 
 LOGGER = logging.getLogger("to microreact")
 
@@ -139,11 +138,6 @@ def save_csv(config, data):
                   del data_obj[FIELD.orig_id]
                   del data_obj[FIELD.age_group]
                   writer.writerow(data_obj)
-
-def get_linelist(config):
-      linelist = read_excel(config['raw_ssi_file'])
-      assert linelist.empty == False
-      return linelist
 
 def _get_first_day_of_week(date):
       return date - timedelta(days=date.weekday())
