@@ -7,6 +7,8 @@ from pandas import read_excel
 from datetime import date, datetime, timedelta
 from enum import Enum
 
+from utilities import datestr_to_week_func, nut3_to_nut2_func
+
 LOGGER = logging.getLogger("to microreact")
 
 class FIELD():
@@ -79,10 +81,6 @@ def replace_tree_ids(data, tree):
         tree = tree[:match_idx] + replacement_id + tree[match_idx + len(original_id):]
     return tree
 
-def replace_data_ids(data, linelist):
-      for _, row in linelist.iterrows():
-            LOGGER.debug(row['gisaid_id'])
-
 def filter_data_by_min_cases(data, config, min_cases=3):
       cases = _get_cases_per_region_week(config)
       filtered_data = []
@@ -139,7 +137,7 @@ def save_csv(config, data):
             writer.writeheader()
             for data_obj in data:
                   del data_obj[FIELD.orig_id]
-                  def data_obj[FIELD.age_group]
+                  del data_obj[FIELD.age_group]
                   writer.writerow(data_obj)
 
 def get_linelist(config):
@@ -158,16 +156,10 @@ def _get_epi_week(infected_date, epidemic_start_date):
 def _get_epi_start_date(data): 
       return min(e[2] for e in data)
 
-def _datestr_to_week_func():
-      return lambda date: datetime.strptime(date, '%Y-%m-%d').isocalendar()[1]
-      
-def _nut3_to_nut2_func():
-      return  lambda nut3: nut3[:-1] if type(nut3) is str else ''
-
 def _get_cases_per_region_week(config):
       linelist = get_linelist(config)
-      linelist['Week']=linelist['SampleDate'].apply(_datestr_to_week_func())
-      linelist['NUTS3Code'] = linelist['NUTS3Code'].apply(_nut3_to_nut2_func())
+      linelist['Week']=linelist['SampleDate'].apply(datestr_to_week_func())
+      linelist['NUTS3Code'] = linelist['NUTS3Code'].apply(nut3_to_nut2_func())
       return linelist.groupby(['Week', 'NUTS3Code']).size().reset_index(name="Cases")
 
 def _find_replacement_idx(tree, key):

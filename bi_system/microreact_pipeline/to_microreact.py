@@ -8,9 +8,9 @@ from config_controller import get_config, set_config_nextstrain, update_latest_n
 from data_cleansing_metadata import check_file, check_errors
 from convert_metadata_to_mysql import get_connection, create_schema, add_data, create_fk
 from convert_to_microreact_files import FIELD, execute_query, convert_to_microreact_format, get_tree, replace_tree_ids, filter_data_by_min_cases
-from convert_to_microreact_files import get_unmatched_ids_in_tree, add_empty_records, save_csv, save_tree, replace_data_ids
+from convert_to_microreact_files import get_unmatched_ids_in_tree, add_empty_records, save_csv, save_tree, get_linelist
 from to_website_data_files import get_seq_grouped_by_week, get_seq_grouped_by_region, get_seq_grouped_by_age
-
+from to_website_data_files import get_all_grouped_by_week, get_all_grouped_by_region, get_all_grouped_by_age
 
 def set_logging(config):
     logging.basicConfig(level=logging.DEBUG, filename=config['microreact_log_path'], filemode='w')
@@ -101,3 +101,8 @@ if __name__ == '__main__':
     get_seq_grouped_by_week(data, FIELD)
     get_seq_grouped_by_region(data, FIELD)
     get_seq_grouped_by_age(data, FIELD)
+
+    linelist_data = get_linelist(config)
+    get_all_grouped_by_week(linelist_data)
+    get_all_grouped_by_region(linelist_data)
+    get_all_grouped_by_age(linelist_data)
