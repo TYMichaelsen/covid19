@@ -9,7 +9,7 @@ from data_cleansing_metadata import check_file, check_errors
 from convert_metadata_to_mysql import get_connection, create_schema, add_data, create_fk
 from convert_to_microreact_files import execute_query, convert_to_microreact_format, get_tree, replace_tree_ids, filter_data_by_min_cases
 from convert_to_microreact_files import get_unmatched_ids_in_tree, add_empty_records, save_csv, save_tree
-from to_website_data_files import save_website_files
+from to_website_data_files import save_website_files, upload_web_files
 
 def set_logging(config):
     logging.basicConfig(level=logging.DEBUG, filename=config['microreact_log_path'], filemode='w')
@@ -90,11 +90,12 @@ if __name__ == '__main__':
     date_suffix = args.date_folder_suffix
 
     set_logging(config)
-    update_latest_nextstrain(config)
-    config = set_config_nextstrain(config, date_str, date_suffix)
-    create_metadata_files(config)
-    convert_to_sql(config)
-    data, tree = convert_to_microreact(config)
+    # update_latest_nextstrain(config)
+    # config = set_config_nextstrain(config, date_str, date_suffix)
+    # create_metadata_files(config)
+    # convert_to_sql(config)
+    # data, tree = convert_to_microreact(config)
     
-    save_micro_react_files(config, copy.deepcopy(data), tree)
-    save_website_files(config, data)
+    # save_micro_react_files(config, copy.deepcopy(data), tree)
+    # save_website_files(config, data)
+    upload_web_files(config)

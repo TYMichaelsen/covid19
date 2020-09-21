@@ -1,5 +1,8 @@
 import pandas as pd
 import logging
+import pysftp
+from os import listdir
+from os.path import isfile, join
 
 from utilities import datestr_to_week_func, nut3_to_nut2_func, get_linelist
 from convert_to_microreact_files import FIELD
@@ -15,6 +18,26 @@ def save_website_files(config, data):
     _save_all_grouped_by_week(linelist_data, config)
     _save_all_grouped_by_region(linelist_data, config)
     _save_all_grouped_by_age(linelist_data, config)
+
+
+def upload_web_files(config):
+    host, username, password = config['web_host'], config['web_user'], config['web_password']
+    path = config['web_path']
+
+    file_dir = config['out_web_dir']
+    files = [join(file_dir, f) for f in listdir(file_dir) if isfile(join(file_dir, f))]
+    
+    try:
+        for file in files:
+            LOGGER.debug(file)
+        # srv = pysftp.Connection(host, username, password = password) 
+        # with srv.cd(path):
+        #     for file in files:
+        #         srv.put(file)
+        # srv.close()     
+    except:
+        LOGGER.error('Failed to sftp files to the web server.')
+        # srv.close()
 
 def _get_path(config, filename):
     return '{}/{}'.format(config['out_web_dir'], filename)
