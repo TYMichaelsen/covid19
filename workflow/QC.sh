@@ -96,31 +96,31 @@ augur tree \
 --output $INPUT_DIR/QC/aligntree/tree_raw.nwk \
 --nthreads $THREADS
   
-augur refine \
---tree $INPUT_DIR/QC/aligntree/tree_raw.nwk \
---output-tree $INPUT_DIR/QC/aligntree/tree.nwk
+#augur refine \
+#--tree $INPUT_DIR/QC/aligntree/tree_raw.nwk \
+#--output-tree $INPUT_DIR/QC/aligntree/tree.nwk
 
 ### ancestral tree.
-augur ancestral \
-  --tree $INPUT_DIR/QC/aligntree/tree.nwk \
-  --alignment $INPUT_DIR/QC/aligntree/masked.fasta \
-  --output-node-data $INPUT_DIR/QC/aligntree/nt_muts.json \
-  --inference joint \
-  --infer-ambiguous
+#augur ancestral \
+#  --tree $INPUT_DIR/QC/aligntree/tree.nwk \
+#  --alignment $INPUT_DIR/QC/aligntree/masked.fasta \
+#  --output-node-data $INPUT_DIR/QC/aligntree/nt_muts.json \
+#  --inference joint \
+#  --infer-ambiguous
   
 ### Translate NT ot AA.
-augur translate \
-  --tree $INPUT_DIR/QC/aligntree/tree.nwk \
-  --ancestral-sequences $INPUT_DIR/QC/aligntree/nt_muts.json \
-  --reference-sequence $REF \
-  --output-node-data $INPUT_DIR/QC/aligntree/aa_muts.json
+#augur translate \
+#  --tree $INPUT_DIR/QC/aligntree/tree.nwk \
+#  --ancestral-sequences $INPUT_DIR/QC/aligntree/nt_muts.json \
+#  --reference-sequence $REF \
+#  --output-node-data $INPUT_DIR/QC/aligntree/aa_muts.json
                        
 ### add clades.
-augur clades \
-  --tree $INPUT_DIR/QC/aligntree/tree.nwk \
-  --mutations $INPUT_DIR/QC/aligntree/nt_muts.json $INPUT_DIR/QC/aligntree/aa_muts.json \
-  --clades $CLADES \
-  --output-node-data $INPUT_DIR/QC/aligntree/clades.json
+#augur clades \
+#  --tree $INPUT_DIR/QC/aligntree/tree.nwk \
+#  --mutations $INPUT_DIR/QC/aligntree/nt_muts.json $INPUT_DIR/QC/aligntree/aa_muts.json \
+#  --clades $CLADES \
+#  --output-node-data $INPUT_DIR/QC/aligntree/clades.json
   
 ###############################################################################
 # Generate the QC report.
