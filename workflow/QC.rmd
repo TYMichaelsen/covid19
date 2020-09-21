@@ -398,7 +398,7 @@ p <- ggtree(ntree_trim) %<+% d_tree
 
 p1 <- p + geom_treescale() +
     geom_tiplab(align = T, linesize = .25, size = 3, aes(color = genome_qc), 
-                offset = 0.00006, fontface = "bold", hjust = 1) +
+                offset = 0.0003, fontface = "bold", hjust = 1) +
     scale_color_manual(values = c("#2ca25f", "darkred"), name = "Genome Quality") +
     guides(colour = guide_legend(override.aes = list(size = 4))) +
     geom_tippoint(aes(color = genome_qc), size = 2) +
