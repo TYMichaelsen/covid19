@@ -51,7 +51,7 @@ def convert_to_microreact_format(data):
                   FIELD.day:week_start_date.day,
                   FIELD.month:week_start_date.month,
                   FIELD.year:week_start_date.year,
-                  FIELD.age_group:e[7]
+                  FIELD.age_group:e[10]
             }
             formatted_data.append(data_obj)
       return formatted_data
@@ -87,7 +87,7 @@ def filter_data_by_min_cases(data, config, min_cases=3):
       for example in data:
             match = cases.loc[(cases['Week'] == example[FIELD.sample_date]) & (cases['NUTS3Code'] == example[FIELD.region])]
             if len(match.index) != 1:
-                  LOGGER.warning("Cases did not properly match the example, continuing... (cases: {}, id: {})".format(len(match.index), example[FIELD.orig_id]))
+                  # LOGGER.warning("Cases did not properly match the example, continuing... (cases: {}, id: {})".format(len(match.index), example[FIELD.orig_id]))
                   skipped_ids.append(example[FIELD.ID])
                   continue
             if match['Cases'].iloc[0] < min_cases:

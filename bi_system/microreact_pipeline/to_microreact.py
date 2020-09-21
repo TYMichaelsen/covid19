@@ -90,12 +90,12 @@ if __name__ == '__main__':
     date_suffix = args.date_folder_suffix
 
     set_logging(config)
-    # update_latest_nextstrain(config)
-    # config = set_config_nextstrain(config, date_str, date_suffix)
-    # create_metadata_files(config)
-    # convert_to_sql(config)
-    # data, tree = convert_to_microreact(config)
+    update_latest_nextstrain(config)
+    config = set_config_nextstrain(config, date_str, date_suffix)
+    create_metadata_files(config)
+    convert_to_sql(config)
+    data, tree = convert_to_microreact(config)
     
-    # save_micro_react_files(config, copy.deepcopy(data), tree)
-    # save_website_files(config, data)
+    save_micro_react_files(config, copy.deepcopy(data), tree)
+    save_website_files(config, data)
     upload_web_files(config)
