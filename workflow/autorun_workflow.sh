@@ -4,8 +4,8 @@
 #
 # 
 
-# Make a text file with all the batches processed so far.
-ls -d /srv/rbd/covid19/processing/?J* > /srv/rbd/covid19/processing/processed.txt
+# FIRST USE ONLY: Make a date-sorted text file with all the batches processed so far.
+# ls -dtr /srv/rbd/covid19/processing/?J* > /srv/rbd/covid19/processing/processed.txt
 
 while : ; do
 
@@ -25,7 +25,7 @@ while [ -s /srv/rbd/covid19/processing/missing.txt ]; do
     
     echo "[$(date +"%T")] Wait to check if it is static. Check again in 1 minute."
     
-    sleep 1m 
+    sleep 30m 
     
     new_files=$(find $DIR)
     
