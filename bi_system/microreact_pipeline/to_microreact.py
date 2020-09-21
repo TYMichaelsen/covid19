@@ -2,6 +2,7 @@ import csv
 import argparse
 import logging
 import sys
+import copy
 
 from config_controller import get_config, set_config_nextstrain, update_latest_nextstrain
 from data_cleansing_metadata import check_file, check_errors
@@ -95,7 +96,7 @@ if __name__ == '__main__':
     create_metadata_files(config)
     convert_to_sql(config)
     data, tree = convert_to_microreact(config)
-    save_micro_react_files(config, data, tree)
+    save_micro_react_files(config, copy.deepcopy(data), tree)
 
     get_seq_grouped_by_week(data, FIELD)
     get_seq_grouped_by_region(data, FIELD)
