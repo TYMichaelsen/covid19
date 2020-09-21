@@ -423,7 +423,7 @@ snv_heat2 <- snv_heat %>%
 
 rownames(snv_heat2) <-snv_heat$library_id
 
-gheatmap(p1, snv_heat2, colnames_angle = 90, hjust = 1, font.size = 2, offset = 0.00016, width = 0.8) +
+gheatmap(p1, snv_heat2, colnames_angle = 90, hjust = 1, font.size = 2, offset = 0.0002, width = 0.8) +
   scale_fill_manual(values = c("#33a02c", "#1f78b4", "grey30", "#de2d26", "grey80", "orange"),  
                     name = "Variant", breaks = c("A", "C", "G", "T", "N", "-")) +
   theme(legend.position = c(0.1,0.65))
