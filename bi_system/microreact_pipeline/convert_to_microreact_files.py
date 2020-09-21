@@ -74,7 +74,7 @@ def replace_tree_ids(data, tree):
 
         match_idx = _find_replacement_idx(tree, original_id)
         if match_idx == -1:
-            LOGGER.warning("Failed to find and replace ID: {}".format(original_id))
+            # LOGGER.warning("Failed to find and replace ID: {}".format(original_id))
             continue
 
         tree = tree[:match_idx] + replacement_id + tree[match_idx + len(original_id):]
