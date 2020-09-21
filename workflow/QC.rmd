@@ -237,6 +237,9 @@ rbind(tab,tot) %>%
 ## Library concentrations vs. coverage
 
 ```{r}
+cols <- c("#52854C", "#E7B800", "#FC4E07") %>%
+  setNames(.,nm = c("HQ","MQ","Fail"))
+
 ggplot(data = d, aes(x=library_conc, y = coverage, color = genome_qc)) +
   geom_point() +
   labs(y      = "Average coverage",
@@ -382,10 +385,15 @@ ggplot(tmp,aes(x = Pool,y = value)) +
 
 ## Identify mixed-virus samples (SNV artic)
 
-```{r, fig.height = 14}
+```{r}
+# Pre-define fig height from data.
 d_tree <- filter(d, sample_type == "sample" & genome_qc != "Fail")
 ntree_trim <- drop.tip(ntree, ntree$tip.label[!(ntree$tip.label %in% d_tree$library_id)]) 
 
+figh <- length(ntree_trim$tip.label)
+```
+
+```{r, fig.height = 14}
 p <- ggtree(ntree_trim) %<+% d_tree
 
 p1 <- p + geom_treescale() +
