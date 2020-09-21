@@ -447,14 +447,14 @@ p <- ggtree(ntree_trim) %<+% d
 
 p1 <- p + geom_treescale() +
     geom_tiplab(align = T, linesize = .25, size = 3, aes(color = library_conc), 
-                offset = 0.00003, fontface = "bold", hjust = 1) +
+                offset = 0.00016, fontface = "bold", hjust = 1) +
     geom_tippoint(aes(color = library_conc, shape = genome_qc), size = 2) +
     scale_color_viridis_c(name = "Library concentration [ng/ul] ", direction = -1, 
                           trans = "log10", breaks = c(0.1, 0.3, 1, 2, 5, 15, 50), limits = c(0.1,NA)) +
     scale_shape_discrete(name = "Genome Quality") +
     theme(legend.position = c(0.1,0.75))
 
-gheatmap(p1, freq_heat2, colnames_angle = 90, hjust = 1, font.size = 2, offset = 0.00004, width = 0.8) +
+gheatmap(p1, freq_heat2, colnames_angle = 90, hjust = 1, font.size = 2, offset = 0.0002, width = 0.8) +
   scale_fill_viridis_c(name = "Alternative variant (SNV)", limits = c(0,1), na.value = "white", direction = -1) +
   theme(legend.position = c(0.1,0.65))
 }
