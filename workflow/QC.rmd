@@ -39,9 +39,9 @@ library("ape")
 
 ```{r,eval=F}
 # For build mode.
-batch      <- "CJ069"
-labmeta    <- "/srv/rbd/covid19/processing/CJ069/sample_sheet.csv"
-input_dir  <- "/srv/rbd/covid19/processing/CJ069"
+batch      <- "CJ102"
+labmeta    <- paste0("/srv/rbd/covid19/processing/",batch,"/sample_sheet.csv")
+input_dir  <- paste0("/srv/rbd/covid19/processing/",batch)
 scheme_dir <- "/srv/rbd/covid19/git/covid19/workflow/dependencies/primer_schemes/nCoV-2019/aau_long_v3.1"
 ref        <- "/srv/rbd/covid19/git/covid19/workflow/dependencies/ref/MN908947.3.fasta"
 ```
@@ -165,16 +165,6 @@ libconc <- read_delim(labmeta, delim = ",", col_names = F) %>%
 ```
 
 ```{r}
-# Get clade assignment.---------------------------------------------------------
-clades <- rjson::fromJSON(file = paste0(input_dir,"/QC/aligntree/clades.json")) %>%
-  .$nodes %>%
-  sapply("[[",1) %>%
-  {data.frame(library_id = names(.),Clade = .,row.names = NULL)} %>%
-  filter(!grepl("NODE",library_id)) %>%
-  mutate(library_id = str_match(library_id, "_(.*?)_")[,2])
-```
-
-```{r}
 # Get SNV calls from the file.--------------------------------------------------
 nt_ref <- ape::read.dna(file = ref, 
                         format = "fasta", as.character = T) %>%
@@ -201,7 +191,6 @@ snv <- ape::read.dna(file = paste0(input_dir,"/QC/aligntree/aligned.fasta"),
 # Merge data.-------------------------------------------------------------------
 d <- left_join(libconc, cov_tot, by = "library_id") %>%
      left_join(genome_qc, by = "library_id") %>%
-     left_join(clades,by = "library_id") %>%
      mutate(sample_type = tolower(library_id) %>%
        {case_when(grepl("neg",.) ~ "NEG",grepl("pos",.) ~ "POS",!grepl("neg|pos",.) ~ "sample")}) %>%
   mutate(coverage   = ifelse(is.na(coverage),0,coverage)) %>%
@@ -211,64 +200,38 @@ d <- left_join(libconc, cov_tot, by = "library_id") %>%
   mutate(dropout_1  = ifelse(is.na(dropout_1),unique(libpool$primer_id) %>% length(),dropout_1)) %>%
   mutate(dropout_2  = ifelse(is.na(dropout_2),unique(libpool$primer_id) %>% length(),dropout_2))
 
-# QC label.
+  # QC label.
 d <- d %>%
-  mutate(genome_qc = ifelse(is.na(n_count),
-                       ifelse(coverage >= 5,
-                         "Fail_artic",
-                         "Fail"),
-                       cut(n_count, breaks = c(-Inf,130,5000,Inf), labels = c("HQ","MQ","Fail")) %>% as.character())) %>%
-  mutate(genome_qc = ifelse(coverage > 5 & genome_qc == "Fail","Dropout",genome_qc)) %>%
-  mutate(genome_qc = factor(genome_qc,levels = c("HQ","MQ","Fail","Dropout","Fail_artic"))) 
+  mutate(genome_qc = cut(n_count, breaks = c(-Inf,130,3000,Inf), labels = c("HQ","MQ","Fail")) %>% as.character()) %>%
+  mutate(genome_qc = ifelse(is.na(genome_qc),"Fail",genome_qc)) %>%
+  mutate(genome_qc = factor(genome_qc,levels = c("HQ","MQ","Fail"))) 
 ```
 
 # General overview
 
-## Overview of genome qualities
+## Overview of genome qualities (excl controls)
 
 - `HQ`: A genome with < 130 N's in total.
-- `MQ`: A genome with < 5000 N's in total.
-- `Fail`: A genome with either >5000 N's in total.
-- `Dropout`: A genome .
-- `Fail_artic`: No genome generated with >5x coverage. The artic pipeline failed for some reason. 
+- `MQ`: A genome with < 3000 N's in total.
+- `Fail`: A genome with either >3000 N's in total.
 
 ```{r}
-tab <- d %>% 
+tab <- d %>% filter(sample_type == "sample") %>%
   group_by(genome_qc,.drop = F) %>%
-  summarise(!!batch := n()) 
+  summarise(n = n())
 
-tot <- tab %>% pull(!!batch) %>% sum() %>%
-  data.frame("Total",.) %>% `colnames<-`(colnames(tab)) 
+tot <- tab %>% pull(n) %>% sum() %>%
+  data.frame("Total",.) %>% `colnames<-`(colnames(tab))
+
+tab <- mutate(tab,n = paste0(n," (",round(n/sum(n),1)*100,"%)"))
 
 rbind(tab,tot) %>%
-  mutate(genome_qc = factor(genome_qc,levels = c("HQ","MQ","Fail","Dropout","Fail_artic","Total"))) %>%
+  mutate(genome_qc = factor(as.character(genome_qc),levels = c("HQ","MQ","Fail","Total"))) %>%
   arrange(genome_qc) %>%
-  dplyr::rename(`Genome Quality` = genome_qc) %>%
+  dplyr::rename(`Genome Quality` = genome_qc,!!batch := n) %>%
   kable() %>%
   kable_styling(bootstrap_options = c("striped", "hover"), full_width = F) %>%
-  row_spec(6,bold=T)
-```
-
-## amplicon dropout vs. library concentration
-
-```{r}
-ggplot(d,aes(x = dropout_1,y = dropout_2,colour = library_conc)) +
-  geom_point()
-```
-
-
-## Library concentration vs. amplicon dropout
-
-```{r}
-cols <- c("#52854C", "#E7B800", "#FC4E07","#999999","black") %>%
-  setNames(.,nm = c("HQ","MQ","Fail","Dropout","Fail_artic"))
-
-ggplot(d,aes(x = library_conc,y = dropout,color = genome_qc)) + 
-  geom_point() +
-  labs(y      = "Amplicon dropout [n] ",
-       x      = "Library Concentration [ng/ul]",
-       colour = "Genome Quality") + 
-  scale_colour_manual(values = cols)
+  row_spec(4,bold=T)
 ```
 
 ## Library concentrations vs. coverage
@@ -283,47 +246,7 @@ ggplot(data = d, aes(x=library_conc, y = coverage, color = genome_qc)) +
   scale_colour_manual(values = cols)
 ```
 
-## Samples dropping out
-
-```{r}
-filter(d,genome_qc == "Dropout") %>%
-  select(library_id,library_conc,coverage) %>%
-  arrange(-coverage) %>%
-  kable() %>%
-  kable_styling(bootstrap_options = c("striped", "hover"), full_width = F)
-```
-
-## Samples failing the artic pipeline
-
-```{r}
-filter(d,genome_qc == "Fail_artic") %>%
-  select(library_id,library_conc) %>%
-  arrange(-library_conc) %>%
-  kable() %>%
-  kable_styling(bootstrap_options = c("striped", "hover"), full_width = F)
-```
-
-## Coverage for each primer-pair (samples only)
-
-```{r, fig.height = 3}
-wh <- filter(d, !is.na(genome_qc) & sample_type == "sample") %>% pull(library_id)
-
-cov_sub <- subset(cov, library_id %in% wh) %>% 
-  mutate(coverage_relative = ifelse(coverage_relative < 0.01, 0.01, coverage_relative)) %>%
-  left_join(d %>% select(library_id, genome_qc), by = "library_id") %>%
-  mutate(genome_qc = factor(genome_qc, levels = c("HQ", "MQ", "Fail")))
-
-ggplot(cov_sub, aes(x = primer_id, y = coverage_relative, color = coverage_relative)) +
-  geom_jitter(width = 0.1 , height = 0.1) +
-  scale_colour_viridis_b(trans = "log10", direction = -1, breaks = c(0, 0.1, 1, 10, 100)) +
-  scale_x_continuous(breaks = c(0,5,10,15,20,25,30)) +
-  facet_grid(cols = vars(genome_qc)) +
-  scale_y_log10(breaks = c(0.01, 0.1, 1, 10, 100), limits = c(0.005, NA)) +
-  labs(x = "Primer pair", y = "Relative coverage [%]") +
-  theme(legend.position = "none")
-```
-
-## Coverage for each primer-pair (controls only)
+## Coverage for each primer-pair - controls
 
 ```{r, fig.height = 8}
 meta_sub <- filter(d,sample_type != "sample")
@@ -351,29 +274,42 @@ if (nrow(meta_sub) > 0){
 } 
 ```
 
-## Deletions or insertions in the consensus sequence
-```{r}
-meta_sub <- filter(d,sample_type == "sample" & genome_qc != "Fail")
-asnv_sub <- filter(asnv, library_id %in% meta_sub$library_id) %>%
-  mutate(tj = paste0(library_id, position))
-snv_sub <-  filter(snv, library_id %in% meta_sub$library_id) %>%
-  mutate(tj = paste0(library_id, position))
+## Primer pool coverage 
 
-filter(snv_sub, alt == "-" | ref == "-") %>% 
-  select(library_id, position, ref, alt)  %>%
-  kable() %>%
-  kable_styling(bootstrap_options = c("striped", "hover"), full_width = F)
+```{r, fig.height = 3}
+tmp <- group_by(d,library_id) %>%
+  summarise(coverage_1 = median(coverage_1),coverage_2 = median(coverage_2)) %>%
+  pivot_longer(cols = starts_with("coverage"),names_to = "Pool") %>%
+  mutate(Pool = gsub("coverage_","",Pool))
+
+ggplot(tmp,aes(x = Pool,y = value)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_point(position = position_jitter(width = .1)) +
+  scale_y_log10() +
+  labs(y = "Average coverage")
 ```
 
-## Deletions or insertions marked in the vcf output
-```{r}
-filter(asnv_sub, snv_type %in% c("I","D")) %>% 
-  select(library_id, type, snv_type, position, ref, alt, depth, ref_count, alt_count, alt_frac) %>%
-  kable() %>%
-  kable_styling(bootstrap_options = c("striped", "hover"), full_width = F)
-```
+<!-- ## Deletions or insertions in the consensus sequence -->
+<!-- ```{r} -->
+<!-- meta_sub <- filter(d,sample_type == "sample" & genome_qc != "Fail") -->
+<!-- asnv_sub <- filter(asnv, library_id %in% meta_sub$library_id) %>% -->
+<!--   mutate(tj = paste0(library_id, position)) -->
+<!-- snv_sub <-  filter(snv, library_id %in% meta_sub$library_id) %>% -->
+<!--   mutate(tj = paste0(library_id, position)) -->
 
-# Detail overview
+<!-- filter(snv_sub, alt == "-" | ref == "-") %>%  -->
+<!--   select(library_id, position, ref, alt)  %>% -->
+<!--   kable() %>% -->
+<!--   kable_styling(bootstrap_options = c("striped", "hover"), full_width = F) -->
+<!-- ``` -->
+
+<!-- ## Deletions or insertions marked in the vcf output -->
+<!-- ```{r} -->
+<!-- filter(asnv_sub, snv_type %in% c("I","D")) %>%  -->
+<!--   select(library_id, type, snv_type, position, ref, alt, depth, ref_count, alt_count, alt_frac) %>% -->
+<!--   kable() %>% -->
+<!--   kable_styling(bootstrap_options = c("striped", "hover"), full_width = F) -->
+<!-- ``` -->
 
 <!-- ## Clade assignment (MQ and HQ only) -->
 <!-- ```{r} -->
@@ -389,65 +325,65 @@ filter(asnv_sub, snv_type %in% c("I","D")) %>%
 <!--   kable_styling(bootstrap_options = c("striped", "hover"), full_width = F) -->
 <!-- ``` -->
 
-## Coverage (HQ)
+<!-- ## Coverage (HQ) -->
 
-```{r}
-meta_sub <- filter(d,sample_type == "sample" & genome_qc == "HQ") %>%
-  head(n = 10) 
+<!-- ```{r} -->
+<!-- meta_sub <- filter(d,sample_type == "sample" & genome_qc == "HQ") %>% -->
+<!--   head(n = 10)  -->
 
-meta_sub <- filter(d,sample_type == "sample" & genome_qc == "Fail" & coverage > 5) %>%
-  arrange(coverage) %>%
-  head(n = 10) 
+<!-- meta_sub <- filter(d,sample_type == "sample" & genome_qc == "Fail" & coverage > 5) %>% -->
+<!--   arrange(coverage) %>% -->
+<!--   head(n = 10)  -->
 
-if (nrow(meta_sub) > 0){
-  # Subset.
-  cov_sub  <- filter(cov, library_id %in% meta_sub$library_id)
-  #asnv_sub <- filter(asnv, library_id %in% meta_sub$library_id)
-  snv_sub <-  filter(snv, library_id %in% meta_sub$library_id)
+<!-- if (nrow(meta_sub) > 0){ -->
+<!--   # Subset. -->
+<!--   cov_sub  <- filter(cov, library_id %in% meta_sub$library_id) -->
+<!--   #asnv_sub <- filter(asnv, library_id %in% meta_sub$library_id) -->
+<!--   snv_sub <-  filter(snv, library_id %in% meta_sub$library_id) -->
 
-  ggplot(cov_sub, aes(x = pos_mean, y = coverage+1, color = coverage+1)) +
-    geom_segment(aes(x = start, xend = end, y = coverage + 1, yend = coverage +1), size = 1) +
-    scale_colour_viridis_c(trans = "log10", direction = -1, breaks = c(1, 10, 100, 1000, 10000),limits = c(1, NA)) +
-    facet_wrap(~library_id, ncol = 2) +
-    scale_y_log10(limits=c(1,100000), breaks = c(1, 10 ,100 ,1000, 10000)) +
-    labs(x = "Genome position [bp]", y = "Coverage [fold]") +
-    theme(legend.position = "none") +
-   geom_text(data = meta_sub, aes(x = 15000, y = 100000, label = paste0("Library conc.: ", round(library_conc, 0), " ng/ul, Coverage: ", coverage)), color = "black", size = 3) +
-    #geom_text(data = asnv_sub, aes(x = position, y = 100, label = paste0(snv_type, "\n", alt_frac, "\n", het)), color = "red", size = 2) +
-    if (nrow(snv_sub) != 0) geom_text(data = snv_sub, aes(x = position, y = 1, label = alt), color = "black", size = 2)
-}
+<!--   ggplot(cov_sub, aes(x = pos_mean, y = coverage+1, color = coverage+1)) + -->
+<!--     geom_segment(aes(x = start, xend = end, y = coverage + 1, yend = coverage +1), size = 1) + -->
+<!--     scale_colour_viridis_c(trans = "log10", direction = -1, breaks = c(1, 10, 100, 1000, 10000),limits = c(1, NA)) + -->
+<!--     facet_wrap(~library_id, ncol = 2) + -->
+<!--     scale_y_log10(limits=c(1,100000), breaks = c(1, 10 ,100 ,1000, 10000)) + -->
+<!--     labs(x = "Genome position [bp]", y = "Coverage [fold]") + -->
+<!--     theme(legend.position = "none") + -->
+<!--    geom_text(data = meta_sub, aes(x = 15000, y = 100000, label = paste0("Library conc.: ", round(library_conc, 0), " ng/ul, Coverage: ", coverage)), color = "black", size = 3) + -->
+<!--     #geom_text(data = asnv_sub, aes(x = position, y = 100, label = paste0(snv_type, "\n", alt_frac, "\n", het)), color = "red", size = 2) + -->
+<!--     if (nrow(snv_sub) != 0) geom_text(data = snv_sub, aes(x = position, y = 1, label = alt), color = "black", size = 2) -->
+<!-- } -->
 
-```
+<!-- ``` -->
 
-## Coverage (MQ)
+<!-- ## Coverage (MQ) -->
 
-```{r}
-meta_sub <- filter(d,sample_type == "sample" & genome_qc == "MQ") %>%
-  head(n = 10) 
+<!-- ```{r} -->
+<!-- meta_sub <- filter(d,sample_type == "sample" & genome_qc == "MQ") %>% -->
+<!--   head(n = 10)  -->
 
-if (nrow(meta_sub) > 0){
-  # Subset.
-  cov_sub  <- filter(cov, library_id %in% meta_sub$library_id)
-  #asnv_sub <- filter(asnv, library_id %in% meta_sub$library_id)
-  snv_sub <-  filter(snv, library_id %in% meta_sub$library_id)
+<!-- if (nrow(meta_sub) > 0){ -->
+<!--   # Subset. -->
+<!--   cov_sub  <- filter(cov, library_id %in% meta_sub$library_id) -->
+<!--   #asnv_sub <- filter(asnv, library_id %in% meta_sub$library_id) -->
+<!--   snv_sub <-  filter(snv, library_id %in% meta_sub$library_id) -->
 
-  ggplot(cov_sub, aes(x = pos_mean, y = coverage+1, color = coverage+1)) +
-    geom_segment(aes(x = start, xend = end, y = coverage + 1, yend = coverage +1), size = 1) +
-    scale_colour_viridis_c(trans = "log10", direction = -1, breaks = c(1, 10, 100, 1000, 10000),limits = c(1, NA)) +
-    facet_wrap(~library_id, ncol = 2) +
-    scale_y_log10(limits=c(1,100000), breaks = c(1, 10 ,100 ,1000, 10000)) +
-    labs(x = "Genome position [bp]", y = "Coverage [fold]") +
-    theme(legend.position = "none") +
-    geom_text(data = meta_sub, aes(x = 15000, y = 100000, label = paste0("Library conc.: ", round(library_conc, 0), " ng/ul, Coverage: ", coverage)), color = "black", size = 3) +
-    #geom_text(data = asnv_sub, aes(x = position, y = 10, label = paste0(snv_type, "\n", alt_frac, "\n", het)), color = "black", size = 2) +
-    geom_text(data = snv_sub, aes(x = position, y = 1, label = alt), color = "black", size = 2)
-}
-```
+<!--   ggplot(cov_sub, aes(x = pos_mean, y = coverage+1, color = coverage+1)) + -->
+<!--     geom_segment(aes(x = start, xend = end, y = coverage + 1, yend = coverage +1), size = 1) + -->
+<!--     scale_colour_viridis_c(trans = "log10", direction = -1, breaks = c(1, 10, 100, 1000, 10000),limits = c(1, NA)) + -->
+<!--     facet_wrap(~library_id, ncol = 2) + -->
+<!--     scale_y_log10(limits=c(1,100000), breaks = c(1, 10 ,100 ,1000, 10000)) + -->
+<!--     labs(x = "Genome position [bp]", y = "Coverage [fold]") + -->
+<!--     theme(legend.position = "none") + -->
+<!--     geom_text(data = meta_sub, aes(x = 15000, y = 100000, label = paste0("Library conc.: ", round(library_conc, 0), " ng/ul, Coverage: ", coverage)), color = "black", size = 3) + -->
+<!--     #geom_text(data = asnv_sub, aes(x = position, y = 10, label = paste0(snv_type, "\n", alt_frac, "\n", het)), color = "black", size = 2) + -->
+<!--     geom_text(data = snv_sub, aes(x = position, y = 1, label = alt), color = "black", size = 2) -->
+<!-- } -->
+<!-- ``` -->
 
 ## Identify mixed-virus samples (SNV artic)
 
 ```{r, fig.height = 14}
-d_tree <- filter(d, sample_type == "sample")
+d_tree <- filter(d, sample_type == "sample" & genome_qc != "Fail")
 ntree_trim <- drop.tip(ntree, ntree$tip.label[!(ntree$tip.label %in% d_tree$library_id)]) 
 
 p <- ggtree(ntree_trim) %<+% d_tree
@@ -456,7 +392,7 @@ p1 <- p + geom_treescale() +
     geom_tiplab(align = T, linesize = .25, size = 3, aes(color = genome_qc), 
                 offset = 0.00003, fontface = "bold", hjust = 1) +
     scale_color_manual(values = c("#2ca25f", "darkred"), name = "Genome Quality") +
-    guides(colour = guide_legend(override.aes = list(size =4))) +
+    guides(colour = guide_legend(override.aes = list(size = 4))) +
     geom_tippoint(aes(color = genome_qc), size = 2) +
     theme(legend.position = c(0.1,0.75))
 
