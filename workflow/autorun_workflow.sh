@@ -23,7 +23,7 @@ while [ -s /srv/rbd/covid19/processing/missing.txt ]; do
   while : ; do
     old_files=$(find $DIR)
     
-    echo "[$(date +"%T")] Wait to check if it is static. Check again in 30 minutes."
+    echo "[$(date +"%T")] Wait to check if $DIR is static. Check again in 30 minutes."
     
     sleep 30m 
     
@@ -32,7 +32,7 @@ while [ -s /srv/rbd/covid19/processing/missing.txt ]; do
     diff_files=$(diff -q <(echo $old_files) <(echo $new_files))
     
     if [ -z "$diff_files" ]; then 
-      echo "[$(date +"%T")] The directory is static, continue with workflow processing." 
+      echo "[$(date +"%T")] $DIR is static, continue with workflow processing." 
       break
     fi
   done
