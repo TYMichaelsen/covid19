@@ -61,7 +61,7 @@ def _save_seq_grouped_by_lineage_week(data, config):
         .size()\
         .reset_index(name='cases')
     
-    path = _get_path(config, 'sequenced_by_week.csv')
+    path = _get_path(config, 'sequenced_by_lineage_week.csv')
     LOGGER.info('Saving file to {}'.format(path))
     data_df.to_csv(path)
         
@@ -81,7 +81,7 @@ def _save_seq_grouped_by_lineage_region(data, config):
         .size()\
         .reset_index(name='cases')
 
-    path = _get_path(config, 'sequenced_by_region.csv')
+    path = _get_path(config, 'sequenced_by_lineage_region.csv')
     LOGGER.info('Saving file to {}'.format(path))
     data_df.to_csv(path)
 
@@ -101,7 +101,7 @@ def _save_seq_grouped_by_lineage_age(data, config):
         .size()\
         .reset_index(name='cases')
     
-    path = _get_path(config, 'sequenced_by_age.csv')
+    path = _get_path(config, 'sequenced_by_lineage_age.csv')
     LOGGER.info('Saving file to {}'.format(path))
     data_df.to_csv(path)
 
