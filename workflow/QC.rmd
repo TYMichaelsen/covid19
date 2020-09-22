@@ -279,7 +279,7 @@ if (nrow(meta_sub) > 0){
 
 ## Primer pool coverage (HQ+MQ samples only)
 
-```{r,out.width="33%"}
+```{r, out.width="50%",fig.height=6}
 tmp <- filter(d,genome_qc %in% c("HQ","MQ") & sample_type == "sample") %>% 
   group_by(library_id,genome_qc) %>%
   summarise(coverage_1 = median(coverage_1),coverage_2 = median(coverage_2)) %>%
@@ -296,10 +296,7 @@ ggplot(tmp,aes(x = "",y = ratio)) +
   labs(x = "",y = "Pool 1/2 ratio") +
   scale_y_log10() +
   theme_bw()
-```
 
-
-```{r,out.width="66%"}
 ggplot(tmp_long,aes(x = Pool,y = value)) +
   geom_boxplot(outlier.shape = NA) +
   geom_point(position = position_jitter(width = .1)) +
