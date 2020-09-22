@@ -264,14 +264,18 @@ rm -f $OUTDIR/results/filtered.txt
 MAXN=3000
 MINLENGT=25000
 
-for file in $OUTDIR/articminion/*.consensus.fasta; do echo $file; done
-if fgrep ">MN908947.3" $file > /dev/null; then
+# need wierd for loop because some files has ref name as header.
+rm -f $OUTDIR/results/consensus.fasta
+for file in $OUTDIR/articminion/*.consensus.fasta; do 
+  if ! fgrep ">MN908947.3" $file > /dev/null; then
+    cat $file >> $OUTDIR/results/consensus.fasta
+  fi
+done
 
-cat $OUTDIR/articminion/*.consensus.fasta | 
+cat $OUTDIR/results/consensus.fasta |
 awk '/^>/ {printf("\n%s\n",$0);next; } { printf("%s",$0);}  END {printf("\n");}' - | awk 'NR > 1' - | # make one-line fasta.
 awk '/^>/ {sub(/\/ARTIC.*$/,"",$0)}1' - |
-
-awk -v THR=$MAXN -v LEN=$MINLENGTH -v outdir=$OUTDIR '!/^>/ { next } { getline seq; seq2=seq; Nn=gsub(/N/,"",seq) }; {if (length(seq2) > LEN && Nn <= THR) { print $0 "\n" seq2 } else {sub(/^>/,"",$0); print $0 >> outdir"/results/filtered.txt"}}' - > $OUTDIR/results/consensus.fasta # Tidy header.
+awk -v THR=$MAXN -v LEN=$MINLENGTH -v outdir=$OUTDIR '!/^>/ { next } { getline seq; seq2=seq; Nn=gsub(/N/,"",seq) }; {if (length(seq2) > LEN && Nn <= THR) { print $0 "\n" seq2 } else {sub(/^>/,"",$0); print $0 >> outdir"/results/filtered.txt"}}' - > tmp && mv tmp $OUTDIR/results/consensus.fasta # Tidy header.
 
 echo "$(wc -l $OUTDIR/results/filtered.txt | sed 's/ .*//') genomes failed QC, see $OUTDIR/results/filtered.txt"
 
