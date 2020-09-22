@@ -74,7 +74,7 @@ mkdir -p $OUT_DIR
 
 # Copy sample_sheet.csv to output folder
 if [ ! -f "${OUT_DIR}/sample_sheet.csv" ]; then
-  cp $SAMPLE_SHEET ${OUT_DIR}/
+  cp $SAMPLE_SHEET ${OUT_DIR}/sample_sheet.csv
 fi
 
 # Check references 
