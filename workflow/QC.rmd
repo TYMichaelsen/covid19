@@ -35,6 +35,7 @@ library("knitr")
 library("kableExtra")
 library("rjson")
 library("ape")
+library("cowplot")
 ```
 
 ```{r,eval=F}
@@ -246,7 +247,8 @@ ggplot(data = d, aes(x=library_conc, y = coverage, color = genome_qc)) +
        x      = "Library Concentration [ng/ul]",
        colour = "Genome Quality") +
   scale_y_log10() + 
-  scale_colour_manual(values = cols)
+  scale_colour_manual(values = cols) +
+  theme_bw()
 ```
 
 ## Coverage for each primer-pair - controls
@@ -277,19 +279,53 @@ if (nrow(meta_sub) > 0){
 } 
 ```
 
-## Primer pool coverage 
+## Primer pool coverage (HQ+MQ samples only)
 
 ```{r}
-tmp <- group_by(d,library_id) %>%
+tmp <- filter(d,genome_qc %in% c("HQ","MQ") & sample_type == "sample") %>% 
+  group_by(library_id,genome_qc) %>%
   summarise(coverage_1 = median(coverage_1),coverage_2 = median(coverage_2)) %>%
+  mutate(ratio = coverage_1/coverage_2)
+
+tmp_long <- tmp %>%
   pivot_longer(cols = starts_with("coverage"),names_to = "Pool") %>%
   mutate(Pool = gsub("coverage_","",Pool))
 
-ggplot(tmp,aes(x = Pool,y = value)) +
+p1 <- ggplot(tmp,aes(x = "",y = ratio)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_point(position = position_jitter(width = .1)) +
+  geom_hline(yintercept = 1,linetype = "dotted",colour = "red") +
+  labs(x = "",y = "Pool 1/2 ratio") +
+  scale_y_log10() +
+  theme_bw()
+
+p2 <- ggplot(tmp_long,aes(x = Pool,y = value)) +
   geom_boxplot(outlier.shape = NA) +
   geom_point(position = position_jitter(width = .1)) +
   scale_y_log10() +
-  labs(y = "Average coverage")
+  labs(y = "Average coverage") +
+  theme_bw()
+
+plot_grid(p1,p2,nrow = 1,rel_widths = c(.5,1))
+```
+
+## Coverage for each primer-pair (HQ+MQ samples only)
+
+```{r}
+wh <- filter(d, genome_qc %in% c("HQ","MQ") & sample_type == "sample") %>% pull(library_id)
+cov_sub <- subset(cov, library_id %in% wh) %>% 
+  mutate(coverage_relative = ifelse(coverage_relative < 0.01, 0.01, coverage_relative)) %>%
+  left_join(d %>% select(library_id, genome_qc), by = "library_id") %>%
+  mutate(genome_qc = factor(genome_qc, levels = c("HQ", "MQ", "Fail")))
+
+ggplot(cov_sub, aes(x = primer_id, y = coverage_relative, color = coverage_relative)) +
+  geom_jitter(width = 0.1 , height = 0.1) +
+  scale_colour_viridis_b(trans = "log10", direction = -1, breaks = c(0, 0.1, 1, 10, 100)) +
+  scale_x_continuous(breaks = c(0,5,10,15,20,25,30)) +
+  facet_grid(rows = vars(genome_qc)) +
+  scale_y_log10(breaks = c(0.01, 0.1, 1, 10, 100), limits = c(0.005, NA)) +
+  labs(x = "Primer pair", y = "Relative coverage [%]") +
+  theme(legend.position = "none")
 ```
 
 <!-- ## Deletions or insertions in the consensus sequence -->
