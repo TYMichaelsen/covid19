@@ -49,7 +49,9 @@ def _save_seq_grouped_by_week(data, config):
     data_df = pd.DataFrame(data)
     data_df = data_df.groupby([FIELD.epi_week])\
         .size()\
-        .reset_index(name='cases')
+        .reset_index(name='cases')\
+        .rename(columns={FIELD.epi_week:'week'})
+
         
     path = _get_path(config, 'sequenced_by_week.csv')
     LOGGER.info('Saving file to {}'.format(path))
@@ -59,8 +61,9 @@ def _save_seq_grouped_by_lineage_week(data, config):
     data_df = pd.DataFrame(data)
     data_df = data_df.groupby([FIELD.epi_week, FIELD.lineage])\
         .size()\
-        .reset_index(name='cases')
-    
+        .reset_index(name='cases')\
+        .rename(columns={FIELD.epi_week:'week', FIELD.lineage:'lineage'})
+
     path = _get_path(config, 'sequenced_by_lineage_week.csv')
     LOGGER.info('Saving file to {}'.format(path))
     data_df.to_csv(path)
@@ -69,7 +72,8 @@ def _save_seq_grouped_by_region(data, config):
     data_df = pd.DataFrame(data)
     data_df = data_df.groupby([FIELD.region])\
         .size()\
-        .reset_index(name='cases')
+        .reset_index(name='cases')\
+        .rename(columns={'region__autocolor':'region'})
 
     path = _get_path(config, 'sequenced_by_region.csv')
     LOGGER.info('Saving file to {}'.format(path))
@@ -79,7 +83,8 @@ def _save_seq_grouped_by_lineage_region(data, config):
     data_df = pd.DataFrame(data)
     data_df = data_df.groupby([FIELD.region, FIELD.lineage])\
         .size()\
-        .reset_index(name='cases')
+        .reset_index(name='cases')\
+        .rename(columns={FIELD.region:'region', FIELD.lineage:'lineage'})
 
     path = _get_path(config, 'sequenced_by_lineage_region.csv')
     LOGGER.info('Saving file to {}'.format(path))
@@ -97,9 +102,10 @@ def _save_seq_grouped_by_age(data, config):
 
 def _save_seq_grouped_by_lineage_age(data, config):
     data_df = pd.DataFrame(data)
-    data_df = data_df.groupby([FIELD.age_group])\
+    data_df = data_df.groupby([FIELD.age_group, FIELD.lineage])\
         .size()\
-        .reset_index(name='cases')
+        .reset_index(name='cases')\
+        .rename(columns={'':'lineage'})
     
     path = _get_path(config, 'sequenced_by_lineage_age.csv')
     LOGGER.info('Saving file to {}'.format(path))
