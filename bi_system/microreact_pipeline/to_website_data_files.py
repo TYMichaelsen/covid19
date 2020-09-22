@@ -114,7 +114,10 @@ def _save_seq_grouped_by_lineage_age(data, config):
 
 def _save_all_grouped_by_week(linelist_data_df, config):
     linelist_data_df['Week']=linelist_data_df['SampleDate'].apply(datestr_to_week_func())
-    data_df = linelist_data_df.groupby(['Week']).size().reset_index(name='cases')
+    data_df = linelist_data_df.groupby(['Week'])\ 
+        .size()\
+        .reset_index(name='cases')\
+        .rename(columns={'Week':'week'})
     
     path = _get_path(config, 'all_by_week.csv')
     LOGGER.info('Saving file to {}'.format(path))
@@ -122,14 +125,20 @@ def _save_all_grouped_by_week(linelist_data_df, config):
 
 def _save_all_grouped_by_region(linelist_data_df, config):
     linelist_data_df['NUTS2Code']=linelist_data_df['NUTS3Code'].apply(nut3_to_nut2_func())
-    data_df = linelist_data_df.groupby(['NUTS2Code']).size().reset_index(name='cases')
+    data_df = linelist_data_df.groupby(['NUTS2Code'])\ 
+        .size()\
+        .reset_index(name='cases')\
+        .rename(columns={'NUTS2Code':'region'})
 
     path = _get_path(config, 'all_by_region.csv')
     LOGGER.info('Saving file to {}'.format(path))
     data_df.to_csv(path)
 
 def _save_all_grouped_by_age(linelist_data_df, config):
-    data_df = linelist_data_df.groupby(['SampleAgeGrp']).size().reset_index(name='cases')       
+    data_df = linelist_data_df.groupby(['SampleAgeGrp'])\ 
+        .size()\
+        .reset_index(name='cases')\
+        .rename(columns={'SampleAgeGrp':'age_group'})      
     
     path = _get_path(config, 'all_by_age.csv')
     LOGGER.info('Saving file to {}'.format(path))
