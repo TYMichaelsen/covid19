@@ -121,7 +121,7 @@ def _save_all_grouped_by_week(linelist_data_df, config):
     
     path = _get_path(config, 'all_by_week.csv')
     LOGGER.info('Saving file to {}'.format(path))
-    data_df.to_csv(path)
+    _save_df(data_df, path)
 
 def _save_all_grouped_by_region(linelist_data_df, config):
     linelist_data_df['NUTS2Code']=linelist_data_df['NUTS3Code'].apply(nut3_to_nut2_func())
@@ -132,7 +132,7 @@ def _save_all_grouped_by_region(linelist_data_df, config):
 
     path = _get_path(config, 'all_by_region.csv')
     LOGGER.info('Saving file to {}'.format(path))
-    data_df.to_csv(path)
+    _save_df(data_df, path)
 
 def _save_all_grouped_by_age(linelist_data_df, config):
     data_df = linelist_data_df.groupby(['SampleAgeGrp'])\ 
@@ -142,7 +142,7 @@ def _save_all_grouped_by_age(linelist_data_df, config):
     
     path = _get_path(config, 'all_by_age.csv')
     LOGGER.info('Saving file to {}'.format(path))
-    data_df.to_csv(path)
+    _save_df(data_df, path)
 
 def _save_df(data_df, path):
     data_json = data_df.to_json(orient='split')
