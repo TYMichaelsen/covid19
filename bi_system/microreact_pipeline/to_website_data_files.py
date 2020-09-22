@@ -1,6 +1,8 @@
 import pandas as pd
 import logging
 import pysftp
+import json
+
 from os import listdir
 from os.path import isfile, join
 
@@ -51,11 +53,10 @@ def _save_seq_grouped_by_week(data, config):
         .size()\
         .reset_index(name='cases')\
         .rename(columns={FIELD.epi_week:'week'})
-
-        
-    path = _get_path(config, 'sequenced_by_week.csv')
+     
+    path = _get_path(config, 'sequenced_by_week.json')
     LOGGER.info('Saving file to {}'.format(path))
-    data_df.to_csv(path)
+    _save_df(data_df, path)
 
 def _save_seq_grouped_by_lineage_week(data, config):
     data_df = pd.DataFrame(data)
@@ -64,9 +65,9 @@ def _save_seq_grouped_by_lineage_week(data, config):
         .reset_index(name='cases')\
         .rename(columns={FIELD.epi_week:'week', FIELD.lineage:'lineage'})
 
-    path = _get_path(config, 'sequenced_by_lineage_week.csv')
+    path = _get_path(config, 'sequenced_by_lineage_week.json')
     LOGGER.info('Saving file to {}'.format(path))
-    data_df.to_csv(path)
+    _save_df(data_df, path)
         
 def _save_seq_grouped_by_region(data, config):
     data_df = pd.DataFrame(data)
@@ -75,9 +76,9 @@ def _save_seq_grouped_by_region(data, config):
         .reset_index(name='cases')\
         .rename(columns={'region__autocolor':'region'})
 
-    path = _get_path(config, 'sequenced_by_region.csv')
+    path = _get_path(config, 'sequenced_by_region.json')
     LOGGER.info('Saving file to {}'.format(path))
-    data_df.to_csv(path)
+    _save_df(data_df, path)
 
 def _save_seq_grouped_by_lineage_region(data, config):
     data_df = pd.DataFrame(data)
@@ -86,9 +87,9 @@ def _save_seq_grouped_by_lineage_region(data, config):
         .reset_index(name='cases')\
         .rename(columns={FIELD.region:'region', FIELD.lineage:'lineage'})
 
-    path = _get_path(config, 'sequenced_by_lineage_region.csv')
+    path = _get_path(config, 'sequenced_by_lineage_region.json')
     LOGGER.info('Saving file to {}'.format(path))
-    data_df.to_csv(path)
+    _save_df(data_df, path)
 
 def _save_seq_grouped_by_age(data, config):
     data_df = pd.DataFrame(data)
@@ -96,9 +97,9 @@ def _save_seq_grouped_by_age(data, config):
         .size()\
         .reset_index(name='cases')
     
-    path = _get_path(config, 'sequenced_by_age.csv')
+    path = _get_path(config, 'sequenced_by_age.json')
     LOGGER.info('Saving file to {}'.format(path))
-    data_df.to_csv(path)
+    _save_df(data_df, path)
 
 def _save_seq_grouped_by_lineage_age(data, config):
     data_df = pd.DataFrame(data)
@@ -107,9 +108,9 @@ def _save_seq_grouped_by_lineage_age(data, config):
         .reset_index(name='cases')\
         .rename(columns={'':'lineage'})
     
-    path = _get_path(config, 'sequenced_by_lineage_age.csv')
+    path = _get_path(config, 'sequenced_by_lineage_age.json')
     LOGGER.info('Saving file to {}'.format(path))
-    data_df.to_csv(path)
+    _save_df(data_df, path)
 
 def _save_all_grouped_by_week(linelist_data_df, config):
     linelist_data_df['Week']=linelist_data_df['SampleDate'].apply(datestr_to_week_func())
@@ -133,3 +134,9 @@ def _save_all_grouped_by_age(linelist_data_df, config):
     path = _get_path(config, 'all_by_age.csv')
     LOGGER.info('Saving file to {}'.format(path))
     data_df.to_csv(path)
+
+def _save_df(data_df, path):
+    data_json = data_df.to_json(orient='split')
+    data_json = json.loads(data_json)
+    with open(path, 'w') as f:
+        json.dump(data_json, f)
