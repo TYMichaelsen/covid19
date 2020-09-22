@@ -14,11 +14,14 @@ def save_website_files(config, data):
     _save_seq_grouped_by_region(data, config)
     _save_seq_grouped_by_age(data, config)
 
+    _save_seq_grouped_by_lineage_week(data, config)
+    _save_seq_grouped_by_lineage_region(data, config)
+    _save_seq_grouped_by_lineage_age(data, config)
+
     linelist_data = get_linelist(config)
     _save_all_grouped_by_week(linelist_data, config)
     _save_all_grouped_by_region(linelist_data, config)
     _save_all_grouped_by_age(linelist_data, config)
-
 
 def upload_web_files(config):
     host, username, password = config['web_host'], config['web_user'], config['web_password']
@@ -44,7 +47,21 @@ def _get_path(config, filename):
 
 def _save_seq_grouped_by_week(data, config):
     data_df = pd.DataFrame(data)
-    data_df = data_df.groupby([FIELD.epi_week]).size().reset_index(name='cases')
+    data_df = data_df.groupby([FIELD.epi_week])\
+        .size()\
+        .reset_index(name='cases')\
+        .columns = ['id', 'week', 'cases']
+
+    path = _get_path(config, 'sequenced_by_week.csv')
+    LOGGER.info('Saving file to {}'.format(path))
+    data_df.to_csv(path)
+
+def _save_seq_grouped_by_lineage_week(data, config):
+    data_df = pd.DataFrame(data)
+    data_df = data_df.groupby([FIELD.epi_week, FIELD.lineage])\
+        .size()\
+        .reset_index(name='cases')\
+        .columns = ['id', 'lineage-week', 'cases']
     
     path = _get_path(config, 'sequenced_by_week.csv')
     LOGGER.info('Saving file to {}'.format(path))
@@ -52,15 +69,43 @@ def _save_seq_grouped_by_week(data, config):
         
 def _save_seq_grouped_by_region(data, config):
     data_df = pd.DataFrame(data)
-    data_df = data_df.groupby([FIELD.region]).size().reset_index(name='cases')
-    
+    data_df = data_df.groupby([FIELD.region])\
+        .size()\
+        .reset_index(name='cases')\
+        .columns = ['id', 'region', 'cases']
+
+    path = _get_path(config, 'sequenced_by_region.csv')
+    LOGGER.info('Saving file to {}'.format(path))
+    data_df.to_csv(path)
+
+def _save_seq_grouped_by_lineage_region(data, config):
+    data_df = pd.DataFrame(data)
+    data_df = data_df.groupby([FIELD.region, FIELD.lineage])\
+        .size()\
+        .reset_index(name='cases')\
+        .columns = ['id', 'lineage-region', 'cases']
+
     path = _get_path(config, 'sequenced_by_region.csv')
     LOGGER.info('Saving file to {}'.format(path))
     data_df.to_csv(path)
 
 def _save_seq_grouped_by_age(data, config):
     data_df = pd.DataFrame(data)
-    data_df = data_df.groupby([FIELD.age_group]).size().reset_index(name='cases')
+    data_df = data_df.groupby([FIELD.age_group])\
+        .size()\
+        .reset_index(name='cases')\
+        .columns = ['id', 'age', 'cases']
+    
+    path = _get_path(config, 'sequenced_by_age.csv')
+    LOGGER.info('Saving file to {}'.format(path))
+    data_df.to_csv(path)
+
+def _save_seq_grouped_by_lineage_age(data, config):
+    data_df = pd.DataFrame(data)
+    data_df = data_df.groupby([FIELD.age_group])\
+        .size()\
+        .reset_index(name='cases')\
+        .columns = ['id', 'lineage-age', 'cases']
     
     path = _get_path(config, 'sequenced_by_age.csv')
     LOGGER.info('Saving file to {}'.format(path))
