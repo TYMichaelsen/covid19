@@ -41,7 +41,7 @@ while [ -s /srv/rbd/covid19/processing/missing.txt ]; do
   covid19_workflow.sh -i $(basename $DIR) -s aau_long_v3.1
   
   # Remove from missing.txt and add to processed.txt
-  tail -n +2 /srv/rbd/covid19/processing/missing.txt > /srv/rbd/covid19/processing/missing.txt
+  tail -n +2 /srv/rbd/covid19/processing/missing.txt > tmp && mv tmp /srv/rbd/covid19/processing/missing.txt
   cat /srv/rbd/covid19/processing/processed.txt <(echo $DIR) > tmp && mv tmp /srv/rbd/covid19/processing/processed.txt
    
 done
