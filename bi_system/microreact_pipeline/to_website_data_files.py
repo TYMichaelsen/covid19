@@ -110,7 +110,7 @@ def _save_seq_grouped_by_lineage_age(data, config):
     data_df = data_df.groupby([FIELD.age_group, FIELD.lineage])\
         .size()\
         .reset_index(name='cases')\
-        .rename(columns={'':'lineage'})
+        .rename(columns={FIELD.lineage:'lineage'})
     
     path = _get_path(config, 'sequenced_by_lineage_age.json')
     LOGGER.info('Saving file to {}'.format(path))
@@ -118,18 +118,18 @@ def _save_seq_grouped_by_lineage_age(data, config):
 
 def _save_all_grouped_by_week(linelist_data_df, config):
     linelist_data_df['Week']=linelist_data_df['SampleDate'].apply(datestr_to_week_func())
-    data_df = linelist_data_df.groupby(['Week'])\ 
+    data_df = linelist_data_df.groupby(['Week'])\
         .size()\
         .reset_index(name='cases')\
         .rename(columns={'Week':'week'})
     
-    path = _get_path(config, 'all_by_week.csv')
+    path = _get_path(config, 'all_by_week.json')
     LOGGER.info('Saving file to {}'.format(path))
     _save_df(data_df, path)
 
 def _save_all_grouped_by_region(linelist_data_df, config):
     linelist_data_df['NUTS2Code']=linelist_data_df['NUTS3Code'].apply(nut3_to_nut2_func())
-    data_df = linelist_data_df.groupby(['NUTS2Code'])\ 
+    data_df = linelist_data_df.groupby(['NUTS2Code'])\
         .size()\
         .reset_index(name='cases')\
         .rename(columns={'NUTS2Code':'region'})
@@ -141,12 +141,12 @@ def _save_all_grouped_by_region(linelist_data_df, config):
     _save_df(data_df, path)
 
 def _save_all_grouped_by_age(linelist_data_df, config):
-    data_df = linelist_data_df.groupby(['SampleAgeGrp'])\ 
+    data_df = linelist_data_df.groupby(['SampleAgeGrp'])\
         .size()\
         .reset_index(name='cases')\
         .rename(columns={'SampleAgeGrp':'age_group'})      
     
-    path = _get_path(config, 'all_by_age.csv')
+    path = _get_path(config, 'all_by_age.json')
     LOGGER.info('Saving file to {}'.format(path))
     _save_df(data_df, path)
 
@@ -161,7 +161,7 @@ def _map_region(data_df):
     return data_df
 
 def _save_df(data_df, path):
-    data_json = data_df.to_json(orient='split')
+    data_json = data_df.to_json(orient='records')
     data_json = json.loads(data_json)
     with open(path, 'w') as f:
         json.dump(data_json, f)
