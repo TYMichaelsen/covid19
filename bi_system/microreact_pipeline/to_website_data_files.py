@@ -76,6 +76,8 @@ def _save_seq_grouped_by_region(data, config):
         .reset_index(name='cases')\
         .rename(columns={'region__autocolor':'region'})
 
+    data_df = _map_region(data_df)
+
     path = _get_path(config, 'sequenced_by_region.json')
     LOGGER.info('Saving file to {}'.format(path))
     _save_df(data_df, path)
@@ -86,6 +88,8 @@ def _save_seq_grouped_by_lineage_region(data, config):
         .size()\
         .reset_index(name='cases')\
         .rename(columns={FIELD.region:'region', FIELD.lineage:'lineage'})
+    
+    data_df = _map_region(data_df)
 
     path = _get_path(config, 'sequenced_by_lineage_region.json')
     LOGGER.info('Saving file to {}'.format(path))
@@ -130,6 +134,8 @@ def _save_all_grouped_by_region(linelist_data_df, config):
         .reset_index(name='cases')\
         .rename(columns={'NUTS2Code':'region'})
 
+    data_df = _map_region(data_df)
+
     path = _get_path(config, 'all_by_region.csv')
     LOGGER.info('Saving file to {}'.format(path))
     _save_df(data_df, path)
@@ -143,6 +149,16 @@ def _save_all_grouped_by_age(linelist_data_df, config):
     path = _get_path(config, 'all_by_age.csv')
     LOGGER.info('Saving file to {}'.format(path))
     _save_df(data_df, path)
+
+def _map_region(data_df):
+    data_df['region'] = data_df['region'].map({
+        'DK01':'Hovedstaden',
+        'DK02':'Sjælland',
+        'DK03':'Syddanmark',
+        'DK04':'Midtjylland',
+        'DK05':'Nordjylland'
+    })
+    return data_df
 
 def _save_df(data_df, path):
     data_json = data_df.to_json(orient='split')
