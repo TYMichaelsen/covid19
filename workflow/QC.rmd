@@ -212,7 +212,7 @@ d <- d %>%
 
 - `HQ`: A genome with < 130 N's in total.
 - `MQ`: A genome with < 3000 N's in total.
-- `Fail`: A genome with either >3000 N's in total.
+- `Fail`: A genome with >3000 N's in total.
 
 ```{r}
 tab <- d %>% filter(sample_type == "sample") %>%
