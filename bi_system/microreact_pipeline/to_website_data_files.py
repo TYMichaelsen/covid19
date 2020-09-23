@@ -145,7 +145,7 @@ def _save_all_grouped_by_age(linelist_data_df, config):
     _save_df(data_df, path)
 
 def _save_df(data_df, path):
-    data_json = data_df.to_json(orient='split')
+    data_json = data_df.to_json(orient='records')
     data_json = json.loads(data_json)
     with open(path, 'w') as f:
         json.dump(data_json, f)
