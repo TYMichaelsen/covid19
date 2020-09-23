@@ -106,7 +106,7 @@ def _save_seq_grouped_by_lineage_age(data, config):
     data_df = data_df.groupby([FIELD.age_group, FIELD.lineage])\
         .size()\
         .reset_index(name='cases')\
-        .rename(columns={'':'lineage'})
+        .rename(columns={FIELD.lineage:'lineage'})
     
     path = _get_path(config, 'sequenced_by_lineage_age.json')
     LOGGER.info('Saving file to {}'.format(path))
