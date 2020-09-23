@@ -136,7 +136,7 @@ def _save_all_grouped_by_region(linelist_data_df, config):
 
     data_df = _map_region(data_df)
 
-    path = _get_path(config, 'all_by_region.csv')
+    path = _get_path(config, 'all_by_region.json')
     LOGGER.info('Saving file to {}'.format(path))
     _save_df(data_df, path)
 
