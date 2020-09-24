@@ -49,10 +49,10 @@ def _get_path(config, filename):
 
 def _save_seq_grouped_by_week(data, config):
     data_df = pd.DataFrame(data)
-    data_df = data_df.groupby([FIELD.epi_week])\
+    data_df = data_df.groupby([FIELD.sample_date])\
         .size()\
         .reset_index(name='cases')\
-        .rename(columns={FIELD.epi_week:'week'})
+        .rename(columns={FIELD.sample_date:'week'})
      
     path = _get_path(config, 'sequenced_by_week.json')
     LOGGER.info('Saving file to {}'.format(path))
@@ -60,10 +60,10 @@ def _save_seq_grouped_by_week(data, config):
 
 def _save_seq_grouped_by_lineage_week(data, config):
     data_df = pd.DataFrame(data)
-    data_df = data_df.groupby([FIELD.epi_week, FIELD.lineage])\
+    data_df = data_df.groupby([FIELD.sample_date, FIELD.lineage])\
         .size()\
         .reset_index(name='cases')\
-        .rename(columns={FIELD.epi_week:'week', FIELD.lineage:'lineage'})
+        .rename(columns={FIELD.sample_date:'week', FIELD.lineage:'lineage'})
 
     path = _get_path(config, 'sequenced_by_lineage_week.json')
     LOGGER.info('Saving file to {}'.format(path))
