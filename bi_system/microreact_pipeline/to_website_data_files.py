@@ -71,10 +71,10 @@ def _save_seq_grouped_by_lineage_week(data, config):
         
 def _save_seq_grouped_by_region(data, config):
     data_df = pd.DataFrame(data)
-    data_df = data_df.groupby([FIELD.region])\
+    data_df = data_df.groupby([FIELD.region, FIELD.sample_date])\
         .size()\
         .reset_index(name='cases')\
-        .rename(columns={'region__autocolor':'region'})
+        .rename(columns={FIELD.region:'region', FIELD.sample_date:'week'})
 
     data_df = _map_region(data_df)
 
@@ -97,10 +97,11 @@ def _save_seq_grouped_by_lineage_region(data, config):
 
 def _save_seq_grouped_by_age(data, config):
     data_df = pd.DataFrame(data)
-    data_df = data_df.groupby([FIELD.age_group])\
+    data_df = data_df.groupby([FIELD.age_group, FIELD.sample_date])\
         .size()\
-        .reset_index(name='cases')
-    
+        .reset_index(name='cases')\
+        .rename(columns={FIELD.sample_date:'week'})
+        
     path = _get_path(config, 'sequenced_by_age.json')
     LOGGER.info('Saving file to {}'.format(path))
     _save_df(data_df, path)
@@ -129,10 +130,10 @@ def _save_all_grouped_by_week(linelist_data_df, config):
 
 def _save_all_grouped_by_region(linelist_data_df, config):
     linelist_data_df['NUTS2Code']=linelist_data_df['NUTS3Code'].apply(nut3_to_nut2_func())
-    data_df = linelist_data_df.groupby(['NUTS2Code'])\
+    data_df = linelist_data_df.groupby(['NUTS2Code', 'Week'])\
         .size()\
         .reset_index(name='cases')\
-        .rename(columns={'NUTS2Code':'region'})
+        .rename(columns={'NUTS2Code':'region', 'Week':'week'})
 
     data_df = _map_region(data_df)
 
