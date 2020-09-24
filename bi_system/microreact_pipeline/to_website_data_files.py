@@ -84,10 +84,10 @@ def _save_seq_grouped_by_region(data, config):
 
 def _save_seq_grouped_by_lineage_region(data, config):
     data_df = pd.DataFrame(data)
-    data_df = data_df.groupby([FIELD.region, FIELD.lineage])\
+    data_df = data_df.groupby([FIELD.region, FIELD.lineage, FIELD.sample_date])\
         .size()\
         .reset_index(name='cases')\
-        .rename(columns={FIELD.region:'region', FIELD.lineage:'lineage'})
+        .rename(columns={FIELD.region:'region', FIELD.lineage:'lineage', FIELD.sample_date:'week'})
     
     data_df = _map_region(data_df)
 
