@@ -101,17 +101,17 @@ def _save_seq_grouped_by_age(data, config):
         .size()\
         .reset_index(name='cases')\
         .rename(columns={FIELD.sample_date:'week'})
-        
+
     path = _get_path(config, 'sequenced_by_age.json')
     LOGGER.info('Saving file to {}'.format(path))
     _save_df(data_df, path)
 
 def _save_seq_grouped_by_lineage_age(data, config):
     data_df = pd.DataFrame(data)
-    data_df = data_df.groupby([FIELD.age_group, FIELD.lineage])\
+    data_df = data_df.groupby([FIELD.age_group, FIELD.lineage, FIELD.sample_date])\
         .size()\
         .reset_index(name='cases')\
-        .rename(columns={FIELD.lineage:'lineage'})
+        .rename(columns={FIELD.lineage:'lineage', FIELD.sample_date:'week'})
     
     path = _get_path(config, 'sequenced_by_lineage_age.json')
     LOGGER.info('Saving file to {}'.format(path))
