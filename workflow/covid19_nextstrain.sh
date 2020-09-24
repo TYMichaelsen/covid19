@@ -10,6 +10,7 @@ Arguments:
     -h  Show this help text.
     -m  Metadata file.
     -s  Sequence file.
+    -g  Flag to build global dataset. Default is False, not to build, only take all Danish data and subsample global data
     -o  (Develop only) Specify output directory.
     -t  (Develop only) Number of threads.
     -f  (Develop only) Force override existing output directory. 
@@ -20,7 +21,7 @@ Arguments:
 ### Terminal Arguments ---------------------------------------------------------
 
 # Import user arguments
-while getopts ':hfpm:s:o:t:k:' OPTION; do
+while getopts ':hfpgm:s:o:t:k:' OPTION; do
   case $OPTION in
     h) echo "$USAGE"; exit 1;;
     m) META=$OPTARG;;
@@ -29,6 +30,7 @@ while getopts ':hfpm:s:o:t:k:' OPTION; do
     t) THREADS=$OPTARG;;
     f) FORCE=1;;
     p) PULL_GITHUB=1;;
+    g) BUILD_GRLOBAL=1;;
     k) SNAKE_ADD=$OPTARG;;
     :) printf "missing argument for -$OPTARG\n" >&2; exit 1;;
     \?) printf "invalid option for -$OPTARG\n" >&2; exit 1;;
@@ -91,7 +93,13 @@ mkdir -p $OUTDIR/data
 GISAID_META=$(findTheLatest "${DISTDIR}/global_data/*tsv")
 GISAID_FASTA=$(findTheLatest "${DISTDIR}/global_data/*fasta")
 NCOV_ROOT="/opt/nextstrain/ncov-aau"
-ARGSTR="--cores $THREADS --profile my_profiles/denmark --config metadata=$OUTDIR/data/metadata_nextstrain.tsv sequences=$OUTDIR/data/masked.fasta ${SNAKE_ADD}"
+if [ -n "$BUILD_GLOBAL" ]; then
+    BPROFILE="my_profiles/denmark"
+else
+    BPROFILE="my_profiles/denmarkonly"
+fi
+
+ARGSTR="--cores $THREADS --profile $BPROFILE --config metadata=$OUTDIR/data/metadata_nextstrain.tsv sequences=$OUTDIR/data/masked.fasta ${SNAKE_ADD}"
 
 # Run nextstrain 
 ###############################################################################
@@ -146,7 +154,7 @@ if [ $CONDA_RUN -eq 1 ]; then
         $NCOV_ROOT/scripts/assign_clades.py --nthreads $THREADS  \
                                             python $NCOV_ROOT/scripts/assign_clades.py --nthreads $THREADS  \
                                             --alignment $OUTDIR/results/masked.fasta \
-                                            --clades $OUTDIR/results/DenmarkOnly/temp_subclades.tsv \
+                                            --clades $OUTDIR/results/Denmark/temp_subclades.tsv \
                                             --chunk-size  $THREADS \
                                             --output $OUTDIR/results/global_clades_assignment.tsv
     fi
@@ -198,7 +206,7 @@ if [ -f auspice/ncov_DenmarkGlobal.json  ]; then
     echo Running assign_clades ...
     python $NCOV_ROOT/scripts/assign_clades.py --nthreads $THREADS  \
                                        --alignment $OUTDIR/results/masked.fasta \
-                                       --clades $OUTDIR/results/DenmarkOnly/temp_subclades.tsv \
+                                       --clades $OUTDIR/results/Denmark/temp_subclades.tsv \
                                        --chunk-size  $THREADS \
                                        --output $OUTDIR/results/global_clades_assignment.tsv
 fi
