@@ -141,10 +141,10 @@ def _save_all_grouped_by_region(linelist_data_df, config):
     _save_df(data_df, path)
 
 def _save_all_grouped_by_age(linelist_data_df, config):
-    data_df = linelist_data_df.groupby(['SampleAgeGrp'])\
+    data_df = linelist_data_df.groupby(['SampleAgeGrp', 'Week'])\
         .size()\
         .reset_index(name='cases')\
-        .rename(columns={'SampleAgeGrp':'age_group'})      
+        .rename(columns={'SampleAgeGrp':'age_group', 'Week':'week'})      
     
     path = _get_path(config, 'all_by_age.json')
     LOGGER.info('Saving file to {}'.format(path))
