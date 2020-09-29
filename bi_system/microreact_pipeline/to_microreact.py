@@ -4,7 +4,7 @@ import logging
 import sys
 import copy
 
-from config_controller import get_config, set_config_nextstrain, update_latest_nextstrain
+from config_controller import get_config, set_config_nextstrain, set_config_linelist, update_latest_nextstrain
 from data_cleansing_metadata import check_file, check_errors
 from convert_metadata_to_mysql import get_connection, create_schema, add_data, create_fk
 from convert_to_microreact_files import execute_query, convert_to_microreact_format, get_tree, replace_tree_ids, filter_data_by_min_cases
@@ -91,7 +91,10 @@ if __name__ == '__main__':
 
     set_logging(config)
     update_latest_nextstrain(config)
+    
     config = set_config_nextstrain(config, date_str, date_suffix)
+    config = set_config_linelist(config, date_str)
+
     create_metadata_files(config)
     convert_to_sql(config)
     data, tree = convert_to_microreact(config)
