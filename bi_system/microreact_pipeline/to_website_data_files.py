@@ -35,14 +35,14 @@ def upload_web_files(config):
     try:
         for file in files:
             LOGGER.debug(file)
-        # srv = pysftp.Connection(host, username, password = password) 
-        # with srv.cd(path):
-        #     for file in files:
-        #         srv.put(file)
-        # srv.close()     
+        srv = pysftp.Connection(host, username, password = password) 
+        with srv.cd(path):
+            for file in files:
+                srv.put(file)
+        srv.close()     
     except:
         LOGGER.error('Failed to sftp files to the web server.')
-        # srv.close()
+        srv.close()
 
 def _get_path(config, filename):
     return '{}/{}'.format(config['out_web_dir'], filename)
