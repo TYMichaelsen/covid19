@@ -2,6 +2,7 @@ import pandas as pd
 import logging
 import pysftp
 import json
+import sys
 
 from os import listdir
 from os.path import isfile, join
@@ -32,17 +33,18 @@ def upload_web_files(config):
     file_dir = config['out_web_dir']
     files = [join(file_dir, f) for f in listdir(file_dir) if isfile(join(file_dir, f))]
     
-    try:
-        for file in files:
-            LOGGER.debug(file)
-        srv = pysftp.Connection(host, username, password = password) 
-        with srv.cd(path):
-            for file in files:
-                srv.put(file)
-        srv.close()     
-    except:
-        LOGGER.error('Failed to sftp files to the web server.')
-        srv.close()
+    # try:           
+    #     srv = pysftp.Connection(host, username, password) 
+    #     with srv.cd(path):
+    #         for file in files:
+    #             LOGGER.debug("Sending {}".format(file))
+    #             srv.put(file)
+    #     srv.close()     
+    # except:
+    #     e = sys.exc_info()
+    #     LOGGER.error('Failed to sftp files to the web server.')
+    #     LOGGER.error(e)
+    #     srv.close()
 
 def _get_path(config, filename):
     return '{}/{}'.format(config['out_web_dir'], filename)
