@@ -72,6 +72,7 @@ From: covid19_1.5.sif
   conda run -n pangolin python setup.py install
   # Force update pangolin's important dependecy
   conda run -n pangolin pip install git+https://github.com/hCoV-2019/lineages.git --upgrade
+  conda run -n pangolin pip install git+https://github.com/cov-lineages/pangoLEARN.git --upgrade
   cd - ; rm -rf pangolin # Go back to default directory and remove pangolin source
 
   # Upgrade auspice
