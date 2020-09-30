@@ -99,7 +99,11 @@ else
     BPROFILE="my_profiles/denmarkonly"
 fi
 
-ARGSTR="--cores $THREADS --profile $BPROFILE --config metadata=$OUTDIR/data/metadata_nextstrain.tsv sequences=$OUTDIR/data/masked.fasta ${SNAKE_ADD}"
+
+gisaid_date=$(basename $GISAID_META|sed -e 's/metadata_//;s/.tsv//')
+data_date=$(basename -s "_export" $(dirname $SEQS))
+
+ARGSTR="--cores $THREADS --profile $BPROFILE --config gisaid_date=$gisaid_date data_date=$data_date metadata=$OUTDIR/data/metadata_nextstrain.tsv sequences=$OUTDIR/data/masked.fasta ${SNAKE_ADD}"
 
 # Run nextstrain 
 ###############################################################################
@@ -200,7 +204,7 @@ cd $OUTDIR/ncov-aau
 snakemake ${ARGSTR}
 
 # Move results and auspice directories to $OUTDIR when snakemake finishes successfully
-if [ -f auspice/ncov_DenmarkGlobal.json  ]; then
+if [ ! -d $OUTDIR/auspice  ]; then
     echo Copying output to $OUTDIR ...
     cp -r results auspice $OUTDIR
     echo Running assign_clades ...
