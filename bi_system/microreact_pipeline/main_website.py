@@ -2,6 +2,7 @@ import argparse
 import logging
 
 from to_website_data_files import save_website_files, upload_web_files
+from website_stats import send_stats
 from config_controller import get_config
 
 def set_logging(config):
@@ -18,3 +19,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     config = get_config(args.config_filepath, './microreact_pipeline/config/web_template.json')
+    send_stats(config)
