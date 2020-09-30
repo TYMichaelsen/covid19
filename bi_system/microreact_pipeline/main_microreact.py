@@ -9,7 +9,6 @@ from data_cleansing_metadata import check_file, check_errors
 from convert_metadata_to_mysql import get_connection, create_schema, add_data, create_fk
 from convert_to_microreact_files import execute_query, convert_to_microreact_format, get_tree, replace_tree_ids, filter_data_by_min_cases
 from convert_to_microreact_files import get_unmatched_ids_in_tree, add_empty_records, save_csv, save_tree
-from to_website_data_files import save_website_files, upload_web_files
 
 def set_logging(config):
     logging.basicConfig(level=logging.DEBUG, filename=config['microreact_log_path'], filemode='w')
@@ -80,12 +79,12 @@ def save_micro_react_files(config, data, tree):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('config_filepath', type=str, default="config.json", help='path to the config file containing the file locations, see config.json.template in this directory')
+    parser.add_argument('config_filepath', type=str, default='config/microreact.json', help='path to the config file containing the file locations')
     parser.add_argument('--date', type=str, default="latest", help="nextstrain date")
     parser.add_argument('--date_folder_suffix', type=str, default="nextstrain", help="date folder suffix (e.g. 'nextstrain' in '2020-05-10_nextstrain')")
     args = parser.parse_args()
 
-    config = get_config(args.config_filepath)
+    config = get_config(args.config_filepath, './config/microreact_template.json')
     date_str = args.date
     date_suffix = args.date_folder_suffix
 
@@ -98,7 +97,4 @@ if __name__ == '__main__':
     create_metadata_files(config)
     convert_to_sql(config)
     data, tree = convert_to_microreact(config)
-    
     save_micro_react_files(config, copy.deepcopy(data), tree)
-    save_website_files(config, data)
-    upload_web_files(config)

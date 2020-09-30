@@ -1,6 +1,6 @@
 {
     "cleansing_log_file":"/srv/rbd/covid19/bisystem/staging/cleansing.log",
-    "raw_ssi_file": "covid19/metadata/raw-ssi-metadata/Lineliste_040920.xlsx",
+    "raw_ssi_file": "/srv/rbd/covid19/metadata/raw-ssi-metadata/Lineliste_040920.xlsx",
     "sequenced_metadata_file": "/srv/rbd/covid19/nextstrain/2020-08-31_nextstrain/data/metadata_full.tsv",
     "staged_metadata_file":"/srv/rbd/covid19/bisystem/staging/danish_metadata.tsv",
     "global_clade_assignment_file": "/srv/rbd/covid19/nextstrain/2020-08-31_nextstrain/results/DenmarkOnly/clade_assignment.tsv",
@@ -11,5 +11,8 @@
     "clade_tree_path" :"/srv/rbd/covid19/nextstrain/2020-08-31_nextstrain/results/DenmarkOnly/tree.nwk",
     "out_react_tsv": "/srv/rbd/covid19/bisystem/staging/microreact.tsv",
     "out_react_nwk": "/srv/rbd/covid19/bisystem/staging/microreact.nwk",
+    "out_web_dir": "/srv/rbd/covid19/bisystem/staging/web",
+    "web_host":"covid19.aau.dk", "web_user":"svc_covid19-aau-dk@srv.aau.dk", "web_password":"s5Cgb6eLGHm6nbTL%jCXmzcviw7drVBa",
+    "web_path":"/srv/web/covid19.aau.dk/https",
     "microreact_log_path":"/srv/rbd/covid19/bisystem/staging/microreact.log"
 }

@@ -10,12 +10,12 @@ from shutil import copyfile
 
 LOGGER = logging.getLogger("config controller")
 
-def get_config(config_filepath):
+def get_config(config_filepath, config_template_filepath):
     config_filepath = check_file(config_filepath)
     with open(config_filepath, 'r') as f:
         config = json.load(f)
     
-    with open('config.json.template', 'r') as f:
+    with open(config_template_filepath, 'r') as f:
         expected_config = json.load(f)
     
     for k in expected_config.keys():
