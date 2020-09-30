@@ -84,7 +84,7 @@ if __name__ == '__main__':
     parser.add_argument('--date_folder_suffix', type=str, default="nextstrain", help="date folder suffix (e.g. 'nextstrain' in '2020-05-10_nextstrain')")
     args = parser.parse_args()
 
-    config = get_config(args.config_filepath, './config/microreact_template.json')
+    config = get_config(args.config_filepath, './microreact_pipeline/config/microreact_template.json')
     date_str = args.date
     date_suffix = args.date_folder_suffix
 

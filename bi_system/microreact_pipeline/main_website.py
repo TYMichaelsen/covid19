@@ -17,4 +17,4 @@ if __name__ == '__main__':
     parser.add_argument('config_filepath', type=str, default="config/web.json", help='path to the config file containing the file locations')
     args = parser.parse_args()
 
-    config = get_config(args.config_filepath, './config/web_template.json')
+    config = get_config(args.config_filepath, './microreact_pipeline/config/web_template.json')
