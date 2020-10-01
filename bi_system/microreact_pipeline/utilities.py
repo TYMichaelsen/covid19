@@ -1,3 +1,7 @@
+import sys
+import json
+import pysftp
+
 from datetime import datetime
 from pandas import read_excel
 
@@ -11,3 +15,22 @@ def datestr_to_week_func():
 
 def nut3_to_nut2_func():
       return  lambda nut3: nut3[:-1] if type(nut3) is str else ''
+
+def save_df(data_df, path):
+    data_json = data_df.to_json(orient='records')
+    data_json = json.loads(data_json)
+    with open(path, 'w') as f:
+        json.dump(data_json, f)
+
+def stfp_file(host, user, password, destination_path, local_path, logger):
+    try:
+        srv = pysftp.Connection(host, user, password)
+        with srv.cd(destination_path):
+            logger.debug('Sending {}...'.format(local_path))
+            srv.put(local_path)
+        srv.close()
+    except:
+        e = sys.exc_info()
+        logger.error('Failed to sftp {} to the web server.'.format(local_path))
+        logger.error(e)
+        srv.close()
