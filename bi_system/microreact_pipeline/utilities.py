@@ -24,9 +24,12 @@ def save_df(data_df, path):
 
 def stfp_file(host, user, password, destination_path, local_path, logger):
     try:
-        srv = pysftp.Connection(host, user, password)
+        logger.info('Attempting to connect to {}'.format(host))
+        srv = pysftp.Connection(host, user, password=password)
+        logger.info('Connected to {}'.format(host))
         with srv.cd(destination_path):
-            logger.debug('Sending {}...'.format(local_path))
+            logger.info('Moved to {}'.format(destination_path))
+            logger.info('Sending {}...'.format(local_path))
             srv.put(local_path)
         srv.close()
     except:
