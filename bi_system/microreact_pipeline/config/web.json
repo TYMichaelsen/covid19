@@ -1,7 +1,7 @@
 {
   "stats_file":"srv/rbd/tym/webpage/2020-09-30-07-44_key-numbers.tsv",
   "host":"covid19.aau.dk", "user":"svc_covid19-aau-dk@srv.aau.dk", "password":"s5Cgb6eLGHm6nbTL%jCXmzcviw7drVBa",
-  "stats_server_path":"/srv/web/covid19.aau.dk/https",
+  "stats_server_path":"/srv/web/covid19.aau.dk/https/data",
   "stats_save_path":"/srv/rbd/covid19/bisystem/staging/web/stats.json",
   "log_filepath":"/srv/rbd/covid19/bisystem/staging/web.log"
 }
