@@ -12,7 +12,5 @@
   "out_react_tsv": "/srv/rbd/covid19/bisystem/staging/microreact.tsv",
   "out_react_nwk": "/srv/rbd/covid19/bisystem/staging/microreact.nwk",
   "out_web_dir": "/srv/rbd/covid19/bisystem/staging/web",
-  "web_host":"...", "web_user":"...", "web_password":"...",
-  "web_path":"/srv/web/covid19.aau.dk/https",
   "microreact_log_path":"/srv/rbd/covid19/bisystem/staging/microreact.log"
 }
