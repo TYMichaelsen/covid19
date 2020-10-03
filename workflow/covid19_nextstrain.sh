@@ -164,6 +164,8 @@ else
 
     TimeStamp=$(date +%y%m%d_%H%M)
 
+    echo ${Timetamp}: ${USER}, PWD: ${PWD} >>${OUTDIR}/run.log
+    echo ${Timetamp}: "$0 $@" >>${OUTDIR}/run.log
     echo ${Timetamp}: Singularity Image Used: $SINGIMG >> ${OUTDIR}/run.log
     echo ${Timetamp}: snakemake ${ARGSTR} >> $OUTDIR/run.log
     singularity exec  -B /srv/rbd:/srv/rbd \
