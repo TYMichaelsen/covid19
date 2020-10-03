@@ -116,7 +116,7 @@ ARGSTR="$ARGSTR outdir=${OUTDIR}/results out_auspice=${OUTDIR}/aupsice ${SNAKE_A
 if [ -d $OUTDIR -a x${PULL_GITHUB} != x ]; then
     cd $OUTDIR
     wget https://github.com/biocyberman/ncov/archive/aau.zip
-    unzip aau.zip && rm aau.zip
+    unzip -o aau.zip && rm aau.zip
     cd -
 fi
 
