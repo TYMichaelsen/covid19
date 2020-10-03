@@ -163,6 +163,8 @@ if [ $CONDA_RUN -eq 1 ]; then
                                             --output $OUTDIR/results/global_clades_assignment.tsv
     fi
 else
+    echo Singularity Image: $SINGIMG > ${OUTDIR}/run.log
+    echo snakemake ${ARGSTR} >> $OUTDIR/run.log
     singularity exec  -B /srv/rbd:/srv/rbd \
                 -B $HOME:$HOME \
                 $SINGIMG bash <<HEREDOC
