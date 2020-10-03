@@ -164,10 +164,10 @@ else
 
     TimeStamp=$(date +%y%m%d_%H%M)
 
-    echo ${Timetamp}: ${USER}, PWD: ${PWD} >>${OUTDIR}/run.log
-    echo ${Timetamp}: "$0 $@" >>${OUTDIR}/run.log
-    echo ${Timetamp}: Singularity Image Used: $SINGIMG >> ${OUTDIR}/run.log
-    echo ${Timetamp}: snakemake ${ARGSTR} >> $OUTDIR/run.log
+    echo ${TimeStamp}: ${USER}, PWD: ${PWD} >>${OUTDIR}/run.log
+    echo ${TimeStamp}: "$0 $@" >>${OUTDIR}/run.log
+    echo ${TimeStamp}: Singularity Image Used: $SINGIMG >> ${OUTDIR}/run.log
+    echo ${TimeStamp}: snakemake ${ARGSTR} >> $OUTDIR/run.log
     singularity exec  -B /srv/rbd:/srv/rbd \
                 -B $HOME:$HOME \
                 $SINGIMG bash <<HEREDOC
