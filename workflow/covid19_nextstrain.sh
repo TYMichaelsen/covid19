@@ -71,7 +71,7 @@ if [ -z ${SEQS+x} ]; then
 fi
 
 if [ -z ${OUTDIR+x} ]; then 
-  OUTDIR=$(basename -s _export $(findTheLatest "${DISTDIR}/genomes/*export"))_nextstrain
+    OUTDIR=${NEXTSTRAINOUT}/$(basename -s _export $(findTheLatest "${DISTDIR}/genomes/*export"))_nextstrain
 fi
 
 GENOMEDIR=$(dirname $SEQS)
