@@ -11,6 +11,7 @@ Arguments:
     -m  Metadata file.
     -s  Sequence file.
     -g  Flag to build global dataset. Default is False, not to build, only take all Danish data and subsample global data
+    -i  (Develop only) Specify a specific singularity image to use.
     -o  (Develop only) Specify output directory.
     -t  (Develop only) Number of threads.
     -f  (Develop only) Force override existing output directory. 
@@ -21,13 +22,14 @@ Arguments:
 ### Terminal Arguments ---------------------------------------------------------
 
 # Import user arguments
-while getopts ':hfpgm:s:o:t:k:' OPTION; do
+while getopts ':hfpgm:s:o:t:k:i:' OPTION; do
   case $OPTION in
     h) echo "$USAGE"; exit 1;;
     m) META=$OPTARG;;
     s) SEQS=$OPTARG;;
     o) OUTDIR=$OPTARG;;
     t) THREADS=$OPTARG;;
+    i) SINGIMG=$OPTARG;;
     f) FORCE=1;;
     p) PULL_GITHUB=1;;
     g) BUILD_GRLOBAL=1;;
@@ -51,8 +53,9 @@ if [ -z ${THREADS+x} ]; then THREADS=64; fi;
 source ${THISDIR}/utils.sh
 
 IMGDIR="/srv/rbd/thecontainer"
-SINGIMG=$(findTheLatest "${IMGDIR}/*sif")
-# SINGIMG=singularity/covid19_latest.sif
+if [ -z "$SINGIMG" ]; then
+    SINGIMG=$(findTheLatest "${IMGDIR}/*sif")
+fi
 echo Using Singularity image: $SINGIMG
 # DISTDIR="/srv/rbd/covid19/current"
 
