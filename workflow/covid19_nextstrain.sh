@@ -127,7 +127,7 @@ if [ $CONDA_RUN -eq 1 ]; then
     NCOV_ROOT="/srv/rbd/bin/ncov.1308"
     if [ -d ${OUTDIR}/ncov-aau ]; then
         NCOV_ROOT="${OUTDIR}/ncov-aau"
-    if
+    fi
     AUGUR_ENV="/srv/rbd/bin/conda/envs/augur"
 
     # cd $OUTDIR
@@ -161,8 +161,11 @@ if [ $CONDA_RUN -eq 1 ]; then
     snakemake ${ARGSTR}
 
 else
-    echo Singularity Image: $SINGIMG > ${OUTDIR}/run.log
-    echo snakemake ${ARGSTR} >> $OUTDIR/run.log
+
+    TimeStamp=$(date +%y%m%d_%H%M)
+
+    echo ${Timetamp}: Singularity Image Used: $SINGIMG >> ${OUTDIR}/run.log
+    echo ${Timetamp}: snakemake ${ARGSTR} >> $OUTDIR/run.log
     singularity exec  -B /srv/rbd:/srv/rbd \
                 -B $HOME:$HOME \
                 $SINGIMG bash <<HEREDOC
