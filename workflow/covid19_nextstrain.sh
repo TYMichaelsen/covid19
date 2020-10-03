@@ -103,12 +103,14 @@ fi
 gisaid_date=$(basename $GISAID_META|sed -e 's/metadata_//;s/.tsv//')
 data_date=$(basename -s "_export" $(dirname $SEQS))
 
-ARGSTR="--cores $THREADS --profile $BPROFILE --config gisaid_date=$gisaid_date data_date=$data_date metadata=$OUTDIR/data/metadata_nextstrain.tsv sequences=$OUTDIR/data/masked.fasta ${SNAKE_ADD}"
+ARGSTR="--cores $THREADS --profile $BPROFILE --config gisaid_date=$gisaid_date data_date=$data_date "
+ARGSTR="$ARGSTR metadata=$OUTDIR/data/metadata_nextstrain.tsv sequences=$OUTDIR/data/masked.fasta "
+ARGSTR="$ARGSTR outdir=${OUTDIR}/results out_auspice=${OUTDIR}/aupsice ${SNAKE_ADD}"
 
 # Run nextstrain 
 ###############################################################################
 
-if [ -d $OUTDIR -a x${PULL_GITHUB} != x  ]; then
+if [ -d $OUTDIR -a x${PULL_GITHUB} != x ]; then
     cd $OUTDIR
     wget https://github.com/biocyberman/ncov/archive/aau.zip
     unzip aau.zip && rm aau.zip
@@ -152,16 +154,6 @@ if [ $CONDA_RUN -eq 1 ]; then
     source activate  $AUGUR_ENV
     snakemake ${ARGSTR}
 
-    # Move results and auspice directories to $OUTDIR when snakemake finishes successfully
-    if [ $? -eq 0 ]; then
-        cp -r results auspice $OUTDIR
-        $NCOV_ROOT/scripts/assign_clades.py --nthreads $THREADS  \
-                                            python $NCOV_ROOT/scripts/assign_clades.py --nthreads $THREADS  \
-                                            --alignment $OUTDIR/results/masked.fasta \
-                                            --clades $OUTDIR/results/Denmark/temp_subclades.tsv \
-                                            --chunk-size  $THREADS \
-                                            --output $OUTDIR/results/global_clades_assignment.tsv
-    fi
 else
     echo Singularity Image: $SINGIMG > ${OUTDIR}/run.log
     echo snakemake ${ARGSTR} >> $OUTDIR/run.log
@@ -204,18 +196,6 @@ if [ ! -d $OUTDIR/ncov-aau ]; then
 fi
 cd $OUTDIR/ncov-aau
 snakemake ${ARGSTR}
-
-# Move results and auspice directories to $OUTDIR when snakemake finishes successfully
-if [ ! -d $OUTDIR/auspice  ]; then
-    echo Copying output to $OUTDIR ...
-    cp -r results auspice $OUTDIR
-    echo Running assign_clades ...
-    python $NCOV_ROOT/scripts/assign_clades.py --nthreads $THREADS  \
-                                       --alignment $OUTDIR/results/masked.fasta \
-                                       --clades $OUTDIR/results/Denmark/temp_subclades.tsv \
-                                       --chunk-size  $THREADS \
-                                       --output $OUTDIR/results/global_clades_assignment.tsv
-fi
 HEREDOC
 
 fi
