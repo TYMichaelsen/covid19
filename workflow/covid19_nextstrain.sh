@@ -125,6 +125,9 @@ CONDA_RUN=0 # preserve conda-based setup for convenience.
 if [ $CONDA_RUN -eq 1 ]; then
 
     NCOV_ROOT="/srv/rbd/bin/ncov.1308"
+    if [ -d ${OUTDIR}/ncov-aau ]; then
+        NCOV_ROOT="${OUTDIR}/ncov-aau"
+    if
     AUGUR_ENV="/srv/rbd/bin/conda/envs/augur"
 
     # cd $OUTDIR
