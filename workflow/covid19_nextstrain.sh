@@ -108,7 +108,7 @@ data_date=$(basename -s "_export" $(dirname $SEQS))
 
 ARGSTR="--cores $THREADS --profile $BPROFILE --config gisaid_date=$gisaid_date data_date=$data_date "
 ARGSTR="$ARGSTR metadata=$OUTDIR/data/metadata_nextstrain.tsv sequences=$OUTDIR/data/masked.fasta "
-ARGSTR="$ARGSTR outdir=${OUTDIR}/results out_auspice=${OUTDIR}/aupsice ${SNAKE_ADD}"
+ARGSTR="$ARGSTR outdir=${OUTDIR}/results out_auspice=${OUTDIR}/auspice ${SNAKE_ADD}"
 
 # Run nextstrain 
 ###############################################################################
