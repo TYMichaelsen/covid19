@@ -5,6 +5,7 @@ build
 singularity/.Rhistory
 workflow/dependencies/ref/human_g1k_v37.fasta
 bi_system/config.json
+bi_system/microreact_pipeline/config/web.json
 .Rproj.user
 .DS_Store
 **/__pycache__

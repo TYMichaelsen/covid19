@@ -1,6 +1,7 @@
 import pandas as pd 
-from utilities import datestr_to_week_func
+import logging
 
+from utilities import datestr_to_week_func
 
 def get_sequenced_grouped_by_week_df(df, config):
     df['SampleDate'] = df['SampleDate'].apply(datestr_to_week_func())

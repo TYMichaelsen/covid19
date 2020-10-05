@@ -42,12 +42,12 @@ def send_stats(config):
     save_df_as_json(df, config['stats_save_path'])
     stfp_file(config['host'], config['user'], config['password'], config['stats_server_path'], config['stats_save_path'], logger)
 
-def send_df(config, data):
+def send_data(config, data):
     logger = logging.getLogger('web data')
     for e in data:
         path = '{}/{}.json'.format(config['data_save_path'], e['name'])
         save_df_as_json(e['df'], path)
-        # stfp_file(config['host'], config['user'], config['password'], config['data_server_path'], path, logger)
+        stfp_file(config['host'], config['user'], config['password'], config['data_server_path'], path, logger)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -56,5 +56,7 @@ if __name__ == '__main__':
 
     config = get_config(args.config_filepath, './microreact_pipeline/config/web_template.json')
     set_logging(config)
-    #send_stats(config)
-    aggregate_data(config)
+    
+    send_stats(config)
+    website_data = aggregate_data(config)
+    send_data(config, website_data)
