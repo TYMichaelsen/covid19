@@ -24,7 +24,7 @@ def datestr_to_week_and_year_func():
 def nut3_to_nut2_func():
       return  lambda nut3: nut3[:-1] if type(nut3) is str else ''
 
-def save_df(data_df, path):
+def save_df_as_json(data_df, path):
     data_json = data_df.to_json(orient='records')
     data_json = json.loads(data_json)
     with open(path, 'w') as f:
