@@ -1,3 +1,8 @@
 {
-  "stats_file":"srv/rbd/tym/webpage/2020-09-30-07-44_key-numbers.tsv"
+  "data_file":"",
+  "stats_file":"",
+  "host":"", "user":"", "password":"",
+  "stats_server_path":"",
+  "stats_save_path":"",
+  "log_filepath":""
 }

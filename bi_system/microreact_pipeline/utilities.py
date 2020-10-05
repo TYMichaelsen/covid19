@@ -13,6 +13,14 @@ def get_linelist(config):
 def datestr_to_week_func():
       return lambda date: datetime.strptime(date, '%Y-%m-%d').isocalendar()[1]
 
+def datestr_to_year_func():
+      return lambda date: datetime.strptime(date, '%Y-%m-%d').year
+
+def datestr_to_week_and_year_func():
+      return lambda date: '{},{}'.format(
+            datetime.strptime(date, '%Y-%m-%d').isocalendar()[1],
+            datetime.strptime(date, '%Y-%m-%d').year)
+
 def nut3_to_nut2_func():
       return  lambda nut3: nut3[:-1] if type(nut3) is str else ''
 
