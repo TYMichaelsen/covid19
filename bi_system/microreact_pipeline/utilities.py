@@ -38,7 +38,7 @@ def stfp_file(host, user, password, destination_path, local_path, logger):
         with srv.cd(destination_path):
             logger.info('Moved to {}'.format(destination_path))
             logger.info('Sending {}...'.format(local_path))
-            srv.put(local_path)
+            srv.put(local_path, preserve_mtime=True)
         srv.close()
     except:
         e = sys.exc_info()
