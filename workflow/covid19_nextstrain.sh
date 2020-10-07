@@ -32,7 +32,7 @@ while getopts ':hfpgm:s:o:t:k:i:' OPTION; do
     i) SINGIMG=$OPTARG;;
     f) FORCE=1;;
     p) PULL_GITHUB=1;;
-    g) BUILD_GRLOBAL=1;;
+    g) BUILD_GLOBAL=1;;
     k) SNAKE_ADD=$OPTARG;;
     :) printf "missing argument for -$OPTARG\n" >&2; exit 1;;
     \?) printf "invalid option for -$OPTARG\n" >&2; exit 1;;
