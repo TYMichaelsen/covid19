@@ -107,7 +107,7 @@ gisaid_date=$(basename $GISAID_META|sed -e 's/metadata_//;s/.tsv//')
 data_date=$(basename -s "_export" $(dirname $SEQS))
 
 ARGSTR="--cores $THREADS --profile $BPROFILE --config gisaid_date=$gisaid_date data_date=$data_date "
-ARGSTR="$ARGSTR metadata=$OUTDIR/data/metadata_nextstrain.tsv sequences=$OUTDIR/data/masked.fasta "
+ARGSTR="$ARGSTR denmark_meta=${META} denmark_fasta=${SEQS} gisaid_meta=${GISAID_META} gisaid_fasta=${GISAID_FASTA}"
 ARGSTR="$ARGSTR outdir=${OUTDIR}/results out_auspice=${OUTDIR}/auspice ${SNAKE_ADD}"
 
 # Run nextstrain 
@@ -130,32 +130,6 @@ if [ $CONDA_RUN -eq 1 ]; then
     fi
     AUGUR_ENV="/srv/rbd/bin/conda/envs/augur"
 
-    # cd $OUTDIR
-    # rsync -avzp --exclude .git --exclude benmarks --exclude .snakemake --exclude .github  $NCOV_ROOT/ ./
-    if [ ! -f $OUTDIR/data/metadata_nextstrain.tsv ]; then
-        ###############################################################################
-        # Merge the metadata with GISAID metadata.-------------------------------------
-        ###############################################################################
-
-        Rscript --vanilla --no-environ ${THISDIR}/merge_clean_metadata.R -l $META -g $GISAID_META -o $OUTDIR
-        mv $OUTDIR/metadata_nextstrain.tsv $OUTDIR/data/metadata_nextstrain.tsv
-        mv $OUTDIR/metadata_full.tsv $OUTDIR/data/metadata_full.tsv
-    fi
-    if [ ! -f $OUTDIR/data/masked.fasta ]; then
-        ###############################################################################
-        # Merge sequences.-------------------------------------------------------------
-        ###############################################################################
-
-        # Merge GISAID and SSI sequences.
-        # List the sequences to include.
-        awk 'NR > 1 {print \$1}' $OUTDIR/data/metadata_nextstrain.tsv > $OUTDIR/include.txt
-        cat $SEQS $GISAID_FASTA | seqtk subseq  - $OUTDIR/include.txt > $OUTDIR/masked.fasta
-
-        # Move stuff to /data.
-        mv $OUTDIR/masked.fasta $OUTDIR/data/masked.fasta
-        mv $OUTDIR/include.txt $OUTDIR/data/include.txt
-    fi
-
     cd $NCOV_ROOT
     source activate  $AUGUR_ENV
     snakemake ${ARGSTR}
@@ -173,32 +147,6 @@ else
                 $SINGIMG bash <<HEREDOC
 source activate nextstrain
 
-# Source utility functions
-source ${THISDIR}/utils.sh
-
-if [ ! -f $OUTDIR/data/metadata_nextstrain.tsv ]; then
-    ###############################################################################
-    # Merge the metadata with GISAID metadata.-------------------------------------
-    ###############################################################################
-    Rscript --vanilla --no-environ ${THISDIR}/merge_clean_metadata.R -l $META -g $GISAID_META -o $OUTDIR
-    mv $OUTDIR/metadata_nextstrain.tsv $OUTDIR/data/metadata_nextstrain.tsv
-    mv $OUTDIR/metadata_full.tsv $OUTDIR/data/metadata_full.tsv
-fi
-if [ ! -f $OUTDIR/data/masked.fasta ]; then
-    ###############################################################################
-    # Merge sequences.-------------------------------------------------------------
-    ###############################################################################
-
-    # Merge GISAID and SSI sequences.
-    # List the sequences to include.
-    awk 'NR > 1 {print \$1}' $OUTDIR/data/metadata_nextstrain.tsv > $OUTDIR/include.txt
-    cat $SEQS $GISAID_FASTA | seqtk subseq - $OUTDIR/include.txt > $OUTDIR/masked.fasta
-
-    # Move stuff to /data.
-    mv $OUTDIR/masked.fasta $OUTDIR/data/masked.fasta
-    mv $OUTDIR/include.txt $OUTDIR/data/include.txt
-
-fi
 ###############################################################################
 # Run nextstrain 
 ###############################################################################
