@@ -106,9 +106,26 @@ fi
 gisaid_date=$(basename $GISAID_META|sed -e 's/metadata_//;s/.tsv//')
 data_date=$(basename -s "_export" $(dirname $SEQS))
 
+
+# Make sure when re-running on the same $OUTDIR use the same input data
+SNAKE_OUT=${OUTDIR}/results
+if [ -f "${SNAKE_OUT}/Denmark/description.md" ]; then
+    data_date=$(grep 'Denmark Data' "${SNAKE_OUT}/Denmark/description.md" |cut -d':' -f 2|sed 's/ //g')
+    gisaid_date=$(grep 'GISAID Data' "${SNAKE_OUT}/Denmark/description.md" |cut -d':' -f 2|sed 's/ //g')
+
+    if [ -s "$OUTDIR/run.log" ]; then
+        META=$(grep snakemake $OUTDIR/run.log |tail -n 1|sed 's/ /\n/g'| grep 'denmark_meta=' | awk -F '=' '{print $2}')
+        SEQS=$(grep snakemake $OUTDIR/run.log |tail -n 1|sed 's/ /\n/g'| grep 'denmark_fasta=' | awk -F '=' '{print $2}')
+        GISAID_META=$(grep snakemake $OUTDIR/run.log |tail -n 1|sed 's/ /\n/g'| grep 'gisaid_meta=' | awk -F '=' '{print $2}')
+        GISAID_FASTA=$(grep snakemake $OUTDIR/run.log |tail -n 1|sed 's/ /\n/g'| grep 'gisaid_fasta=' | awk -F '=' '{print $2}')
+        echo Existing run output detected at $OUTDIR.
+        echo Now rerunning with data_date: $data_date, gisaid_date: $gisaid_date ...
+    fi
+fi
+
 ARGSTR="--cores $THREADS --profile $BPROFILE --config gisaid_date='\"$gisaid_date\"' data_date='\"$data_date\"' "
 ARGSTR="$ARGSTR denmark_meta=${META} denmark_fasta=${SEQS} gisaid_meta=${GISAID_META} gisaid_fasta=${GISAID_FASTA}"
-ARGSTR="$ARGSTR outdir=${OUTDIR}/results out_auspice=${OUTDIR}/auspice ${SNAKE_ADD}"
+ARGSTR="$ARGSTR outdir=${SNAKE_OUT} out_auspice=${OUTDIR}/auspice ${SNAKE_ADD}"
 
 # Run nextstrain 
 ###############################################################################
