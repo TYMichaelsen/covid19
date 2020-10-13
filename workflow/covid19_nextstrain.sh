@@ -106,7 +106,7 @@ fi
 gisaid_date=$(basename $GISAID_META|sed -e 's/metadata_//;s/.tsv//')
 data_date=$(basename -s "_export" $(dirname $SEQS))
 
-ARGSTR="--cores $THREADS --profile $BPROFILE --config gisaid_date=$gisaid_date data_date=$data_date "
+ARGSTR="--cores $THREADS --profile $BPROFILE --config gisaid_date='\"$gisaid_date\"' data_date='\"$data_date\"' "
 ARGSTR="$ARGSTR denmark_meta=${META} denmark_fasta=${SEQS} gisaid_meta=${GISAID_META} gisaid_fasta=${GISAID_FASTA}"
 ARGSTR="$ARGSTR outdir=${OUTDIR}/results out_auspice=${OUTDIR}/auspice ${SNAKE_ADD}"
 
