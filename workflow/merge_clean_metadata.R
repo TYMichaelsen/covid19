@@ -121,7 +121,7 @@ comb_meta_full$location <- recode(comb_meta_full$location,
 
 ## Columns to select for SSI
 ssi_cols <- c("Address","SymptomsStartDate","Symptoms","Travel","PlaceOfInfection_EN","ContactWithCase","Occupation",
-              "ReportAgeGrp","CodR_Death30Days","CPR_Death30Days","DateOfDeath_final",
+              "ReportAgeGrp","CodR_Death30Days", "CPR", "CPR_Death30Days","DateOfDeath_final",
               "Death60Days_final","Death30Days_final","CitizenshipText","RegHospital","Doctor",
               "Nurse","HealthAssist","Plejehjemsnavn","branche1","branche2","branche3","outbreak")
 
