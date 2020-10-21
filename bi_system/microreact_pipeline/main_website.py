@@ -58,5 +58,5 @@ if __name__ == '__main__':
     set_logging(config)
     
     send_stats(config)
-    website_data = aggregate_data(config)
-    send_data(config, website_data)
+    # website_data = aggregate_data(config)
+    # send_data(config, website_data)
