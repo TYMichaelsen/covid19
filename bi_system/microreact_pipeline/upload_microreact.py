@@ -23,7 +23,7 @@ def _get_credentials():
         print('Failed to obtain credentials to google service account maintaining microreact file.')
 
 def _upload_file(new_filepath, drive_file_id, service):
-     try:
+    try:
         new_file_content = MediaFileUpload(new_filepath, resumable=True)
         result = service.files().update(fileId=drive_file_id, media_body=new_file_content).execute()
         if result is None:
