@@ -1,3 +1,5 @@
+import logging
+
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from apiclient.http import MediaFileUpload
@@ -5,7 +7,12 @@ from apiclient import errors
 
 METADATA_DRIVE_FILE_ID = '11_5qlSGVcYGb-x8J30igO9_kXlC-UGUO'
 TREE_DRIVE_FILE_ID = '17J9ke-_KVmj3vhQq_gXdF6WME_LJG1pX'
+LOGGER = logging.getLogger('google drive upload')
 
+ID_NAME_MAPPING = {
+    METADATA_DRIVE_FILE_ID:'metadata.csv',
+    TREE_DRIVE_FILE_ID:'tree.nwk'
+}
 
 def upload(config):    
     credentials = _get_credentials()
@@ -19,8 +26,8 @@ def _get_credentials():
         service_acc_file = './microreact_pipeline/config/service_account.json'
         return service_account.Credentials.from_service_account_file(service_acc_file, scopes=scopes)
     except Exception as e:
-        print(e)
-        print('Failed to obtain credentials to google service account maintaining microreact file.')
+        LOGGER.error(e)
+        LOGGER.error('Failed to obtain credentials to google service account maintaining microreact file.')
 
 def _upload_file(new_filepath, drive_file_id, service):
     try:
@@ -28,6 +35,8 @@ def _upload_file(new_filepath, drive_file_id, service):
         result = service.files().update(fileId=drive_file_id, media_body=new_file_content).execute()
         if result is None:
             raise Exception('Google drive could not update file with ID {}'.format(drive_file_id))
+        else:
+            LOGGER.info('Successfully updated file {}.'.format(ID_NAME_MAPPING[drive_file_id]))
     except errors.HttpError as e:
-        print(e)
-        print('Error occured when attempting to update {} on google drive.'.format(drive_file_id))
+        LOGGER.error(e)
+        LOGGER.error('Error occured when attempting to update {} on google drive.'.format(drive_file_id))
