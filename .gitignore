@@ -10,4 +10,5 @@ bi_system/microreact_pipeline/config/microreact.json
 .Rproj.user
 .DS_Store
 **/__pycache__
+.vscode
 

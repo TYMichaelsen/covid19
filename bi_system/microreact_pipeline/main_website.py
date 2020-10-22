@@ -4,7 +4,6 @@ import os
 
 from datetime import datetime
 from pandas import read_csv
-from to_website_data_files import save_website_files, upload_web_files
 from config_controller import get_config
 from utilities import save_df_as_json, stfp_file, datestr_to_week_and_year_func
 from web_data_processing import get_all_grouped_by_age_df, get_sequenced_grouped_by_lineage_age_df, get_sequenced_grouped_by_age_df, get_all_grouped_by_region_df, get_sequenced_grouped_by_lineage_region_df, get_sequenced_grouped_by_region_df, get_sequenced_grouped_by_week_df, get_sequenced_grouped_by_lineage_week_df, get_all_grouped_by_week_df
@@ -16,7 +15,6 @@ def set_logging(config):
     console.setLevel(logging.DEBUG)
     console.setFormatter(formatter)
     logging.getLogger().addHandler(console)
-
 
 def _aggregate_data(config):
     logger = logging.getLogger("web data")

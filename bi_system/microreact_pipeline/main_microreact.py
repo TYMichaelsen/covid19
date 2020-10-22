@@ -98,5 +98,5 @@ if __name__ == '__main__':
     create_metadata_files(config)
     convert_to_sql(config)
     data, tree = convert_to_microreact(config)
-    save_micro_react_files(config, copy.deepcopy(data), tree)
+    save_micro_react_files(config, data, tree)
     upload(config)
