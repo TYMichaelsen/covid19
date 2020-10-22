@@ -1,6 +1,8 @@
 import argparse
 import logging
+import os
 
+from datetime import datetime
 from pandas import read_csv
 from to_website_data_files import save_website_files, upload_web_files
 from config_controller import get_config
@@ -16,7 +18,7 @@ def set_logging(config):
     logging.getLogger().addHandler(console)
 
 
-def aggregate_data(config):
+def _aggregate_data(config):
     logger = logging.getLogger("web data")
     
     logger.info('Opening data file: {}'.format(config['data_file']))
@@ -36,18 +38,37 @@ def aggregate_data(config):
     data.append({'name':'seq_groupedby_lineage_region', 'df':get_sequenced_grouped_by_lineage_region_df(df.copy(), config)})
     return data
       
-def send_stats(config):
+def _send_stats(config):
     logger = logging.getLogger('web stats')
-    df = read_csv(config['stats_file'], sep="\t")
+    filepath = _get_latest_stats_file(config)
+    logger.info('Found latest stat file at: {}'.format(filepath))
+    df = read_csv(filepath, sep="\t")
     save_df_as_json(df, config['stats_save_path'])
     stfp_file(config['host'], config['user'], config['password'], config['stats_server_path'], config['stats_save_path'], logger)
 
-def send_data(config, data):
+def _send_data(config, data):
     logger = logging.getLogger('web data')
     for e in data:
         path = '{}/{}.json'.format(config['data_save_path'], e['name'])
         save_df_as_json(e['df'], path)
         stfp_file(config['host'], config['user'], config['password'], config['data_server_path'], path, logger)
+
+def _get_latest_stats_file(config):
+    path = '/'.join(config['stats_file'].split('/')[:-1])
+    file = config['stats_file'].split('/')[-1]
+    filename = file.split('_')[1]
+    date_format = file.split('_')[0]
+    
+    dates = []
+    for f in os.scandir(path):
+        if filename not in f.name:
+            continue
+        date_str = f.name.split('_')[0]
+        dates.append(datetime.strptime(date_str, date_format))
+    
+    assert len(dates) > 0, 'failed to find stat file.'
+    latest_date_str = max(dates).strftime(date_format)
+    return '{}/{}_{}'.format(path, latest_date_str, filename)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -57,6 +78,6 @@ if __name__ == '__main__':
     config = get_config(args.config_filepath, './microreact_pipeline/config/web_template.json')
     set_logging(config)
     
-    send_stats(config)
-    # website_data = aggregate_data(config)
-    # send_data(config, website_data)
+    _send_stats(config)
+    # website_data = _aggregate_data(config)
+    # _send_data(config, website_data)
