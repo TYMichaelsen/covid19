@@ -2,6 +2,7 @@ import csv
 import re
 import logging 
 import uuid
+import pandas as pd
 
 from datetime import date, datetime, timedelta
 from enum import Enum
@@ -33,28 +34,20 @@ def execute_query(connection, query):
       assert len(records) > 0, "Query resulted in 0 records."
       return records
 
-def convert_to_microreact_format(data):
-      formatted_data = []
-      epidemic_start_date = _get_epi_start_date(data)
-      for e in data:
-            week_start_date = _get_first_day_of_week(e[2])
-            data_obj = {
-                  FIELD.ID:str(uuid.uuid4()),
-                  FIELD.orig_id:e[0],
-                  FIELD.sample_date:e[2].isocalendar()[1],
-                  FIELD.epi_week:_get_epi_week(e[2], epidemic_start_date),
-                  FIELD.country:"DK01",
-                  FIELD.region:e[4],
-                  FIELD.lineage:e[3],
-                  FIELD.latitude:e[6],
-                  FIELD.longitude:e[5],
-                  FIELD.day:week_start_date.day,
-                  FIELD.month:week_start_date.month,
-                  FIELD.year:week_start_date.year,
-                  FIELD.age_group:e[10]
-            }
-            formatted_data.append(data_obj)
-      return formatted_data
+def convert_to_microreact_format(df):
+      df['date'] = df['date'].apply(lambda x: datetime.strptime(x, '%Y-%m-%d'))
+      df[FIELD.ID] = pd.Series(index=range(len(df.index))).apply(lambda _: str(uuid.uuid4()))
+      df[FIELD.sample_date] = df['date'].apply(lambda x: x.isocalendar()[1])
+      df[FIELD.epi_week] = df['date'].apply(_get_epi_week, args=(min(df['date']),))
+      df[FIELD.country] = pd.Series(index=range(len(df.index))).apply(lambda _: 'DK01')
+      df[FIELD.day] = df['date'].apply(lambda x: _get_first_day_of_week(x).day)
+      df[FIELD.month] = df['date'].apply(lambda x: _get_first_day_of_week(x).month)
+      df[FIELD.year] = df['date'].apply(lambda x: _get_first_day_of_week(x).year)
+      df[FIELD.region] = df['code'].apply(lambda x: str(x)[:-1])
+
+      df = df.rename(columns={'ssi_id':FIELD.orig_id, 'clade': FIELD.lineage, 'ReportAgeGrp':FIELD.age_group, 'code': FIELD.region})
+      df = df[[FIELD.ID, FIELD.orig_id, FIELD.sample_date, FIELD.epi_week, FIELD.country, FIELD.region, FIELD.lineage, FIELD.latitude, FIELD.longitude, FIELD.day, FIELD.month, FIELD.year, FIELD.age_group]]  
+      return df
 
 def save_tree(config, tree):
       path = config['out_react_nwk']
@@ -64,27 +57,29 @@ def save_tree(config, tree):
 
 def get_tree(config):
       path = config['clade_tree_path']
+      path = 'microreact_pipeline/data/tree.nwk'
       with open(path, "r") as f:
             return f.read()
 
-def replace_tree_ids(data, tree):
-    for e in data:
-        replacement_id = e[FIELD.ID]
-        original_id = e[FIELD.orig_id]
+def replace_tree_ids(df, tree):
 
-        match_idx = _find_replacement_idx(tree, original_id)
-        if match_idx == -1:
-            # LOGGER.warning("Failed to find and replace ID: {}".format(original_id))
-            continue
+      for i,row in df.iterrows():
+            replacement_id = row[FIELD.ID]
+            original_id = row[FIELD.orig_id]
 
-        tree = tree[:match_idx] + replacement_id + tree[match_idx + len(original_id):]
-    return tree
+            match_idx = _find_replacement_idx(tree, original_id)
+            if match_idx == -1:
+                  # LOGGER.warning("Failed to find and replace ID: {}".format(original_id))
+                  continue
 
-def filter_data_by_min_cases(data, config, min_cases=3):
+            tree = tree[:match_idx] + replacement_id + tree[match_idx + len(original_id):]
+      return tree
+
+def filter_data_by_min_cases(df, config, min_cases=3):
       cases = _get_cases_per_region_week(config)
       filtered_data = []
       skipped_ids = []
-      for example in data:
+      for i,example in df.iterrows():
             match = cases.loc[(cases['Week'] == example[FIELD.sample_date]) & (cases['NUTS3Code'] == example[FIELD.region])]
             if len(match.index) != 1:
                   # LOGGER.warning("Cases did not properly match the example, continuing... (cases: {}, id: {})".format(len(match.index), example[FIELD.orig_id]))
@@ -147,8 +142,9 @@ def _get_epi_week(infected_date, epidemic_start_date):
       w_start_epidemic = epidemic_start_date - timedelta(days=epidemic_start_date.weekday())
       return (_get_first_day_of_week(w_start_infected) - _get_first_day_of_week(w_start_epidemic)).days / 7
 
-def _get_epi_start_date(data): 
-      return min(e[2] for e in data)
+# def _get_epi_start_date(df): 
+#       return min(df['date'])
+#       # return min(e[2] for e in data)
 
 def _get_cases_per_region_week(config):
       linelist = get_linelist(config)

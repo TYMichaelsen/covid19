@@ -3,10 +3,10 @@ import argparse
 import logging
 import sys
 import copy
+import pandas as pd
 
 from config_controller import get_config, set_config_nextstrain, set_config_linelist, update_latest_nextstrain
 from data_cleansing_metadata import check_file, check_errors
-from convert_metadata_to_mysql import get_connection, create_schema, add_data, create_fk
 from convert_to_microreact_files import execute_query, convert_to_microreact_format, get_tree, replace_tree_ids, filter_data_by_min_cases
 from convert_to_microreact_files import get_unmatched_ids_in_tree, add_empty_records, save_csv, save_tree
 from upload_microreact import upload
@@ -39,36 +39,23 @@ def create_metadata_files(config):
         writer.writerow({'MessageType': 'Info', 'ErrorType': '', 'Details': 'Finished {}'.format(input_file)})
     logger.info('Done.')
 
-def convert_to_sql(config):
-    connection = get_connection(config)
-    create_schema(connection)
-    add_data(connection, config['staged_metadata_file'], config['global_clade_assignment_file'])
-    create_fk() 
-    connection.close()
-
 def get_data(config):
-    query = 'SELECT P.ssi_id, P.gisaid_id, date, C.low_res_clade, R.code, R.longitude, R.latitude, day(date), month(date), year(date), P.age_group ' \
-            'FROM Persons P ' \
-            'LEFT OUTER JOIN Municipalities M ON P.MunicipalityCode=M.code ' \
-            'LEFT OUTER JOIN NUTS3_Regions R3 ON M.region=R3.code ' \
-            'LEFT OUTER JOIN NUTS2_Regions R ON R3.nuts2_region=R.code ' \
-            'JOIN Clade_assignment C ON P.ssi_id =  C.ssi_id ' \
-            ';'
-    connection = get_connection(config)
-    data = execute_query(connection, query)
-    connection.close()
-    return data
+    df_metadata = pd.read_csv(config['staged_metadata_file'], sep=',')
+    df_clade = pd.read_csv(config['global_clade_assignment_file'], sep='\t')
+    df_regions = pd.read_csv('stable_dims/nuts2_regions.tsv', sep='\t')
 
-def convert_to_microreact(config):
+    df_metadata['NUTS2_code'] = df_metadata['NUTS3Code'].apply(lambda x: str(x)[:-1])
+    df = pd.merge(df_metadata, df_clade, how='inner', left_on='ssi_id', right_on='strain')
+    df = pd.merge(df, df_regions, how='left', left_on='NUTS2_code', right_on='code')
+    return df
+
+def convert_to_microreact(df, tree, config):
     logger = logging.getLogger("to microreact")
 
-    data = get_data(config)
-    data = convert_to_microreact_format(data)
+    df = convert_to_microreact_format(df)
 
-    tree = get_tree(config)
-    tree = replace_tree_ids(data, tree)
-
-    data, skipped_ids = filter_data_by_min_cases(data,config, min_cases=3)
+    tree = replace_tree_ids(df, tree)
+    data, skipped_ids = filter_data_by_min_cases(df, config, min_cases=3)
     data = add_empty_records(data, skipped_ids)
 
     logger.info("Processed {}/{}".format(len(data) - len(skipped_ids), len(data)))
@@ -96,7 +83,9 @@ if __name__ == '__main__':
     config = set_config_linelist(config, date_str)
 
     create_metadata_files(config)
-    convert_to_sql(config)
-    data, tree = convert_to_microreact(config)
+    data = get_data(config)
+    tree = get_tree(config)
+    data, tree = convert_to_microreact(data, tree, config)
+    
     save_micro_react_files(config, data, tree)
     upload(config)
