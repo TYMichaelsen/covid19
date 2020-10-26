@@ -6,7 +6,6 @@ import re
 
 from datetime import datetime
 from data_cleansing_metadata import check_file
-from shutil import copyfile
 
 LOGGER = logging.getLogger("config controller")
 

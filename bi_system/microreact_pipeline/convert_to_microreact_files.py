@@ -1,12 +1,9 @@
-import csv
 import re
 import logging 
 import uuid
 import pandas as pd
 
-from datetime import date, datetime, timedelta
-from enum import Enum
-
+from datetime import datetime, timedelta
 from utilities import datestr_to_week_func, nut3_to_nut2_func, get_linelist
 
 LOGGER = logging.getLogger("to microreact")

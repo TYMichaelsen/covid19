@@ -1,8 +1,6 @@
 import csv
 import argparse
 import logging
-import sys
-import copy
 import pandas as pd
 
 from config_controller import get_config, set_config_nextstrain, set_config_linelist, update_latest_nextstrain
