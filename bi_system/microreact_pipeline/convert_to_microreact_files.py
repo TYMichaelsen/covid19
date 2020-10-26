@@ -60,7 +60,7 @@ def get_tree(config):
             return f.read()
 
 def replace_tree_ids(df, tree):
-
+      LOGGER.info('Replacing Tree IDs with generrated UUIDs...')
       for _,row in df.iterrows():
             replacement_id = row[FIELD.ID]
             original_id = row[FIELD.orig_id]
@@ -74,6 +74,7 @@ def replace_tree_ids(df, tree):
       return tree
 
 def filter_data_by_min_cases(df, config, min_cases=3):
+      LOGGER.info('Filtering data with minimum number of cases per week and region (min number of cases - {})...'.format(min_cases))
       cases = _get_cases_per_region_week(config)
       filtered_data = []
       skipped_ids = []
