@@ -84,7 +84,7 @@ def filter_data_by_min_cases(df, config, min_cases=3):
       for _,example in df.iterrows():
             match = cases.loc[(cases['Week'] == example[FIELD.sample_date]) & (cases['NUTS3Code'] == example[FIELD.region])]
             if len(match.index) != 1:
-                  LOGGER.warning("Cases did not properly match the example, continuing... (cases: {}, id: {})".format(len(match.index), example[FIELD.orig_id]))
+                  # LOGGER.warning("Cases did not properly match the example, continuing... (cases: {}, id: {})".format(len(match.index), example[FIELD.orig_id]))
                   skipped_ids.append(example[FIELD.ID])
                   continue
             if match['Cases'].iloc[0] < min_cases:
