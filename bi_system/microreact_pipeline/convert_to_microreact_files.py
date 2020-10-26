@@ -35,6 +35,7 @@ def execute_query(connection, query):
       return records
 
 def convert_to_microreact_format(df):
+      LOGGER.info('Converting metadatada to microreact format...')
       df['date'] = df['date'].apply(lambda x: datetime.strptime(x, '%Y-%m-%d'))
       df[FIELD.ID] = pd.Series(index=range(len(df.index))).apply(lambda _: str(uuid.uuid4()))
       df[FIELD.sample_date] = df['date'].apply(lambda x: x.isocalendar()[1])
@@ -43,9 +44,10 @@ def convert_to_microreact_format(df):
       df[FIELD.day] = df['date'].apply(lambda x: _get_first_day_of_week(x).day)
       df[FIELD.month] = df['date'].apply(lambda x: _get_first_day_of_week(x).month)
       df[FIELD.year] = df['date'].apply(lambda x: _get_first_day_of_week(x).year)
-      df[FIELD.region] = df['code'].apply(lambda x: str(x)[:-1])
+      df[FIELD.age_group] = df['ReportAgeGrp'].astype('str')
+      df[FIELD.lineage] = df['clade'].apply(lambda x: x.split('/')[0])
 
-      df = df.rename(columns={'ssi_id':FIELD.orig_id, 'clade': FIELD.lineage, 'ReportAgeGrp':FIELD.age_group, 'code': FIELD.region})
+      df = df.rename(columns={'ssi_id':FIELD.orig_id, 'code':FIELD.region})
       df = df[[FIELD.ID, FIELD.orig_id, FIELD.sample_date, FIELD.epi_week, FIELD.country, FIELD.region, FIELD.lineage, FIELD.latitude, FIELD.longitude, FIELD.day, FIELD.month, FIELD.year, FIELD.age_group]]  
       return df
 
@@ -57,19 +59,18 @@ def save_tree(config, tree):
 
 def get_tree(config):
       path = config['clade_tree_path']
-      path = 'microreact_pipeline/data/tree.nwk'
       with open(path, "r") as f:
             return f.read()
 
 def replace_tree_ids(df, tree):
 
-      for i,row in df.iterrows():
+      for _,row in df.iterrows():
             replacement_id = row[FIELD.ID]
             original_id = row[FIELD.orig_id]
 
             match_idx = _find_replacement_idx(tree, original_id)
             if match_idx == -1:
-                  # LOGGER.warning("Failed to find and replace ID: {}".format(original_id))
+                  LOGGER.warning("Failed to find and replace ID: {}".format(original_id))
                   continue
 
             tree = tree[:match_idx] + replacement_id + tree[match_idx + len(original_id):]
@@ -79,16 +80,17 @@ def filter_data_by_min_cases(df, config, min_cases=3):
       cases = _get_cases_per_region_week(config)
       filtered_data = []
       skipped_ids = []
-      for i,example in df.iterrows():
+
+      for _,example in df.iterrows():
             match = cases.loc[(cases['Week'] == example[FIELD.sample_date]) & (cases['NUTS3Code'] == example[FIELD.region])]
             if len(match.index) != 1:
-                  # LOGGER.warning("Cases did not properly match the example, continuing... (cases: {}, id: {})".format(len(match.index), example[FIELD.orig_id]))
+                  LOGGER.warning("Cases did not properly match the example, continuing... (cases: {}, id: {})".format(len(match.index), example[FIELD.orig_id]))
                   skipped_ids.append(example[FIELD.ID])
                   continue
             if match['Cases'].iloc[0] < min_cases:
                   skipped_ids.append(example[FIELD.ID])
                   continue
-            filtered_data.append(example)
+            filtered_data.append(example.to_dict())
       return filtered_data, skipped_ids
 
 def get_unmatched_ids_in_tree(tree, id_prefix_lst):
@@ -124,15 +126,10 @@ def add_empty_records(data, skipped_ids):
 def save_csv(config, data):
       path = config['out_react_tsv']
       LOGGER.info('Saving data to {}'.format(path))
-      with open(path, "w") as f:
-            writer = csv.DictWriter(f,
-                  fieldnames=[FIELD.ID, FIELD.sample_date, FIELD.epi_week, FIELD.country, FIELD.region, FIELD.lineage, FIELD.latitude, FIELD.longitude, 
-                        FIELD.day, FIELD.month, FIELD.year])
-            writer.writeheader()
-            for data_obj in data:
-                  del data_obj[FIELD.orig_id]
-                  del data_obj[FIELD.age_group]
-                  writer.writerow(data_obj)
+
+      df = pd.DataFrame(data)
+      df = df.drop(columns=[FIELD.orig_id, FIELD.age_group], axis=1)
+      df.to_csv(path, sep='\t')
 
 def _get_first_day_of_week(date):
       return date - timedelta(days=date.weekday())

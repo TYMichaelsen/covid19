@@ -56,8 +56,8 @@ def convert_to_microreact(df, tree, config):
 
     tree = replace_tree_ids(df, tree)
     data, skipped_ids = filter_data_by_min_cases(df, config, min_cases=3)
+    print(type(data))
     data = add_empty_records(data, skipped_ids)
-
     logger.info("Processed {}/{}".format(len(data) - len(skipped_ids), len(data)))
     return data, tree
 
