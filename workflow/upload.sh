@@ -89,8 +89,6 @@ done | sed 's/.consensus.fasta/.sorted.bam/' - > $OUTDIR/tmp_bamfiles
 
 head -n 10 $OUTDIR/tmp_bamfiles > tmp && mv tmp $OUTDIR/tmp_bamfiles
 
-exit 1
-
 # Make input file to parallel.
 awk -F'\t' -v outdir=$OUTDIR -v human=$HUMANREF '{print $3":"$2":"outdir":"human}' $OUTDIR/tmp_metadata.tsv > $OUTDIR/tmp_toparallel.txt
 
