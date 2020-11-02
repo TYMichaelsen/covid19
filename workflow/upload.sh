@@ -16,12 +16,13 @@ Arguments:
 
 Description:
   Dumps timestamped folder in upload/ containing sequences, fastq reads, and metadata.
-  Depends on finding the columns 'gisaid_id', 'library_id','curate_exclude', and 'SampleDate' in the metadata. 
+  Depends on finding the columns 'gisaid_id', 'library_id','curate_exclude','region', and 'sample_date' in the metadata. 
   These should be formatted as:
     gisaid_id      = id associated with the sample.
     library_id     = id associated with the library.
     curate_exclude = column indicating if the sample should be excluded. Empty entries means inclusion. 
-    SampleDate     = column with sample date in YYYY-MM-DD format.
+    region         = column with sample DK region.
+    sample_date    = column with sample date in YYYY-MM-DD format.
 
 "
 ### Terminal Arguments ---------------------------------------------------------
@@ -67,7 +68,7 @@ mkdir -p $OUTDIR
 mkdir -p $OUTDIR/mapped_fastq
 
 # Reorder columns in metadata.
-awk -F '\t' 'NR == 1 {for (i=1; i<=NF; i++) ix[$i] = i} NR > 1 {print $ix["ssi_id"]"\t"$ix["library_id"]"\t"$ix["gisaid_id"]"\t"$ix["sample_date"]}' $META > tmp && mv tmp $META
+awk -F '\t' 'NR == 1 {for (i=1; i<=NF; i++) ix[$i] = i} NR > 1 {print $ix["ssi_id"]"\t"$ix["library_id"]"\t"$ix["gisaid_id"]"\t"$ix["region"]"\t"$ix["sample_date"]}' $META > tmp && mv tmp $META
 
 # Subset seqs to metadata.
 awk '{ if ((NR>1)&&($0~/^>/)) { printf("\n%s", $0); } else if (NR==1) { printf("%s", $0); } else { printf("\t%s", $0); } }' $SEQS | # tabularize.
@@ -85,6 +86,10 @@ echo "Output .fastq file for each genome"
 for i in "${ARTICDIR[@]}"; do
   for j in $i/articminion/*.consensus.fasta; do echo $j; done
 done | sed 's/.consensus.fasta/.sorted.bam/' - > $OUTDIR/tmp_bamfiles
+
+head 10 $OUTDIR/tmp_bamfiles > tmp && mv tmp $OUTDIR/tmp_bamfiles
+
+exit 1
 
 # Make input file to parallel.
 awk -F'\t' -v outdir=$OUTDIR -v human=$HUMANREF '{print $3":"$2":"outdir":"human}' $OUTDIR/tmp_metadata.tsv > $OUTDIR/tmp_toparallel.txt
