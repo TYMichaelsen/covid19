@@ -72,7 +72,7 @@ awk -F '\t' 'NR == 1 {for (i=1; i<=NF; i++) ix[$i] = i} NR > 1 {print $ix["ssi_i
 
 # Subset seqs to metadata.
 awk '{ if ((NR>1)&&($0~/^>/)) { printf("\n%s", $0); } else if (NR==1) { printf("%s", $0); } else { printf("\t%s", $0); } }' $SEQS | # tabularize.
-awk -F'\t' 'FNR == NR {seqs[$1]=$2; next} {if (">"$1 in seqs) {print ">"$3"\t"seqs[">"$1]} else {print $0" had no matching sequence, excluding." > "/dev/stderr"}}' - $META | # Subset to ones in metadata.
+awk -F'\t' 'FNR == NR {seqs[$1]=$2; next} {if (">"$1 in seqs) {print ">"$3"\t"seqs[">"$1]} else {print $1" had no matching sequence, excluding." > "/dev/stderr"}}' - $META | # Subset to ones in metadata.
 tr "\t" "\n" > $OUTDIR/sequences.fasta # de-tabularize.
 
 echo "Continuing with $(grep ">" -c $OUTDIR/sequences.fasta) sequences."
