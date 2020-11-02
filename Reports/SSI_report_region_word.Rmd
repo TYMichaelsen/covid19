@@ -1,0 +1,514 @@
+---
+output:
+  word_document:
+    reference_docx: ssi_report_word_template.docx
+  html_document:
+    df_print: paged
+always_allow_html: yes
+editor_options: 
+  chunk_output_type: console
+knit: (function(inputFile, encoding) { rmarkdown::render(inputFile, encoding = encoding, output_file = file.path(dirname(inputFile), paste0(format(Sys.Date(),"%d-%m-%Y"),"_rapport_til_regionerne.docx"))) })
+---
+
+```{r,include = F}
+### USER SPECIFIED PARAMETERS ##################################################
+
+# Set week to focus at, according to the ISO standard. Can be multiple.
+weeks <- c(40)
+
+# Set which linelist to use.
+timestmp_ll <- "2020-10-09"
+path_to_ll  <- "/srv/rbd/covid19/metadata/raw-ssi-metadata/Lineliste_091020.xlsx"
+
+# !OBS: The genome metadata and phylogenetic tree are automatically loaded from the latest data build.
+```
+
+```{r libraries, warning = F, message=F,include=F}
+library(tidyverse)
+library(readxl)
+library(data.table)
+library(lubridate)
+library(jsonlite)
+library(httr)
+library(stringr)
+library(Biostrings)
+library(ggmap)
+library(ggtree)
+library(ape)
+library(kableExtra)
+library(ISOweek)
+library(patchwork)
+
+knitr::opts_chunk$set(
+  fig.cap    = " ",
+  fig.align  = "center",
+  #fig.width  = 12,
+  #fig.height = 8,
+  message    = FALSE, 
+  warning    = FALSE,
+  echo       = F)
+
+# Format weeks.
+date_rng <- paste0("2020-W",c(head(weeks,n=1),tail(weeks,n=1)),c("-1","-7")) %>%
+  ISOweek2date() %>%
+  as.Date()
+
+prev_week     <- min(weeks) - 1
+date_rng_prev <- paste0("2020-W",c(head(prev_week,n=1),tail(prev_week,n=1)),c("-1","-7")) %>%
+  ISOweek2date() %>%
+  as.Date()
+
+# Misc functions.---------------------------------------------------------------
+median_range <- function(x) paste0(median(x, na.rm = T), " (", min(x, na.rm = T), "-", max(x, na.rm = T), ")")
+median_iqr   <- function(x) paste0(median(x, na.rm = T), " (", IQR(x, na.rm = T), ")")
+```
+
+```{r colors}
+branded_colors <- list(
+  "blue"   = "#00798c",
+  "red"    = "#d1495b",
+  "yellow" = "#edae49",
+  "green"  = "#66a182",
+  "navy"   = "#2e4057", 
+  "grey"   = "#8d96a3"
+)
+
+clade_colors <- list(
+  "19A"   = "#00798c",
+  "19B"    = "#d1495b",
+  "20A" = "#edae49",
+  "20B"  = "#66a182",
+  "20C"   = "#2e4057")
+
+dk_month <- factor(c("Januar", "Februar", "Marts", "April", "Maj", "Juni",
+                     "Juli", "August", "September", "Oktober", "November", "December"),
+                   levels = c("Januar", "Februar", "Marts", "April", "Maj", "Juni",
+                     "Juli", "August", "September", "Oktober", "November", "December"))
+```
+
+```{r readMergeData}
+# Get zipcode ------------------------------------------------------------------
+path <- "https://dawa.aws.dk/postnumre?landpostnumre"
+
+request <- GET(url = path)
+
+response <- content(request, as = "text", encoding = "UTF-8")
+
+swapDKlet <- function(x){stringr::str_replace_all(x,c("ø" = "oe","Ø" = "Oe","å" = "aa","Å" = "Aa","æ" = "ae","Æ" = "Ae"))}
+
+kommune_postnr <- jsonlite::fromJSON(response, flatten = TRUE) %>% 
+  data.frame() %>%
+  separate(visueltcenter, c("long", "lat"), sep = ",") %>%
+  mutate(long = gsub('[c()]', '',long) %>% as.numeric()) %>%
+  mutate(lat  = gsub('[c()]', '',lat) %>% as.numeric()) %>%
+  mutate(zipcode_name = swapDKlet(navn)) %>%
+  mutate(zipcode      = nr) %>%
+  select(zipcode,zipcode_name,navn,long,lat)
+
+# Select the most recent data.
+timestmp_data <- list.files("/srv/rbd/covid19/genomes",pattern = "_export") %>%
+  sub("_export","",x = .) %>%
+  gsub("_","-",x = .) %>%
+  strptime(format = "%Y-%m-%d-%H-%M") %>%
+  max() %>%
+  format("%Y-%m-%d-%H-%M")
+
+# Select the most recent nextstrain.
+timestmp_nxt <- list.files("/srv/rbd/covid19/nextstrain",pattern = "_nextstrain") %>%
+  sub("_nextstrain","",x = .) %>%
+  gsub("_","-",x = .) %>%
+  {.[!grepl("[A-z]",x = .)]} %>%
+  strptime(format = "%Y-%m-%d-%H-%M") %>%
+  max(na.rm = T) %>%
+  format("%Y-%m-%d-%H-%M")
+
+### Load the data.--------------------------------------------------------------
+# Linelist.
+meta_ll <- read_excel(
+  path      = path_to_ll, 
+  col_types = "text") %>%
+  mutate(
+    zip_old       = ZipCodeCity,
+    date_linelist = as.Date(SampleDate)) %>%
+  mutate(ZipCodeCity = sub(" ",";",ZipCodeCity)) %>%
+  separate(ZipCodeCity,into = c("zipcode","zipcode_name"),sep = ";") %>%
+  left_join(kommune_postnr %>% select(zipcode, long, lat), by = "zipcode") 
+
+# Metadata for genomes.
+meta_seq_raw <- read_delim(
+  file      = paste0("/srv/rbd/covid19/genomes/",timestmp_data,"_export/metadata.tsv"),
+  delim     = "\t",
+  guess_max = 100000) %>%
+  mutate(date_consensus = as.Date(date_consensus)) %>%
+  select(ssi_id, library_id, journal_seq, journal_reg, recieved_aau, date_consensus, qpcr_ct_ssi, CPR, genome_qc, n_count)
+
+# Count number of sequenced samples
+nSeq <- read_delim(
+  file      = paste0("/srv/rbd/covid19/metadata/",timestmp_data,"_metadata.tsv"),
+  delim     = "\t",
+  guess_max = 100000) %>% 
+  pull(library_id) %>% unique() %>%  length()
+
+# Clade assignment.
+clades <- read_delim(
+  file      = paste0("/srv/rbd/covid19/nextstrain/",timestmp_nxt,"_nextstrain/results/Denmark/clade_assignment.tsv"),
+  delim     = "\t") %>%
+  select(strain,clade,direct_mutations)
+
+# Remove CPR duplicates from metadata.
+meta_seq_raw <- meta_seq_raw %>%
+  filter(!is.na(CPR) & !is.na(ssi_id)) %>%
+  filter(!is.na(date_consensus))
+
+# Add clades.
+meta_seq <- left_join(meta_seq_raw,clades,by = c("ssi_id" = "strain"))
+
+# Misc data.--------------------------------------------------------------------
+# For plotting denmark.
+dk_nuts2 <- read_delim(file = "/srv/rbd/ma/test/maps/DK_NUTS2.txt", delim ="\t")
+
+# Define clusters.
+name_clusters <- meta_seq %>%
+  filter(!is.na(direct_mutations)) %>%
+  group_by(direct_mutations) %>%
+  summarise(cluster_count = n(), 
+            cluster_start = min(as.Date(date_consensus)),
+            cluster_end = max(as.Date(date_consensus))) %>%
+  arrange(cluster_start) %>%
+  mutate(cluster_no   = 1:n()) %>%
+  mutate(cluster_name = paste0("Cluster ",cluster_no)) %>%
+  group_by(cluster_name) %>%
+  mutate(cluster_size  = paste0(sum(cluster_count)),
+         cluster_start = min(as.Date(cluster_start)),
+         cluster_end   = max(as.Date(cluster_end)))
+
+meta_seq <- left_join(meta_seq,name_clusters,by = "direct_mutations")
+
+# Join the genome-metadata with the linelist.
+meta_all <- left_join(meta_ll,meta_seq,by = "CPR") %>%
+  mutate(date_consensus = as.Date(ifelse(is.na(date_consensus),as.character(date_linelist),as.character(date_consensus)))) 
+
+# Format data and filter by week of interest
+meta_all <- mutate(meta_all,
+  genome_qc    = factor(genome_qc,levels = c("HQ","MQ","Fail")),
+  firstDayWeek = {floor_date(date_consensus,"week") + 1} %>% as.Date(),
+  #samplseWeek    = date2ISOweek(floor_date(date_consensus,"week")),
+  clade        = sub("/.*","",x = clade)) %>%
+  group_by(firstDayWeek) %>%
+  mutate(cluster_cov     = sum(!is.na(cluster_name))/n()) %>%
+  ungroup() %>% group_by(firstDayWeek,Region) %>%
+  mutate(cluster_cov_reg = sum(!is.na(cluster_name))/n()) %>%
+  ungroup() %>% 
+  filter(date_consensus <= date_rng[2])
+```
+
+
+```{r}
+## Create plot of positive samples vs genomes for each region
+## This must be done before subsetting metadata
+## to only those with genomes
+
+nPos <- nrow(meta_all)
+
+pos_vs_genomes_reg_plot <- list()
+for(reg in unique(meta_all$Region[!is.na(meta_all$Region)])){
+pos_vs_genomes_reg_plot[[reg]] <- 
+  meta_all %>% filter(Region == reg) %>% 
+  group_by(firstDayWeek) %>% 
+  summarize("Positive" = n(),
+            "Genomer"  = sum(genome_qc %in% c("MQ", "HQ"))) %>%
+  mutate("Positive" = Positive - Genomer) %>% 
+  pivot_longer(cols = c("Positive", "Genomer")) %>% 
+  mutate(name = factor(name, levels = c("Positive", "Genomer"))) %>% 
+  ggplot(aes(x = firstDayWeek, y = value, fill = name)) +
+  geom_area() + 
+  scale_x_date(date_breaks = "1 month",date_labels = "%b") +
+  scale_fill_manual(values = unname(branded_colors[c("blue", "red")]))  +
+  theme_classic() +
+  theme(legend.position = "bottom", legend.title = element_blank()) +
+  ylab("Antal prøver") +
+  xlab("Måned")
+}
+```
+
+```{r readTree}
+# Tree.
+tree <- read.tree(file = paste0("/srv/rbd/covid19/nextstrain/",timestmp_nxt,"_nextstrain/results/Denmark/tree_raw.nwk"))
+
+# intersect tree and metadata.
+wh <- match(tree$tip.label,meta_all$ssi_id) %>%
+  `names<-`(tree$tip.label) %>%
+  na.omit()
+
+tree     <- keep.tip(tree,tip = names(wh))
+meta_all <- meta_all[wh,]
+```
+
+
+# Genomisk overblik for SARS-CoV-2 i Danmark
+Danish Covid-19 Genome Consortium
+
+Rapport udfærdiget af AAU og SSI d. `r format(Sys.time(), '%d-%m-%Y')`
+
+## Baggrund
+For at assistere epidemiologer og sundhedsmyndigheder med at overvåge spredningen af SARS-CoV-2 i Danmark blev Danish Covid-19 Genome Consortium (DGGC) etableret som et multidisciplinært samarbejde mellem eksperter fra Statens Serum Institut og Aalborg Universitet. Formålet med samarbejdet er at sekventere SARS-CoV-2 genomer for at se hvordan de udvikler sig, og kombinere denne information med epidemiologiske data, for at kunne følge lokale og globale smittekæder. I indeværende rapport gives et overblik for mængden og kvaliteten af det indsamlede materiale for de fem danske regioner, samt den regionale udvikling af klader.
+
+## Overblik for regionerne
+```{r basicStats}
+nGenomes <- meta_all %>% 
+  filter(genome_qc %in% c("MQ", "HQ")) %>%
+  nrow()
+
+nGenomesThisWeek <- meta_all %>%
+  filter(genome_qc %in% c("MQ", "HQ")) %>%
+  filter(date_consensus >= date_rng[1]) %>%
+  nrow()
+
+nDirMut  <- meta_all %>% filter(!is.na(direct_mutations) & 
+                                  duplicated(direct_mutations) == F) %>% nrow()
+
+nDirMutOld <- meta_all %>% filter(date_consensus < date_rng[1] & 
+                                    !is.na(direct_mutations) 
+                                  & duplicated(direct_mutations) == F) %>% nrow()
+```
+
+I denne rapport indgår data fra perioden `r format(min(meta_all$date_consensus), '%d-%m-%Y')` til `r format(date_rng[2], '%d-%m-%Y')`. Data for perioden indeholder `r nPos` positive prøver, hvoraf der er sekventeret virus fra `r nSeq`. Dette gav anledning til `r nGenomes` genomer, der fordeler sig på `r nDirMut` unikke variantkombinationer. Nedenfor ses et kvalitetsoverblik for samtlige danske prøver.
+
+```{r qc, fig.width = 7, fig.height=3}
+qc1 <- meta_all %>%  filter(!is.na(Region) & qpcr_ct_ssi < 50) %>% 
+  mutate(genome_qc = factor(genome_qc, levels = c("HQ", "MQ", "Fail"))) %>% 
+  ggplot(aes(x = qpcr_ct_ssi, fill = genome_qc)) + 
+  geom_histogram() + 
+  scale_fill_manual(values = unname(branded_colors[c("green", "blue", "red")]), name = "Genom Kvalitet")  +
+  #facet_grid(cols = vars(Region)) + 
+  theme_classic() +
+  theme(legend.position = "none") +
+  ylab("Antal Genomer") + 
+  xlim(c(15,40)) +
+  xlab("CT værdi")
+
+qc2 <- meta_all %>%  filter(!is.na(Region)) %>% 
+  filter(!is.na(genome_qc)) %>% 
+  mutate(genome_qc = factor(genome_qc, levels = c("HQ", "MQ", "Fail"))) %>% 
+  ggplot(aes(x = genome_qc, fill = genome_qc)) + 
+  scale_fill_manual(values = unname(branded_colors[c("green", "blue", "red")]))  +
+  geom_bar() + 
+  theme_classic() +
+  theme(legend.position = "none") +
+  ylab("Antal genomer") +
+  xlab("Genom kvalitet")
+
+qc1 + qc2
+```
+
+```{r qc_reg}
+## QC by region
+reg_qc_plot <- list()
+for(reg in unique(meta_all$Region[!is.na(meta_all$Region)])){
+ 
+  qc1 <- meta_all %>%  filter(Region == reg & qpcr_ct_ssi < 50) %>% 
+  mutate(genome_qc = factor(genome_qc, levels = c("HQ", "MQ", "Fail"))) %>% 
+  ggplot(aes(x = qpcr_ct_ssi, fill = genome_qc)) + 
+  geom_histogram() + 
+  scale_fill_manual(values = unname(branded_colors[c("green", "blue", "red")]), name = "Genom Kvalitet")  +
+  #facet_grid(cols = vars(Region)) + 
+  theme_classic() +
+  theme(legend.position = "none") +
+  ylab("Antal Genomer") + 
+  xlim(c(15,40)) +
+  xlab("CT værdi")
+
+qc2 <- meta_all %>%  filter(Region == reg) %>% 
+  filter(!is.na(genome_qc)) %>% 
+  mutate(genome_qc = factor(genome_qc, levels = c("HQ", "MQ", "Fail"))) %>% 
+  ggplot(aes(x = genome_qc, fill = genome_qc)) + 
+  scale_fill_manual(values = unname(branded_colors[c("green", "blue", "red")]))  +
+  geom_bar() + 
+  theme_classic() +
+  theme(legend.position = "none") +
+  ylab("Antal genomer") +
+  xlab("Genom kvalitet")
+  
+  reg_qc_plot[[reg]]  <- qc1 + qc2
+}
+```
+
+```{r clades_reg, fig.height = 8}
+## Calculate cumulative clade distribution by regions
+cumclade <- filter(meta_all,!is.na(firstDayWeek) & !is.na(Region)) %>% 
+  filter(!is.na(clade)) %>% 
+  select(clade,firstDayWeek, Region) %>%
+  mutate(clade = substr(clade,1,3),
+         n = 1) %>%
+  group_by(Region, firstDayWeek,clade) %>%
+  summarise(n = sum(n)) %>%
+  ungroup() %>%
+  complete(Region, firstDayWeek,clade,fill = list(n = 0)) %>%
+  group_by(Region, clade) %>%
+  arrange(as.numeric(firstDayWeek)) %>%
+  mutate(cs = cumsum(n)) %>%
+  group_by(Region,firstDayWeek) %>%
+  mutate(freq = n/sum(n),cfreq = cs/sum(cs))
+
+## Add for all of DK
+cumclade_DK <- group_by(cumclade,firstDayWeek,clade) %>%
+  summarise(n = sum(n)) %>%
+  group_by(clade) %>%
+  mutate(cs = cumsum(n)) %>%
+  group_by(firstDayWeek) %>%
+  mutate(freq = n/sum(n),cfreq = cs/sum(cs),
+         Region = "Hele Danmark")
+
+cumclade_DK <- bind_rows(cumclade_DK, cumclade)
+
+## Create plot for each region, store in list
+reg_clade_plot <- list()
+for(reg in unique(meta_all$Region[!is.na(meta_all$Region)])){
+reg_clade_plot[[reg]]  <- cumclade %>% 
+  filter(Region == reg) %>% 
+  ggplot(aes(x = firstDayWeek, y = n, group = clade, fill = clade)) +
+    geom_area() + 
+    theme_classic() +
+    scale_x_date(date_breaks = "1 month",date_labels = "%b") +
+    scale_fill_manual(values = unname(branded_colors), name = "Klade") +
+    theme(legend.position = "bottom") +
+    ylab("Antal Genomer") +
+    xlab("Måned")
+}
+```
+
+```{r}
+reg_phylo_plot <- list()
+
+for(reg in unique(meta_all$Region[!is.na(meta_all$Region)])){
+  ## Extract metadata and generate Region variable
+  tree_dk_meta <- meta_all %>%  select(ssi_id, SampleDate, Region, clade) %>% 
+    filter(ssi_id %in% tree$tip.label) %>% 
+    mutate(SampleDate = as.Date(SampleDate),
+           clade = ifelse(Region == reg, substr(clade,1,3), NA))
+  
+  ## Make basic phylogenetic tree
+  reg_phylo_plot[[reg]] <- ggtree(tree,col = "grey", as.Date = T,
+                                      mrsd = max(meta_all$date_consensus, na.rm = T)) %<+% tree_dk_meta +
+    theme_tree2() + 
+    scale_x_date(date_breaks = "1 month") +
+    geom_tippoint(aes(colour = clade)) +
+    scale_shape_manual(values=c(1),na.translate = F, name = "Klade") +
+    scale_color_manual(values = clade_colors, na.translate = F, name = "Klade") +
+    theme(
+      legend.position      = "bottom",
+      legend.justification = c(0,1),
+      axis.text.x = element_text(angle = 45,hjust = 1))
+}
+```
+\newpage
+
+# Region Hovedstaden
+## Prøveoversigt
+```{r, fig.height = 3, fig.width=7}
+pos_vs_genomes_reg_plot[["Hovedstaden"]] 
+```
+
+## Genom Kvalitet
+```{r, fig.height = 3, fig.width=7}
+reg_qc_plot[["Hovedstaden"]] 
+```
+
+## Klade fordeling
+```{r, fig.height = 4, fig.width=7}
+reg_clade_plot[["Hovedstaden"]]
+```
+
+## Fylogeni
+```{r, fig.height = 8, fig.width=7}
+reg_phylo_plot[["Hovedstaden"]]
+```
+\newpage
+
+
+# Region Sjælland
+## Prøveoversigt
+```{r, fig.height = 3, fig.width=7}
+pos_vs_genomes_reg_plot[["Sjælland"]] 
+```
+
+## Genom Kvalitet
+```{r, fig.height = 3, fig.width=7}
+reg_qc_plot[["Sjælland"]] 
+```
+
+## Klade fordeling
+```{r, fig.height = 4, fig.width=7}
+reg_clade_plot[["Sjælland"]]
+```
+
+## Fylogeni
+```{r, fig.height = 8, fig.width=7}
+reg_phylo_plot[["Sjælland"]]
+```
+\newpage
+
+# Region Midtjylland
+## Prøveoversigt
+```{r, fig.height = 3, fig.width=7}
+pos_vs_genomes_reg_plot[["Midtjylland"]] 
+```
+
+## Genom Kvalitet
+```{r, fig.height = 3, fig.width=7}
+reg_qc_plot[["Midtjylland"]] 
+```
+
+## Klade fordeling
+```{r, fig.height = 4, fig.width=7}
+reg_clade_plot[["Midtjylland"]]
+```
+
+## Fylogeni
+```{r, fig.height = 8, fig.width=7}
+reg_phylo_plot[["Midtjylland"]]
+```
+\newpage
+
+# Region Syddanmark
+## Prøveoversigt
+```{r, fig.height = 3, fig.width=7}
+pos_vs_genomes_reg_plot[["Syddanmark"]] 
+```
+
+## Genom Kvalitet
+```{r, fig.height = 3, fig.width=7}
+reg_qc_plot[["Syddanmark"]] 
+```
+
+## Klade fordeling
+```{r, fig.height = 4, fig.width=7}
+reg_clade_plot[["Syddanmark"]]
+```
+
+## Fylogeni
+```{r, fig.height = 8, fig.width=7}
+reg_phylo_plot[["Syddanmark"]]
+```
+\newpage
+
+# Region Nordjylland
+## Prøveoversigt
+```{r, fig.height = 3, fig.width=7}
+pos_vs_genomes_reg_plot[["Nordjylland"]] 
+```
+
+## Genom Kvalitet
+```{r, fig.height = 3, fig.width=7}
+reg_qc_plot[["Nordjylland"]] 
+```
+
+## Klade fordeling
+```{r, fig.height = 4, fig.width=7}
+reg_clade_plot[["Nordjylland"]]
+```
+
+## Fylogeni
+```{r, fig.height = 8, fig.width=7}
+reg_phylo_plot[["Nordjylland"]]
+```
