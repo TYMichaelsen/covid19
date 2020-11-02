@@ -87,7 +87,7 @@ for i in "${ARTICDIR[@]}"; do
   for j in $i/articminion/*.consensus.fasta; do echo $j; done
 done | sed 's/.consensus.fasta/.sorted.bam/' - > $OUTDIR/tmp_bamfiles
 
-head 10 $OUTDIR/tmp_bamfiles > tmp && mv tmp $OUTDIR/tmp_bamfiles
+head -n 10 $OUTDIR/tmp_bamfiles > tmp && mv tmp $OUTDIR/tmp_bamfiles
 
 exit 1
 
