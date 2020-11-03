@@ -2,6 +2,7 @@ import re
 import logging 
 import uuid
 import pandas as pd
+import math
 
 from datetime import datetime, timedelta
 from utilities import datestr_to_week_func, nut3_to_nut2_func, get_linelist
@@ -44,7 +45,7 @@ def convert_to_microreact_format(df):
       df[FIELD.age_group] = df['ReportAgeGrp'].astype('str')
       df[FIELD.lineage] = df['clade'].apply(lambda x: x.split('/')[0])
 
-      df = df.rename(columns={'ssi_id':FIELD.orig_id, 'code':FIELD.region})
+      df = df.rename(columns={'ssi_id':FIELD.orig_id, 'NUTS2_code':FIELD.region})
       df = df[[FIELD.ID, FIELD.orig_id, FIELD.sample_date, FIELD.epi_week, FIELD.country, FIELD.region, FIELD.lineage, FIELD.latitude, FIELD.longitude, FIELD.day, FIELD.month, FIELD.year, FIELD.age_group]]  
       return df
 
@@ -77,18 +78,38 @@ def filter_data_by_min_cases(df, config, min_cases=3):
       LOGGER.info('Filtering data with minimum number of cases per week and region (min number of cases - {})...'.format(min_cases))
       cases = _get_cases_per_region_week(config)
       filtered_data = []
-      skipped_ids = []
+      skipped_ids = {}
+
+      region_less = []
 
       for _,example in df.iterrows():
-            match = cases.loc[(cases['Week'] == example[FIELD.sample_date]) & (cases['NUTS3Code'] == example[FIELD.region])]
+            if example[FIELD.region] == 'Unknown':
+                  region_less.append(example.to_dict())
+                  continue
+            
+            match = cases.loc[(cases[FIELD.sample_date] == example[FIELD.sample_date]) & (cases[FIELD.region] == example[FIELD.region])]
             if len(match.index) != 1:
-                  # LOGGER.warning("Cases did not properly match the example, continuing... (cases: {}, id: {})".format(len(match.index), example[FIELD.orig_id]))
-                  skipped_ids.append(example[FIELD.ID])
+                  LOGGER.warning("Cases did not properly match the example, continuing... (cases: {}, id: {})".format(len(match.index), example[FIELD.orig_id]))
+                  skipped_ids[example[FIELD.ID]] = example[FIELD.lineage]
                   continue
+            
             if match['Cases'].iloc[0] < min_cases:
-                  skipped_ids.append(example[FIELD.ID])
+                  LOGGER.warning('Example with id: {} does not satisfy minimum number of cases. Cases: {}'.format(example[FIELD.orig_id], len(match.index)))
+                  skipped_ids[example[FIELD.ID]] = example[FIELD.lineage]
                   continue
+
             filtered_data.append(example.to_dict())
+
+      if len(region_less) < min_cases:
+            LOGGER.warning('There are less than {} cases without region - skipping...'.format(min_cases))
+            for example in region_less:
+                  skipped_ids[example[FIELD.ID]] = example[FIELD.lineage]
+      else:
+            LOGGER.info('Appending region less cases...')
+            filtered_data.extend(region_less)
+
+      LOGGER.info('Data entries after filtering: {}'.format(len(filtered_data)))
+      LOGGER.info('Skipped entries: {}'.format(len(skipped_ids)))
       return filtered_data, skipped_ids
 
 def get_unmatched_ids_in_tree(tree, id_prefix_lst):
@@ -106,11 +127,11 @@ def add_empty_records(data, skipped_ids):
             empty_data_obj = {
                   FIELD.ID:skipped_id,
                   FIELD.orig_id:None,
-                  FIELD.sample_date:None,
-                  FIELD.epi_week:None,
-                  FIELD.country:None,
-                  FIELD.region:None,
-                  FIELD.lineage:None,
+                  FIELD.sample_date:'Unknown',
+                  FIELD.epi_week:'Unknown',
+                  FIELD.country:'DK01',
+                  FIELD.region:'Unknown',
+                  FIELD.lineage:skipped_ids[skipped_id],
                   FIELD.latitude:None,
                   FIELD.longitude:None,
                   FIELD.day:None,
@@ -142,10 +163,11 @@ def _get_epi_week(infected_date, epidemic_start_date):
 #       # return min(e[2] for e in data)
 
 def _get_cases_per_region_week(config):
-      linelist = get_linelist(config)
-      linelist['Week']=linelist['SampleDate'].apply(datestr_to_week_func())
-      linelist['NUTS3Code'] = linelist['NUTS3Code'].apply(nut3_to_nut2_func())
-      return linelist.groupby(['Week', 'NUTS3Code']).size().reset_index(name="Cases")
+      df = get_linelist(config)
+      df[FIELD.sample_date] = df['SampleDate'].apply(lambda x: datetime.strptime(x, '%Y-%m-%d'))
+      df[FIELD.sample_date] = df[FIELD.sample_date].apply(lambda x: x.isocalendar()[1])
+      df[FIELD.region] = df['NUTS3Code'].apply(lambda x: str(x)[:-1] if 'DK' in str(x) else 'Unknown')
+      return df.groupby([FIELD.sample_date, FIELD.region]).size().reset_index(name="Cases")
 
 def _find_replacement_idx(tree, key):
       for match in re.finditer(key, tree):

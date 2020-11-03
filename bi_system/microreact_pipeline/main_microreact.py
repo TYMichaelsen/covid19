@@ -42,19 +42,16 @@ def get_data(config):
     df_clade = pd.read_csv(config['global_clade_assignment_file'], sep='\t')
     df_regions = pd.read_csv('stable_dims/nuts2_regions.tsv', sep='\t')
 
-    df_metadata['NUTS2_code'] = df_metadata['NUTS3Code'].apply(lambda x: str(x)[:-1])
+    df_metadata['NUTS2_code'] = df_metadata['NUTS3Code'].apply(lambda x: str(x)[:-1] if 'DK' in str(x) else 'Unknown')
     df = pd.merge(df_metadata, df_clade, how='inner', left_on='ssi_id', right_on='strain')
     df = pd.merge(df, df_regions, how='left', left_on='NUTS2_code', right_on='code')
     return df
 
 def convert_to_microreact(df, tree, config):
-    logger = logging.getLogger("to microreact")
-
     df = convert_to_microreact_format(df)
     tree = replace_tree_ids(df, tree)
     data, skipped_ids = filter_data_by_min_cases(df, config, min_cases=3)
     data = add_empty_records(data, skipped_ids)
-    logger.info("Processed {}/{}".format(len(data) - len(skipped_ids), len(data)))
     return data, tree
 
 def save_micro_react_files(config, data, tree):
@@ -76,7 +73,7 @@ if __name__ == '__main__':
     update_latest_nextstrain(config)
     
     config = set_config_nextstrain(config, date_str, date_suffix)
-    config = set_config_linelist(config, date_str)
+    # config = set_config_linelist(config, date_str)
 
     create_metadata_files(config)
     data = get_data(config)

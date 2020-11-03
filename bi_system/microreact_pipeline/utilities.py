@@ -1,14 +1,33 @@
 import sys
 import json
 import pysftp
+import os
 
 from datetime import datetime
-from pandas import read_excel
+from pandas import read_csv, option_context
 
 def get_linelist(config):
-      linelist = read_excel(config['raw_ssi_file'])
+      path = _get_latest_linelist_file(config)
+      linelist = read_csv(path, sep='\t')
       assert linelist.empty == False
       return linelist
+
+def _get_latest_linelist_file(config):
+    path = '/'.join(config['raw_ssi_file'].split('/')[:-1])
+    file = config['raw_ssi_file'].split('/')[-1]
+    filename = file.split('_')[1]
+    date_format = file.split('_')[0]
+    
+    dates = []
+    for f in os.scandir(path):
+        if filename not in f.name:
+            continue
+        date_str = f.name.split('_')[0]
+        dates.append(datetime.strptime(date_str, date_format))
+    
+    assert len(dates) > 0, 'failed to find stat file.'
+    latest_date_str = max(dates).strftime(date_format)
+    return '{}/{}_{}'.format(path, latest_date_str, filename)
 
 def datestr_to_week_func():
       return lambda date: datetime.strptime(date, '%Y-%m-%d').isocalendar()[1]
@@ -45,3 +64,7 @@ def stfp_file(host, user, password, destination_path, local_path, logger):
         logger.error('Failed to sftp {} to the web server.'.format(local_path))
         logger.error(e)
         srv.close()
+
+def print_full(df):
+      with option_context('display.max_rows', None, 'display.max_columns', None):
+            print(df)
