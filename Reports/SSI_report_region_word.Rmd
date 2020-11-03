@@ -191,7 +191,7 @@ meta_all <- left_join(meta_ll,meta_seq,by = "CPR") %>%
 # Format data and filter by week of interest
 meta_all <- mutate(meta_all,
   genome_qc    = factor(genome_qc,levels = c("HQ","MQ","Fail")),
-  firstDayWeek = {floor_date(date_consensus,"week") + 1} %>% as.Date(),
+  firstDayWeek = {floor_date(date_consensus,"week", week_start = 1)} %>% as.Date(),
   #samplseWeek    = date2ISOweek(floor_date(date_consensus,"week")),
   clade        = sub("/.*","",x = clade)) %>%
   group_by(firstDayWeek) %>%
