@@ -14,11 +14,11 @@ knit: (function(inputFile, encoding) { rmarkdown::render(inputFile, encoding = e
 ### USER SPECIFIED PARAMETERS ##################################################
 
 # Set week to focus at, according to the ISO standard. Can be multiple.
-weeks <- c(41)
+weeks <- c(42,43)
 
 # Set which linelist to use.
-timestmp_ll <- "2020-10-22"
-path_to_ll  <- "/srv/rbd/covid19/metadata/raw-ssi-metadata/Lineliste_221020.xlsx"
+timestmp_ll <- "2020-10-28"
+path_to_ll  <- "/srv/rbd/covid19/metadata/raw-ssi-metadata/Lineliste_281020.xlsx"
 
 # !OBS: The genome metadata and phylogenetic tree are automatically loaded from the latest data build.
 ```
@@ -190,7 +190,7 @@ meta_all <- left_join(meta_ll,meta_seq,by = "CPR") %>%
 # Format data and filter by week of interest
 meta_all <- mutate(meta_all,
   genome_qc    = factor(genome_qc,levels = c("HQ","MQ","Fail")),
-  firstDayWeek = {floor_date(date_consensus,"week") + 1} %>% as.Date(),
+  firstDayWeek = {floor_date(date_consensus,"week", week_start = 1)} %>% as.Date(),
   #samplseWeek    = date2ISOweek(floor_date(date_consensus,"week")),
   clade        = sub("/.*","",x = clade)) %>%
   group_by(firstDayWeek) %>%
@@ -345,7 +345,7 @@ clade_freq <- meta_all %>%
 
 ```{r, fig.height=10, fig.width = 12}
 # Make a nation-wide figure, all clusters >=20.
-d_clades_week <- filter(meta_all, !is.na(clade)) %>%
+d_clades_week <- filter(meta_all, !is.na(clade) & date_consensus <= date_rng[2]) %>%
   filter(!is.na(cluster_no)) %>%
   group_by(firstDayWeek,clade,cluster_no,cluster_size,cluster_start) %>%
   summarise(count = n()) %>%
