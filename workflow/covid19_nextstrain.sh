@@ -60,7 +60,7 @@ echo Using Singularity image: $SINGIMG
 # DISTDIR="/srv/rbd/covid19/current"
 
 if [ -z ${META+x} ]; then
-    META=$(findTheLatest "${DISTDIR}/genomes/*export")/metadata.tsv
+    META=$(findTheLatest "${DISTDIR}/metadata/*nextstrain.tsv")
     echo "WARNING: -m not provided, will use the latest one for nextstrain:"
     echo $META
 fi
