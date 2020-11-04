@@ -10,7 +10,7 @@ Arguments:
     -h  Show this help text.
     -m  Metadata file.
     -s  Sequence file.
-    -g  Flag to build global dataset. Default is False, not to build, only take all Danish data and subsample global data
+    -b  Choose custom build among 'light' (default), 'full' or 'global'. Multiple builds also possible: light,full (no space around ',')
     -i  (Develop only) Specify a specific singularity image to use.
     -o  (Develop only) Specify output directory.
     -t  (Develop only) Number of threads.
@@ -22,7 +22,7 @@ Arguments:
 ### Terminal Arguments ---------------------------------------------------------
 
 # Import user arguments
-while getopts ':hfpgm:s:o:t:k:i:' OPTION; do
+while getopts ':hfpm:b:s:o:t:k:i:' OPTION; do
   case $OPTION in
     h) echo "$USAGE"; exit 1;;
     m) META=$OPTARG;;
@@ -32,7 +32,7 @@ while getopts ':hfpgm:s:o:t:k:i:' OPTION; do
     i) SINGIMG=$OPTARG;;
     f) FORCE=1;;
     p) PULL_GITHUB=1;;
-    g) BUILD_GLOBAL=1;;
+    b) CUSTOM_BUILD=$OPTARG;;
     k) SNAKE_ADD=$OPTARG;;
     :) printf "missing argument for -$OPTARG\n" >&2; exit 1;;
     \?) printf "invalid option for -$OPTARG\n" >&2; exit 1;;
@@ -60,7 +60,7 @@ echo Using Singularity image: $SINGIMG
 # DISTDIR="/srv/rbd/covid19/current"
 
 if [ -z ${META+x} ]; then
-    META=$(findTheLatest "${DISTDIR}/genomes/*export")/metadata.tsv
+    META=$(findTheLatest "${DISTDIR}/metadata/*nextstrain.tsv")
     echo "WARNING: -m not provided, will use the latest one for nextstrain:"
     echo $META
 fi
@@ -72,6 +72,10 @@ fi
 
 if [ -z ${OUTDIR+x} ]; then 
     OUTDIR=${NEXTSTRAINOUT}/$(basename -s _export $(findTheLatest "${DISTDIR}/genomes/*export"))_nextstrain
+fi
+
+if [ -z ${CUSTOM_BUILD+x} ]; then 
+    CUSTOM_BUILD="light"
 fi
 
 GENOMEDIR=$(dirname $SEQS)
@@ -96,10 +100,10 @@ mkdir -p $OUTDIR/data
 GISAID_META=$(findTheLatest "${DISTDIR}/global_data/*tsv")
 GISAID_FASTA=$(findTheLatest "${DISTDIR}/global_data/*fasta")
 NCOV_ROOT="/opt/nextstrain/ncov-aau"
-if [ -n "$BUILD_GLOBAL" ]; then
-    BPROFILE="my_profiles/denmark"
-else
-    BPROFILE="my_profiles/denmarkonly"
+BPROFILE="my_profiles/denmark"
+
+if [ -n "$CUSTOM_BUILD" ]; then
+    SNAKE_ADD="custom_build=$CUSTOM_BUILD $SNAKE_ADD"
 fi
 
 
