@@ -55,24 +55,6 @@ local_meta <- read_tsv(opt$l,guess_max = 10000)
 
 local_date <- as.Date(str_match(opt$l, "metadata/(.*?)_metadata")[2])
 
-## Rename local variables to match gisaid data
-local_meta <- dplyr::rename(local_meta,
-                     strain           = ssi_id,
-                     date             = SampleDate,
-                     location         = zipcode_name,
-                     division         = Region,
-                     age              = SampleAge,
-                     country_exposure = CountryOfTravel,
-                     sex              = Sex) %>%
-  mutate(
-    virus   = "ncov",
-    region  = "Europe",
-    country = "Denmark",
-    division = swapDKlet(division),
-    location = swapDKlet(location),
-    sex     = ifelse(sex == "M","Male","Female"),
-    date_submitted = local_date)
-
 ############################
 ### Combine & Clean data ###
 ############################
