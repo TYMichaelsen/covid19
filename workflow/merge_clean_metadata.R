@@ -49,7 +49,7 @@ gisaid_meta$strain <- recode(gisaid_meta$strain,
 ##################
 
 # Load local data
-local_meta <- read_tsv(opt$l,guess_max = 10000)
+local_meta <- read_tsv(opt$l,guess_max = 10000) %>% filter(! strain %in% c("Wuhan/WH01/2019", "Wuhan/Hu-1/2019"))
 
 ## Extract date from file name
 
