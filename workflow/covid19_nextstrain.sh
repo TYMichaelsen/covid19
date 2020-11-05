@@ -101,6 +101,7 @@ GISAID_META=$(findTheLatest "${DISTDIR}/global_data/*tsv")
 GISAID_FASTA=$(findTheLatest "${DISTDIR}/global_data/*fasta")
 NCOV_ROOT="/opt/nextstrain/ncov-aau"
 BPROFILE="my_profiles/denmark"
+RUNLOGFILE=${OUTDIR}/run.log
 
 if [ -n "$CUSTOM_BUILD" ]; then
     SNAKE_ADD="custom_build=$CUSTOM_BUILD $SNAKE_ADD"
@@ -113,19 +114,18 @@ data_date=$(basename -s "_export" $(dirname $SEQS))
 
 # Make sure when re-running on the same $OUTDIR use the same input data
 SNAKE_OUT=${OUTDIR}/results
-if [ -f "${SNAKE_OUT}/Denmark/description.md" ]; then
-    data_date=$(grep 'Denmark Data' "${SNAKE_OUT}/Denmark/description.md" |cut -d':' -f 2|sed 's/ //g')
-    gisaid_date=$(grep 'GISAID Data' "${SNAKE_OUT}/Denmark/description.md" |cut -d':' -f 2|sed 's/ //g')
+if [ -s "${RUNLOGFILE}" ]; then
+    data_date=$(grep snakemake ${RUNLOGFILE} |tail -n 1|sed 's/ /\n/g'| grep 'data_date=' | awk -F '=' '{print $2}'|tr -d \'\")
+    gisaid_date=$(grep snakemake ${RUNLOGFILE} |tail -n 1|sed 's/ /\n/g'| grep 'gisaid_date=' | awk -F '=' '{print $2}'|tr -d \'\")
 
-    if [ -s "$OUTDIR/run.log" ]; then
-        META=$(grep snakemake $OUTDIR/run.log |tail -n 1|sed 's/ /\n/g'| grep 'denmark_meta=' | awk -F '=' '{print $2}')
-        SEQS=$(grep snakemake $OUTDIR/run.log |tail -n 1|sed 's/ /\n/g'| grep 'denmark_fasta=' | awk -F '=' '{print $2}')
-        GISAID_META=$(grep snakemake $OUTDIR/run.log |tail -n 1|sed 's/ /\n/g'| grep 'gisaid_meta=' | awk -F '=' '{print $2}')
-        GISAID_FASTA=$(grep snakemake $OUTDIR/run.log |tail -n 1|sed 's/ /\n/g'| grep 'gisaid_fasta=' | awk -F '=' '{print $2}')
-        echo Existing run output detected at $OUTDIR.
-        echo Now rerunning with data_date: $data_date, gisaid_date: $gisaid_date ...
-    fi
+    META=$(grep snakemake ${RUNLOGFILE} |tail -n 1|sed 's/ /\n/g'| grep 'denmark_meta=' | awk -F '=' '{print $2}')
+    SEQS=$(grep snakemake ${RUNLOGFILE} |tail -n 1|sed 's/ /\n/g'| grep 'denmark_fasta=' | awk -F '=' '{print $2}')
+    GISAID_META=$(grep snakemake ${RUNLOGFILE} |tail -n 1|sed 's/ /\n/g'| grep 'gisaid_meta=' | awk -F '=' '{print $2}')
+    GISAID_FASTA=$(grep snakemake ${RUNLOGFILE} |tail -n 1|sed 's/ /\n/g'| grep 'gisaid_fasta=' | awk -F '=' '{print $2}')
+    echo Existing run output detected at $OUTDIR.
+    echo Now rerunning with data_date: $data_date, gisaid_date: $gisaid_date ...
 fi
+
 
 ARGSTR="--cores $THREADS --profile $BPROFILE --config gisaid_date='\"$gisaid_date\"' data_date='\"$data_date\"' "
 ARGSTR="$ARGSTR denmark_meta=${META} denmark_fasta=${SEQS} gisaid_meta=${GISAID_META} gisaid_fasta=${GISAID_FASTA}"
@@ -159,10 +159,11 @@ else
 
     TimeStamp=$(date +%y%m%d_%H%M)
 
-    echo ${TimeStamp}: ${USER}, PWD: ${PWD} >>${OUTDIR}/run.log
-    echo ${TimeStamp}: "$0 $@" >>${OUTDIR}/run.log
-    echo ${TimeStamp}: Singularity Image Used: $SINGIMG >> ${OUTDIR}/run.log
-    echo ${TimeStamp}: snakemake ${ARGSTR} >> $OUTDIR/run.log
+    echo ${TimeStamp}: ${USER}, PWD: ${PWD} >>${RUNLOGFILE}
+    echo ${TimeStamp}: "$0 $@" >>${RUNLOGFILE}
+    echo ${TimeStamp}: Singularity Image Used: $SINGIMG >> ${RUNLOGFILE}
+    echo ${TimeStamp}: snakemake ${ARGSTR} >> ${RUNLOGFILE}
+
     singularity exec  -B /srv/rbd:/srv/rbd \
                 -B $HOME:$HOME \
                 $SINGIMG bash <<HEREDOC
