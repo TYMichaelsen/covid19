@@ -174,6 +174,7 @@ source activate nextstrain
 ###############################################################################
 if [ ! -d $OUTDIR/ncov-aau ]; then
    cp -r $NCOV_ROOT $OUTDIR
+   chmod -R g+w ${OUTDIR}/ncov-aau
 fi
 cd $OUTDIR/ncov-aau
 snakemake ${ARGSTR}
