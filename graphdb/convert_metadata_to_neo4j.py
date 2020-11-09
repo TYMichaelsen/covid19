@@ -324,7 +324,7 @@ if __name__ == '__main__':
     with open(config_file) as f:
         config = json.load(f)
 
-    with open('../bi_system/config.json.template') as f:
+    with open('config/graph.json.template') as f:
         expected_config = json.load(f)
 
     for k in expected_config.keys():
@@ -345,3 +345,4 @@ if __name__ == '__main__':
         clades = get_global_clades(gfile, writer)
         load_data(graph, infile, writer, clades)
         writer.writerow({'MessageType': 'Info', 'ErrorType': '', 'Details': 'Finished {}'.format(infile)})
+
