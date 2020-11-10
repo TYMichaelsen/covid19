@@ -2,6 +2,7 @@ import re
 import logging 
 import uuid
 import pandas as pd
+import numpy as np
 import math
 
 from datetime import datetime, timedelta
@@ -13,9 +14,10 @@ class FIELD():
       ID = "ID"
       orig_id = "orig_id"
       sample_date = "sample_date"
-      epi_week= "epi_weel"
+      epi_week= "epi_week"
       country="country"
-      region="region__autocolor"
+      region="region"
+      region_name="region__autocolor"
       lineage="lineage__autocolor"
       latitude="latitude"
       longitude="longitude"
@@ -38,15 +40,18 @@ def convert_to_microreact_format(df):
       df[FIELD.ID] = pd.Series(index=range(len(df.index))).apply(lambda _: str(uuid.uuid4()))
       df[FIELD.sample_date] = df['date'].apply(lambda x: x.isocalendar()[1])
       df[FIELD.epi_week] = df['date'].apply(_get_epi_week, args=(min(df['date']),))
-      df[FIELD.country] = pd.Series(index=range(len(df.index))).apply(lambda _: 'DK01')
+      df[FIELD.country] = pd.Series(index=range(len(df.index))).apply(lambda _: 'Denmark')
       df[FIELD.day] = df['date'].apply(lambda x: _get_first_day_of_week(x).day)
       df[FIELD.month] = df['date'].apply(lambda x: _get_first_day_of_week(x).month)
       df[FIELD.year] = df['date'].apply(lambda x: _get_first_day_of_week(x).year)
-      df[FIELD.age_group] = df['ReportAgeGrp'].astype('str')
-      df[FIELD.lineage] = df['clade'].apply(lambda x: x.split('/')[0])
 
-      df = df.rename(columns={'ssi_id':FIELD.orig_id, 'NUTS2_code':FIELD.region})
-      df = df[[FIELD.ID, FIELD.orig_id, FIELD.sample_date, FIELD.epi_week, FIELD.country, FIELD.region, FIELD.lineage, FIELD.latitude, FIELD.longitude, FIELD.day, FIELD.month, FIELD.year, FIELD.age_group]]  
+      df[FIELD.region] = df['code'].apply(lambda x: x if type(x) == str else 'Unknown')
+      df[FIELD.lineage] = df['clade'].apply(lambda x: x if type(x) == str else 'Unknown')
+      df[FIELD.lineage] = df[FIELD.lineage].apply(lambda x: x.split('/')[0])
+
+      df = df.rename(columns={'strain':FIELD.orig_id, 'NUTS2_name':FIELD.region_name})
+      df = df[[FIELD.ID, FIELD.orig_id, FIELD.sample_date, FIELD.epi_week, FIELD.country, FIELD.region, FIELD.region_name, FIELD.lineage, FIELD.latitude, FIELD.longitude, FIELD.day, FIELD.month, FIELD.year]]  
+
       return df
 
 def save_tree(config, tree):
@@ -86,7 +91,7 @@ def filter_data_by_min_cases(df, config, min_cases=3):
             if example[FIELD.region] == 'Unknown':
                   region_less.append(example.to_dict())
                   continue
-            
+      
             match = cases.loc[(cases[FIELD.sample_date] == example[FIELD.sample_date]) & (cases[FIELD.region] == example[FIELD.region])]
             if len(match.index) != 1:
                   LOGGER.warning("Cases did not properly match the example, continuing... (cases: {}, id: {})".format(len(match.index), example[FIELD.orig_id]))
@@ -128,16 +133,16 @@ def add_empty_records(data, skipped_ids):
                   FIELD.ID:skipped_id,
                   FIELD.orig_id:None,
                   FIELD.sample_date:'Unknown',
-                  FIELD.epi_week:'Unknown',
-                  FIELD.country:'DK01',
+                  FIELD.epi_week:'0',
+                  FIELD.country:'Denmark',
+                  FIELD.region_name:'Unknown',
                   FIELD.region:'Unknown',
                   FIELD.lineage:skipped_ids[skipped_id],
-                  FIELD.latitude:None,
-                  FIELD.longitude:None,
-                  FIELD.day:None,
-                  FIELD.month:None,
-                  FIELD.year:None,
-                  FIELD.age_group:None
+                  FIELD.latitude:'Unknown',
+                  FIELD.longitude:'Unknown',
+                  FIELD.day:'Unknown',
+                  FIELD.month:'Unknown',
+                  FIELD.year:'Unknown',
             }
             data.append(empty_data_obj)
       return data
@@ -147,8 +152,9 @@ def save_csv(config, data):
       LOGGER.info('Saving data to {}'.format(path))
 
       df = pd.DataFrame(data)
-      df = df.drop(columns=[FIELD.orig_id, FIELD.age_group], axis=1)
-      df.to_csv(path, sep='\t')
+      df = df.drop(columns=[FIELD.orig_id, FIELD.region], axis=1)
+
+      df.to_csv(path, sep='\t', index=False)
 
 def _get_first_day_of_week(date):
       return date - timedelta(days=date.weekday())

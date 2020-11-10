@@ -2,6 +2,7 @@ import csv
 import argparse
 import logging
 import pandas as pd
+import math
 
 from config_controller import get_config, set_config_nextstrain, set_config_linelist, update_latest_nextstrain
 from data_cleansing_metadata import check_file, check_errors
@@ -38,13 +39,21 @@ def create_metadata_files(config):
     logger.info('Done.')
 
 def get_data(config):
-    df_metadata = pd.read_csv(config['staged_metadata_file'], sep=',')
+    df_metadata = pd.read_csv(config['sequenced_metadata_file'], sep='\t')
     df_clade = pd.read_csv(config['global_clade_assignment_file'], sep='\t')
     df_regions = pd.read_csv('stable_dims/nuts2_regions.tsv', sep='\t')
 
-    df_metadata['NUTS2_code'] = df_metadata['NUTS3Code'].apply(lambda x: str(x)[:-1] if 'DK' in str(x) else 'Unknown')
-    df = pd.merge(df_metadata, df_clade, how='inner', left_on='ssi_id', right_on='strain')
-    df = pd.merge(df, df_regions, how='left', left_on='NUTS2_code', right_on='code')
+    df_regions = df_regions.rename(columns={'name':'NUTS2_name'})
+    df_regions['NUTS2_name'] = df_regions['NUTS2_name'].apply(lambda x: x.split('_')[1]) 
+    df_metadata = df_metadata.rename(columns={'division':'NUTS2_name'})
+    df_metadata['NUTS2_name'] = df_metadata['NUTS2_name'].apply(lambda x: x if type(x) == str else 'Unknown')
+        
+    df = pd.merge(df_metadata, df_clade, how='left', left_on='strain', right_on='strain')
+    df = pd.merge(df, df_regions, how='left', left_on='NUTS2_name', right_on='NUTS2_name')
+
+    allowed_regions = df_regions['NUTS2_name'].to_list()
+    df['NUTS2_name'] = df['NUTS2_name'].apply(lambda x: x if x in allowed_regions else 'Unknown')
+
     return df
 
 def convert_to_microreact(df, tree, config):
@@ -70,9 +79,9 @@ if __name__ == '__main__':
     date_suffix = args.date_folder_suffix
 
     set_logging(config)
-    update_latest_nextstrain(config)
     
-    config = set_config_nextstrain(config, date_str, date_suffix)
+    # update_latest_nextstrain(config)
+    # config = set_config_nextstrain(config, date_str, date_suffix)
     # config = set_config_linelist(config, date_str)
 
     create_metadata_files(config)
@@ -81,4 +90,4 @@ if __name__ == '__main__':
     data, tree = convert_to_microreact(data, tree, config)
     
     save_micro_react_files(config, data, tree)
-    upload(config)
+    # upload(config)

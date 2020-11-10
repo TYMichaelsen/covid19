@@ -7,10 +7,17 @@ from datetime import datetime
 from pandas import read_csv, option_context
 
 def get_linelist(config):
-      path = _get_latest_linelist_file(config)
-      linelist = read_csv(path, sep='\t')
-      assert linelist.empty == False
-      return linelist
+
+    path = ''
+    for f in os.scandir(config['raw_ssi_file']):
+        if 'linelist' in f.name:
+            path = '{}/{}'.format(config['raw_ssi_file'], f.name)
+            break
+    
+    assert path != '', 'linelist file not found.'
+    linelist = read_csv(path, sep='\t')
+    assert linelist.empty == False, 'failed to load linelist file'   
+    return linelist
 
 def _get_latest_linelist_file(config):
     path = '/'.join(config['raw_ssi_file'].split('/')[:-1])

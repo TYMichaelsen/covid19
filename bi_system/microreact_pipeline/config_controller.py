@@ -59,10 +59,25 @@ def update_latest_nextstrain(config):
                     continue                
                 
                 _, _, suffix = _split_path(config[k])
+
                 source_path = '{}/{}_nextstrain/{}'.format(common_path_prefix, date_str, suffix)
                 target_path = '{}/latest/{}'.format(common_path_prefix, suffix)
                 
+                date_format = '%Y-%m-%d-%H-%M'
+                date_filename = source_path.split('/')[-1]
+                if date_format in date_filename:
+                    path = '/'.join(source_path.split('/')[:-1])
+                    filename = '_'.join(date_filename.split('_')[1:])
+
+                    for f in os.scandir(path):
+                        if filename in f.name:
+                            date = f.name.split('_')[0]
+                            source_path = '{}/{}_{}'.format(path, date, filename)
+                            target_path = '{}/{}_{}'.format('/'.join(target_path.split('/')[:-1]), date, filename)
+                            break
+                
                 LOGGER.info("Copying {} to latest...".format(source_path))
+                
                 if os.path.exists(os.path.dirname(target_path)) == False:
                     os.makedirs(os.path.dirname(target_path))
                 copyfile(source_path, target_path)
@@ -73,13 +88,30 @@ def update_latest_nextstrain(config):
 
 def _get_replacement_nextstrain_path(path, date_str, date_folder_suffix):
     prefix, _, suffix = _split_path(path)
-    if date_str == 'latest':
-        return '{}/latest/{}'.format(prefix, suffix)
+    # if date_str == 'latest':
+    path = '{}/latest/{}'.format(prefix, suffix)
+    date_format = '%Y-%m-%d-%H-%M'
+    date_filename = path.split('/')[-1]
 
-    if os.path.isdir('{}/{}_{}'.format(prefix, date_str, date_folder_suffix)):
-        return '{}/{}_{}/{}'.format(prefix, date_str, date_folder_suffix, suffix)
+    if date_format not in date_filename:
+        return path
 
-    dir_str = '{}/{}_{}'.format(prefix, date_str, date_folder_suffix)
+    new_path = '/'.join(path.split('/')[:-1])
+    filename = '_'.join(date_filename.split('_')[1:])
+
+    for f in os.scandir(new_path):
+        if filename in f.name:
+            date = f.name.split('_')[0]
+            print(20*'#')
+            print('{}/{}_{}'.format(new_path, date, filename))
+            import sys
+            sys.exit()
+            return '{}/{}_{}'.format(new_path, date, filename)
+
+    # if os.path.isdir('{}/{}_{}'.format(prefix, date_str, date_folder_suffix)):
+    #     return '{}/{}_{}/{}'.format(prefix, date_str, date_folder_suffix, suffix)
+
+    # dir_str = '{}/{}_{}'.format(prefix, date_str, date_folder_suffix)
     raise NotADirectoryError('Directory {} does not exist, make sure to provide correct date and date suffix.'.format(dir_str))
 
 def _get_nextstrain_date_list(path):

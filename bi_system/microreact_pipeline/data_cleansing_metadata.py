@@ -261,10 +261,11 @@ def check_errors(datafile, outfile, errfilewriter):
 
             # Common sense checks
             # consistent COVID status and date
-            if row['COVID19_Status'] in ['1', '2']:
-                if len(row['COVID19_EndDate'.strip()]) == 0:
-                    log_field_error('COVID19_EndDate', rows_read, "missing COVID19_EndDate when status is set to: {}"
-                                    .format(row['COVID19_Status']), errfilewriter)
+            # if row['COVID19_Status'] in ['1', '2']:
+            #     if len(row['COVID19_EndDate'.strip()]) == 0:
+            #         log_field_error('COVID19_EndDate', rows_read, "missing COVID19_EndDate when status is set to: {}"
+            #                         .format(row['COVID19_Status']), errfilewriter)
+            
             # consistent pregnancy info
             if 'Pregnancy' in outrow.keys() and 'Sex' in outrow.keys() and 'ReportAge' in outrow.keys()\
                     and outrow['Pregnancy'] == TRUE_VALUE:
