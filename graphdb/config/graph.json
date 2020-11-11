@@ -1,0 +1,6 @@
+{
+    "global_clade_assignment_file": "/srv/rbd/covid19/nextstrain/latest/results/DenmarkOnly/clade_assignment.tsv",
+    "graph_load_log_file": "/srv/rbd/covid19/bisystem/staging/load_neo4j.log",
+    "neo4j_server": "10.23.0.9", "noe4j_server_password":"fjEuqgZYz7SN",
+    "staged_metadata_file":"/srv/rbd/covid19/bisystem/staging/danish_metadata.tsv"
+}

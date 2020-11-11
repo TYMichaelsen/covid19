@@ -1,0 +1,6 @@
+{
+    "global_clade_assignment_file":"",
+    "graph_load_log_file":"",
+    "neo4j_server": "", "noe4j_server_password":"",
+    "staged_metadata_file":""
+}
