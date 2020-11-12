@@ -2,7 +2,12 @@ import math
 import json
 import pandas as pd
 import argparse
+from collections import deque
 from py2neo import Graph, Node, Relationship, NodeMatcher
+
+NODES = {}
+RELATIONSHIPS = deque([])
+TRANSACTION = None
 
 def get_config(path):
     with open(path) as f:
@@ -22,6 +27,7 @@ def process_data(df_metadata, df_clades, df_linelist, df_regions):
     #fix empty values, columns, before merging
     df_regions.name = df_regions.name.apply(lambda x: x.split('_')[1]) 
     df_metadata.division = df_metadata.division.apply(lambda x: x if type(x) == str else '')
+    df_metadata.location = df_metadata.location.apply(lambda x: x if type(x) == str else '')
     df_metadata.age = df_metadata.age.apply(lambda x: '' if math.isnan(x) else str(x))
     df_metadata['age_group'] = df_metadata.age.apply(lambda x: '0-9' if len(x) == 0 else f'{x[0]}0-{x[0]}9')
 
@@ -53,7 +59,6 @@ def process_data(df_metadata, df_clades, df_linelist, df_regions):
     allowed_regions = df_regions['name'].to_list()
     df.division = df.division.apply(lambda x: x if x in allowed_regions else '')
     df.clade = df.clade.apply(lambda x: x if type(x) == str else '')
-    df.clade = df.clade.apply(lambda x: x.split('/')[0])
     return df
 
 def is_valid_value(v):
@@ -67,56 +72,118 @@ def is_valid_value(v):
         return v != -1
     return False
 
-def construct_nodes(g, df, df_dl):
-    [g.create(Node('AgeGroup', name=v)) for v in df.age_group.unique()]
-    [g.create(Node('Sex', name=v)) for v in df.sex.unique() if v != '']
-    [g.create(Node('Division', name=v)) for v in df.division.unique() if v != '']
-    [g.create(Node('Location', name=v)) for v in df.location.unique() if v != '']
-    [g.create(Node('Strain', name=v)) for v in df.clade.unique() if v != '']
-    
-    g = construct_people(df, df_dl, g)
-    g = construct_division_locations(df_dl, g)
+def add_node(label, v):
+    global TRANSACTION
+    global NODES
 
-    g.commit()
+    node = Node(label, name=v)
+   
+    TRANSACTION.create(node)
+    if label not in NODES:
+        NODES[label] = {}
+    NODES[label][v]=node
 
-def construct_division_locations(df_dl, g):
-    matcher = NodeMatcher(g)
-    for _,row in df_dl.iterrows():
-        location_node = matcher.match('Location', name=row.location).first()
-        division_node = matcher.match('Division', name=row.division).first()
-        if location_node == None or division_node == None:
-            continue
-        g.create(Relationship(location_node, 'PartOf', division_node))
-    return g
+def add_node_obj(node):
+    global TRANSACTION
+    TRANSACTION.create(node)
 
-def construct_people(df, df_dl, g):
-    locations = df_dl.location.unique()
-    matcher = NodeMatcher(g)
+def get_node(label, prop):
+    try:
+        return NODES[label][prop]
+    except:
+        return None
 
-    for _,v in df.head(100).iterrows():
+def add_relationship(node1, node2, label):
+    global TRANSACTION
+    global RELATIONSHIPS
+
+    if node1 == None or node2 == None:
+        print(f'\nFailed to construct relationship {label}, None node(s).')
+        return
+
+    relationship = Relationship(node1, label, node2)
+    h = hash(relationship)
+    if h not in RELATIONSHIPS:
+        RELATIONSHIPS.appendleft(h)
+        TRANSACTION.create(relationship)
+
+def commit():
+    global TRANSACTION
+    TRANSACTION.commit()
+
+def construct_nodes(df, df_dl):
+
+    print('Constructing age, sex, division & location nodes.')
+    [add_node('AgeGroup', v) for v in df.age_group.unique() if is_valid_value(v)]
+    [add_node('Sex', v) for v in df.sex.unique() if is_valid_value(v)]
+    [add_node('Division', v) for v in df.division.unique() if is_valid_value(v)]
+    [add_node('Location', v) for v in df.location.unique() if is_valid_value(v)]
+   
+    construct_clades(df)
+    construct_people(df, df_dl)
+    construct_division_locations(df_dl)
+
+    commit()
+
+def construct_division_locations(df_dl):
+    l = len(df_dl)
+    for i,row in df_dl.iterrows():
+        print(f'\rConstructing location -> division relationships {i+1}/{l}.', end='')  
         try:
-            person_node = construct_person_node(v)
-            g.create(person_node)
-
-            sex_node = matcher.match('Sex', name=v.sex).first()
-            age_node = matcher.match('AgeGroup', name=v.age_group).first()
-            location_node = matcher.match('Location', name=v.location).first()
-            division_node = matcher.match('Division', name=v.division).first()
-            strain_node = matcher.match('Strain', name=v.clade).first()
-
-            if v.location not in locations:
-                print(f'Person {v.strain} has an unregistered location {v.location}')
-            else:
-                g.create(Relationship(person_node, 'LivesIn', location_node))
-
-            g.create(Relationship(person_node, 'ISA', sex_node))
-            g.create(Relationship(person_node, 'InGroup', age_node))
-            g.create(Relationship(person_node, 'PartOf', division_node))
-            g.create(Relationship(person_node, 'HasStrain', strain_node))
+            location_node = NODES['Location'][row.location]
+            division_node = NODES['Division'][row.division]
+            add_relationship(location_node, division_node, 'PartOf')
         except Exception as e:
-            print('Failed to construct person node.')
+            print(f'Failed to construct location -> division relationship ({row.location} -> {row.division})')
             print(e)
-    return g
+    print()
+
+def construct_clades(df):
+    ds = df.clade.apply(lambda x: x.split('/'))
+    print('Constructing clade nodes.')
+
+    [add_node('Strain', v) for v in ds.explode().unique() if is_valid_value(v)]
+
+    l = len(ds)
+    
+    for i,clades in ds.iteritems():
+        print(f'\rConstructing clade -> clade relationships {i+1}/{l}.', end='')
+        if clades[0] == '':
+            continue
+        previous_node = None
+        for clade in clades:
+            if previous_node == None:
+                previous_node = NODES['Strain'][clade]
+                continue
+            node = NODES['Strain'][clade]
+            add_relationship(previous_node, node, 'Contains')
+    print()
+
+def construct_people(df, df_dl):
+    locations = df_dl.location.unique()
+
+    # df = df.head(20)
+    l = len(df)
+    for i,v in df.iterrows():
+        print(f'\rConstructing person node {i+1}/{l}.', end='')
+        person_node = construct_person_node(v)
+        add_node_obj(person_node)
+
+        sex_node = get_node('Sex', v.sex)
+        age_node = get_node('AgeGroup', v.age_group)
+        location_node = get_node('Location', v.location)
+        division_node = get_node('Division', v.division)
+        [add_relationship(person_node, get_node('Strain', c), 'HasStrain') for c in v.clade.split('/')]
+
+        if v.location not in locations:
+            print(f'\nPerson {v.strain} has an unregistered location {v.location}')
+        else:
+            add_relationship(person_node, location_node, 'LivesIn')
+
+        add_relationship(person_node, sex_node, 'ISA')
+        add_relationship(person_node, age_node, 'InGroup')
+        add_relationship(person_node, division_node, 'PartOf')
+    print()
 
 def construct_person_node(person):
     node = Node('Person')
@@ -126,14 +193,15 @@ def construct_person_node(person):
             node[prop] = person[prop]
     return node
     
-def get_graph(config):
+def build_graph(config):
+    global TRANSACTION
     con = f'bolt://{config["neo4j_server"]}:7687'
     user = 'neo4j'
     password = config['noe4j_server_password']
     
-    graph = Graph(con, user=user, password=password)
-    graph.delete_all()
-    return graph.begin()
+    g = Graph(con, user=user, password=password)
+    g.delete_all()
+    TRANSACTION = g.begin()  
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -143,5 +211,5 @@ if __name__ == '__main__':
     config = get_config(args.config_file)
     metadata, clades, linelist, regions, division_location = load_data(config)
     df = process_data(metadata, clades, linelist, regions)
-    g = get_graph(config)
-    construct_nodes(g, df, division_location)
+    build_graph(config)
+    construct_nodes(df, division_location)
