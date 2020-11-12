@@ -1,6 +1,9 @@
 {
-    "global_clade_assignment_file": "/srv/rbd/covid19/nextstrain/latest/results/DenmarkOnly/clade_assignment.tsv",
     "graph_load_log_file": "/srv/rbd/covid19/bisystem/staging/load_neo4j.log",
-    "neo4j_server": "10.23.0.9", "noe4j_server_password":"fjEuqgZYz7SN",
-    "staged_metadata_file":"/srv/rbd/covid19/bisystem/staging/danish_metadata.tsv"
+    "neo4j_server": "10.23.0.16", "noe4j_server_password":"fjEuqgZYz7SN",
+    "metadata":"/srv/rbd/covid19/nextstrain/2020-11-07-22-46_nextstrain/data/2020-11-07-13-31_metadata_nextstrain.tsv",
+    "clades": "/srv/rbd/covid19/nextstrain/2020-11-07-22-46_nextstrain/results/Denmark_Full/clade_assignment.tsv",
+    "regions": "/srv/rbd/mp/covid19/bi_system/stable_dims/nuts2_regions.tsv",
+    "linelist":"/srv/rbd/covid19/metadata/2020-11-11-12-38_linelist101120.tsv",
+    "division_location_mapping":"/srv/rbd/mp/covid19/graphdb/dims/division_location.tsv"
 }
