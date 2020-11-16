@@ -8,6 +8,7 @@ from py2neo import Graph, Node, Relationship, NodeMatcher
 NODES = {}
 RELATIONSHIPS = deque([])
 TRANSACTION = None
+GRAPH = None
 
 def get_config(path):
     with open(path) as f:
@@ -40,7 +41,7 @@ def process_data(df_metadata, df_clades, df_linelist, df_regions):
     df = pd.merge(df, df_linelist[ll_columns], how='left', left_on=df.strain, right_on='ssi_id')
 
     #filter columns
-    meta_clade_columns = ['strain', 'clade', 'virus', 'date', 'division', 'location', 'region_exposure','division_exposure', 'country_exposure', 'host', 'age', 'age_group', 'sex']
+    meta_clade_columns = ['strain', 'clade', 'virus', 'date', 'division', 'location', 'region_exposure','division_exposure', 'country_exposure', 'host', 'age', 'age_group', 'sex', 'direct_aa_mutations']
     linelist_columns = ['COVID19_Status','COVID19_EndDate','SymptomsStartDate','Pregnancy','Symptoms','Travel','ContactWithCase','Doctor','Nurse','HealthAssist','Death60Days_final','DateOfDeath_final','Occupation','CitizenshipCode','Reg_RegionCode']
     filter_columns = meta_clade_columns + linelist_columns
     df = df[filter_columns]
@@ -51,6 +52,7 @@ def process_data(df_metadata, df_clades, df_linelist, df_regions):
     df.Travel = df.Travel.apply(lambda x: True if x == 'Y' else x)
     df.Travel = df.Travel.apply(lambda x: False if x == 'N' else x)
 
+    df.direct_aa_mutations = df.direct_aa_mutations.apply(lambda x: x if type(x) == str else '')
     df.ContactWithCase = df.ContactWithCase.apply(lambda x: True if x == 'Y' else x)
     df.ContactWithCase = df.ContactWithCase.apply(lambda x: False if x == 'N' else x)
     df.COVID19_Status = df.COVID19_Status.apply(lambda x: True if x ==1.0 else False)
@@ -71,6 +73,26 @@ def is_valid_value(v):
     if type(v) == int:
         return v != -1
     return False
+
+def build_graph(config):
+    global GRAPH
+    
+    con = f'bolt://{config["neo4j_server"]}:7687'
+    user = 'neo4j'
+    password = config['noe4j_server_password']
+    
+    GRAPH = Graph(con, user=user, password=password)
+    GRAPH.delete_all()
+
+def begin_translaction():
+    global TRANSACTION
+    global GRAPH
+    
+    TRANSACTION = GRAPH.begin()
+
+def commit_transaction():
+    global TRANSACTION
+    TRANSACTION.commit() 
 
 def add_node(label, v):
     global TRANSACTION
@@ -107,26 +129,26 @@ def add_relationship(node1, node2, label):
         RELATIONSHIPS.appendleft(h)
         TRANSACTION.create(relationship)
 
-def commit():
-    global TRANSACTION
-    TRANSACTION.commit()
-
 def construct_nodes(df, df_dl):
+    construct_metadata_nodes(df)
+    construct_clades(df)
+    construct_division_locations(df_dl)
+    construct_people(df, df_dl)
 
+def construct_metadata_nodes(df):
     print('Constructing age, sex, division & location nodes.')
+    
+    begin_translaction()
     [add_node('AgeGroup', v) for v in df.age_group.unique() if is_valid_value(v)]
     [add_node('Sex', v) for v in df.sex.unique() if is_valid_value(v)]
     [add_node('Division', v) for v in df.division.unique() if is_valid_value(v)]
     [add_node('Location', v) for v in df.location.unique() if is_valid_value(v)]
-   
-    construct_clades(df)
-    construct_people(df, df_dl)
-    construct_division_locations(df_dl)
-
-    commit()
+    add_node('Origin', 'Mink')
+    commit_transaction()
 
 def construct_division_locations(df_dl):
     l = len(df_dl)
+    begin_translaction()
     for i,row in df_dl.iterrows():
         print(f'\rConstructing location -> division relationships {i+1}/{l}.', end='')  
         try:
@@ -137,8 +159,10 @@ def construct_division_locations(df_dl):
             print(f'Failed to construct location -> division relationship ({row.location} -> {row.division})')
             print(e)
     print()
+    commit_transaction()
 
 def construct_clades(df):
+    begin_translaction()
     ds = df.clade.apply(lambda x: x.split('/'))
     print('Constructing clade nodes.')
 
@@ -158,32 +182,38 @@ def construct_clades(df):
             node = NODES['Strain'][clade]
             add_relationship(previous_node, node, 'Contains')
     print()
+    commit_transaction()
 
 def construct_people(df, df_dl):
     locations = df_dl.location.unique()
 
-    # df = df.head(20)
     l = len(df)
+    begin_translaction()
     for i,v in df.iterrows():
         print(f'\rConstructing person node {i+1}/{l}.', end='')
+        
+        if i % 50 == 0:
+            commit_transaction()
+            begin_translaction()
+        
         person_node = construct_person_node(v)
         add_node_obj(person_node)
-
-        sex_node = get_node('Sex', v.sex)
-        age_node = get_node('AgeGroup', v.age_group)
-        location_node = get_node('Location', v.location)
-        division_node = get_node('Division', v.division)
-        [add_relationship(person_node, get_node('Strain', c), 'HasStrain') for c in v.clade.split('/')]
 
         if v.location not in locations:
             print(f'\nPerson {v.strain} has an unregistered location {v.location}')
         else:
-            add_relationship(person_node, location_node, 'LivesIn')
+            add_relationship(person_node, get_node('Location', v.location), 'LivesIn')
 
-        add_relationship(person_node, sex_node, 'ISA')
-        add_relationship(person_node, age_node, 'InGroup')
-        add_relationship(person_node, division_node, 'PartOf')
+        if 'I692V' in v.direct_aa_mutations:
+            add_relationship(person_node, get_node('Origin', 'Mink'), 'InfectedBy')
+
+        add_relationship(person_node, get_node('Sex', v.sex), 'ISA')
+        add_relationship(person_node, get_node('AgeGroup', v.age_group), 'InGroup')
+        add_relationship(person_node, get_node('Division', v.division), 'PartOf')
+        [add_relationship(person_node, get_node('Strain', c), 'HasStrain') for c in v.clade.split('/')]
+
     print()
+    commit_transaction()
 
 def construct_person_node(person):
     node = Node('Person')
@@ -192,17 +222,7 @@ def construct_person_node(person):
         if is_valid_value(person[prop]):
             node[prop] = person[prop]
     return node
-    
-def build_graph(config):
-    global TRANSACTION
-    con = f'bolt://{config["neo4j_server"]}:7687'
-    user = 'neo4j'
-    password = config['noe4j_server_password']
-    
-    g = Graph(con, user=user, password=password)
-    g.delete_all()
-    TRANSACTION = g.begin()  
-
+     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('config_file', type=str)

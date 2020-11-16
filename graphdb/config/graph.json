@@ -4,6 +4,6 @@
     "metadata":"/srv/rbd/covid19/nextstrain/2020-11-07-22-46_nextstrain/data/2020-11-07-13-31_metadata_nextstrain.tsv",
     "clades": "/srv/rbd/covid19/nextstrain/2020-11-07-22-46_nextstrain/results/Denmark_Full/clade_assignment.tsv",
     "regions": "/srv/rbd/mp/covid19/bi_system/stable_dims/nuts2_regions.tsv",
-    "linelist":"/srv/rbd/covid19/metadata/2020-11-11-12-38_linelist101120.tsv",
+    "linelist":"/srv/rbd/covid19/metadata/2020-11-13-11-50_linelist101120.tsv",
     "division_location_mapping":"/srv/rbd/mp/covid19/graphdb/dims/division_location.tsv"
 }
