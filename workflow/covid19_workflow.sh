@@ -63,6 +63,8 @@ RUNTIME_DIR="/tmp/sing.${UID}"
 if [ -d ${RUNTIME_DIR} ]; then
     rm -rf ${RUNTIME_DIR}
 fi
+HUMREF=${WORKFLOW_PATH}/dependencies/ref/human_g1k_v37.fasta
+
 mkdir -m 0700 -p ${RUNTIME_DIR}
 
 # Determine absolute path to input/output
@@ -78,7 +80,7 @@ if [ ! -f "${OUT_DIR}/sample_sheet.csv" ]; then
 fi
 
 # Check references 
-#if [ ! -f "${WORKFLOW_PATH}/dependencies/ref/human_g1k_v37.fasta" ]; then
+#if [ ! -f "$HUMREF" ]; then
 #  echo ""
 #  echo "Downloading human reference genome to ${WORKFLOW_PATH}/dependencies/ref/human_g1k_v37.fasta"
 #  echo ""
@@ -91,8 +93,6 @@ fi
 
 
 # This is the full workflow script.
-# Make final_output to dump important stuff.
-
 
 ###############################################################################
 # Demultiplexing
@@ -153,6 +153,26 @@ if [ -s $OUT_DIR/demultiplexed/missing.txt ]; then
   rm -r $OUT_DIR/demultiplexed
   exit
 fi
+
+###############################################################################
+# Remove human reads
+###############################################################################
+
+echo ""
+echo "[$(date +"%T")] Removing human reads from demultiplexed data"
+echo ""
+
+singularity \
+  --silent \
+  exec \
+  -B $WORKFLOW_PATH:$WORKFLOW_PATH \
+  -B $OUT_DIR:$OUT_DIR \
+  -B $INPUT_DIR:$INPUT_DIR \
+  -B $RUNTIME_DIR:/run/user/$UID \
+  $SINGIMG \
+  bash -c "INDIR=$OUT_DIR/demultiplexed; THREADS=$THREADS; HUMREF=$HUMREF; . $WORKFLOW_PATH/human-filtering-reads.sh"
+
+exit 
 
 ###############################################################################
 # Generate genomes
