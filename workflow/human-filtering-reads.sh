@@ -11,3 +11,5 @@ minimap2 -ax map-ont -t 1 {2} {1} | samtools view --threads 1 -u -f 4 - | samtoo
 
 # Save that the files has been filtered.
 cat $INDIR/*fastq.txt > $INDIR/human-filtered.txt
+
+rm $INDIR/*fastq.txt
