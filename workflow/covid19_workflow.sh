@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 VERSION=0.1.0
-
+set -x
 ### Description ----------------------------------------------------------------
 
 USAGE="$(basename "$0") [-h] [-s file -m file -a string -o dir -t int] 
@@ -172,7 +172,7 @@ singularity \
   $SINGIMG \
   bash -c "INDIR=$OUT_DIR/demultiplexed; THREADS=$THREADS; HUMREF=$HUMREF; . $WORKFLOW_PATH/human-filtering-reads.sh"
 
-exit 
+exit 1
 
 ###############################################################################
 # Generate genomes
