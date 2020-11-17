@@ -14,13 +14,9 @@ knit: (function(inputFile, encoding) { rmarkdown::render(inputFile, encoding = e
 ### USER SPECIFIED PARAMETERS ##################################################
 
 # Set week to focus at, according to the ISO standard. Can be multiple.
-weeks <- c(42,43)
+weeks <- c(45)
 
-# Set which linelist to use.
-timestmp_ll <- "2020-10-28"
-path_to_ll  <- "/srv/rbd/covid19/metadata/raw-ssi-metadata/Lineliste_281020.xlsx"
-
-# !OBS: The genome metadata and phylogenetic tree are automatically loaded from the latest data build.
+# !OBS: The linelist, genome metadata and phylogenetic tree are automatically loaded from the latest data build.
 ```
 
 ```{r libraries, warning = F, message=F,include=F}
@@ -86,32 +82,6 @@ dk_month <- factor(c("Januar", "Februar", "Marts", "April", "Maj", "Juni",
 ```
 
 ```{r readMergeData}
-# Get zipcode ------------------------------------------------------------------
-path <- "https://dawa.aws.dk/postnumre?landpostnumre"
-
-request <- GET(url = path)
-
-response <- content(request, as = "text", encoding = "UTF-8")
-
-swapDKlet <- function(x){stringr::str_replace_all(x,c("ø" = "oe","Ø" = "Oe","å" = "aa","Å" = "Aa","æ" = "ae","Æ" = "Ae"))}
-
-kommune_postnr <- jsonlite::fromJSON(response, flatten = TRUE) %>% 
-  data.frame() %>%
-  separate(visueltcenter, c("long", "lat"), sep = ",") %>%
-  mutate(long = gsub('[c()]', '',long) %>% as.numeric()) %>%
-  mutate(lat  = gsub('[c()]', '',lat) %>% as.numeric()) %>%
-  mutate(zipcode_name = swapDKlet(navn)) %>%
-  mutate(zipcode      = nr) %>%
-  select(zipcode,zipcode_name,navn,long,lat)
-
-# Select the most recent data.
-timestmp_data <- list.files("/srv/rbd/covid19/genomes",pattern = "_export") %>%
-  sub("_export","",x = .) %>%
-  gsub("_","-",x = .) %>%
-  strptime(format = "%Y-%m-%d-%H-%M") %>%
-  max() %>%
-  format("%Y-%m-%d-%H-%M")
-
 # Select the most recent nextstrain.
 timestmp_nxt <- list.files("/srv/rbd/covid19/nextstrain",pattern = "_nextstrain") %>%
   sub("_nextstrain","",x = .) %>%
@@ -121,58 +91,37 @@ timestmp_nxt <- list.files("/srv/rbd/covid19/nextstrain",pattern = "_nextstrain"
   max(na.rm = T) %>%
   format("%Y-%m-%d-%H-%M")
 
+# Select the most recent linelist data.
+tmp <- list.files("/srv/rbd/covid19/metadata",pattern = "linelist") %>%  
+  str_split(string = .,pattern = "_linelist") %>%  
+  .[[1]] 
+
+timestmp      <- tmp[1]
+timestmp_ll   <- tmp[2] %>%   sub(".tsv","",x = .) %>%  as.Date(format = "%d%m%y")
+
 ### Load the data.--------------------------------------------------------------
-# Linelist.
-meta_ll <- read_excel(
-  path      = path_to_ll, 
-  col_types = "text") %>%
-  mutate(
-    zip_old       = ZipCodeCity,
-    date_linelist = as.Date(SampleDate)) %>%
-  mutate(ZipCodeCity = sub(" ",";",ZipCodeCity)) %>%
-  separate(ZipCodeCity,into = c("zipcode","zipcode_name"),sep = ";") %>%
-  left_join(kommune_postnr %>% select(zipcode, long, lat), by = "zipcode") 
 
-# Metadata for genomes.
-meta_seq_raw <- read_delim(
-  file      = paste0("/srv/rbd/covid19/genomes/",timestmp_data,"_export/metadata.tsv"),
-  delim     = "\t",
-  guess_max = 100000) %>%
-  mutate(date_consensus = as.Date(date_consensus)) %>%
-  select(ssi_id, library_id, journal_seq, journal_reg, recieved_aau, date_consensus, qpcr_ct_ssi, CPR, genome_qc, n_count)
+# Linelist
+meta_ll <- read_tsv(file = list.files("/srv/rbd/covid19/metadata",
+                                      pattern = "linelist",
+                                      full.names = T),
+                    guess_max = 100000) %>% 
+  filter(host == "human")
 
-# Count number of sequenced samples
-nSeq <- read_delim(
-  file      = paste0("/srv/rbd/covid19/metadata/",timestmp_data,"_metadata.tsv"),
-  delim     = "\t",
-  guess_max = 100000) %>% 
+nSeq <- meta_ll %>% 
   pull(library_id) %>% unique() %>%  length()
-
-# Clade assignment.
-clades <- read_delim(
-  file      = paste0("/srv/rbd/covid19/nextstrain/",timestmp_nxt,"_nextstrain/results/Denmark/clade_assignment.tsv"),
-  delim     = "\t") %>%
-  select(strain,clade,direct_mutations)
-
-# Remove CPR duplicates from metadata.
-meta_seq_raw <- meta_seq_raw %>%
-  filter(!is.na(CPR) & !is.na(ssi_id)) %>%
-  filter(!is.na(date_consensus))
-
-# Add clades.
-meta_seq <- left_join(meta_seq_raw,clades,by = c("ssi_id" = "strain"))
 
 # Misc data.--------------------------------------------------------------------
 # For plotting denmark.
 dk_nuts2 <- read_delim(file = "/srv/rbd/ma/test/maps/DK_NUTS2.txt", delim ="\t")
 
 # Define clusters.
-name_clusters <- meta_seq %>%
+name_clusters <- meta_ll %>%
   filter(!is.na(direct_mutations)) %>%
   group_by(direct_mutations) %>%
   summarise(cluster_count = n(), 
-            cluster_start = min(as.Date(date_consensus)),
-            cluster_end = max(as.Date(date_consensus))) %>%
+            cluster_start = min(as.Date(date_sampling)),
+            cluster_end = max(as.Date(date_sampling))) %>%
   arrange(cluster_start) %>%
   mutate(cluster_no   = 1:n()) %>%
   mutate(cluster_name = paste0("Cluster ",cluster_no)) %>%
@@ -181,24 +130,17 @@ name_clusters <- meta_seq %>%
          cluster_start = min(as.Date(cluster_start)),
          cluster_end   = max(as.Date(cluster_end)))
 
-meta_seq <- left_join(meta_seq,name_clusters,by = "direct_mutations")
-
-# Join the genome-metadata with the linelist.
-meta_all <- left_join(meta_ll,meta_seq,by = "CPR") %>%
-  mutate(date_consensus = as.Date(ifelse(is.na(date_consensus),as.character(date_linelist),as.character(date_consensus)))) 
-
-# Format data and filter by week of interest
-meta_all <- mutate(meta_all,
+meta_all <- left_join(meta_ll,name_clusters,by = "direct_mutations") %>% 
+  mutate(
   genome_qc    = factor(genome_qc,levels = c("HQ","MQ","Fail")),
-  firstDayWeek = {floor_date(date_consensus,"week", week_start = 1)} %>% as.Date(),
-  #samplseWeek    = date2ISOweek(floor_date(date_consensus,"week")),
+  firstDayWeek = {floor_date(date_sampling,"week", week_start = 1)} %>% as.Date(),
   clade        = sub("/.*","",x = clade)) %>%
   group_by(firstDayWeek) %>%
   mutate(cluster_cov     = sum(!is.na(cluster_name))/n()) %>%
   ungroup() %>% group_by(firstDayWeek,Region) %>%
   mutate(cluster_cov_reg = sum(!is.na(cluster_name))/n()) %>%
   ungroup() %>% 
-  filter(date_consensus <= date_rng[2])
+  filter(date_sampling <= date_rng[2])
 ```
 
 
@@ -206,8 +148,6 @@ meta_all <- mutate(meta_all,
 ## Create plot of positive samples vs genomes.
 ## This must be done before subsetting metadata
 ## to only those with genomes
-
-nPos <- nrow(meta_all)
 
 pos_vs_genomes <- 
   meta_all %>% filter(!is.na(Region)) %>% 
@@ -229,7 +169,7 @@ pos_vs_genomes <-
 
 ```{r readTree}
 # Tree.
-tree <- read.tree(file = paste0("/srv/rbd/covid19/nextstrain/",timestmp_nxt,"_nextstrain/results/Denmark/tree_raw.nwk"))
+tree <- read.tree(file = paste0("/srv/rbd/covid19/nextstrain/",timestmp_nxt,"_nextstrain/results/Denmark_Full/tree_raw.nwk"))
 
 # intersect tree and metadata.
 wh <- match(tree$tip.label,meta_all$ssi_id) %>%
@@ -251,26 +191,27 @@ For at assistere epidemiologer og sundhedsmyndigheder med at overvåge spredning
 
 ## Uge statistik
 ```{r basicStats}
+nPos <- nrow(meta_ll)
+
 nGenomes <- meta_all %>% 
   filter(genome_qc %in% c("MQ", "HQ")) %>%
   nrow()
 
 nGenomesThisWeek <- meta_all %>%
   filter(genome_qc %in% c("MQ", "HQ")) %>%
-  filter(date_consensus >= date_rng[1]) %>%
+  filter(date_sampling >= date_rng[1]) %>%
   nrow()
 
 nDirMut  <- meta_all %>% filter(!is.na(direct_mutations) & 
                                   duplicated(direct_mutations) == F) %>% nrow()
 
-nDirMutOld <- meta_all %>% filter(date_consensus < date_rng[1] & 
+nDirMutOld <- meta_all %>% filter(date_sampling < date_rng[1] & 
                                     !is.na(direct_mutations) 
                                   & duplicated(direct_mutations) == F) %>% nrow()
 ```
 
-I denne rapport indgår data fra perioden `r format(min(meta_all$date_consensus), '%d-%m-%Y')` til `r format(date_rng[2], '%d-%m-%Y')`. Der er særligt fokus på uge `r weeks` (`r format(date_rng[1], '%d-%m-%Y')` til `r format(date_rng[2], '%d-%m-%Y')`). Data der anvendes i denne rapport inkluderer:
+I denne rapport indgår data fra perioden `r format(min(meta_all$date_sampling), '%d-%m-%Y')` til `r format(date_rng[2], '%d-%m-%Y')`. Der er særligt fokus på uge `r weeks` (`r format(date_rng[1], '%d-%m-%Y')` til `r format(date_rng[2], '%d-%m-%Y')`). Data der anvendes i denne rapport inkluderer:
 
-* Metadata relateret til sekventering, senest opdateret d. `r format(as.Date(timestmp_data), '%d-%m-%Y')`
 * Metadata fra linelisten, senest opdateret d. `r format(as.Date(timestmp_ll), '%d-%m-%Y')`
 * Fylogenetisk træ, senest opdateret d. `r format(as.Date(timestmp_nxt), '%d-%m-%Y')`
 
@@ -331,7 +272,7 @@ Figuren nedenfor viser udviklingen af clusters over tid. Rækker angiver cluster
 ```{r}
 ## Identify clades with more than 10 samples in the period.
 clade_freq <- meta_all %>% 
-  filter(date_consensus >= date_rng[1]  & date_consensus <= date_rng[2] & !is.na(genome_qc)) %>% 
+  filter(date_sampling >= date_rng[1]  & date_sampling <= date_rng[2] & !is.na(genome_qc)) %>% 
   group_by(cluster_no,cluster_start,cluster_end,clade) %>% 
   summarize(n = n()) %>% 
   #filter(n >= 10 & !is.na(cluster_no)) %>%
@@ -345,7 +286,7 @@ clade_freq <- meta_all %>%
 
 ```{r, fig.height=10, fig.width = 12}
 # Make a nation-wide figure, all clusters >=20.
-d_clades_week <- filter(meta_all, !is.na(clade) & date_consensus <= date_rng[2]) %>%
+d_clades_week <- filter(meta_all, !is.na(clade) & date_sampling <= date_rng[2]) %>%
   filter(!is.na(cluster_no)) %>%
   group_by(firstDayWeek,clade,cluster_no,cluster_size,cluster_start) %>%
   summarise(count = n()) %>%
@@ -390,7 +331,7 @@ ggplot(
 ```{r}
 # Per region.
 meta_table <- left_join(clade_freq,meta_all, by = "cluster_no") %>% 
-  filter(date_consensus >= date_rng[1]  & date_consensus <= date_rng[2] & !is.na(Region) & !is.na(cluster_no)) %>% 
+  filter(date_sampling >= date_rng[1]  & date_sampling <= date_rng[2] & !is.na(Region) & !is.na(cluster_no)) %>% 
   group_by(Region,cluster_no) %>% 
   summarize(n = n(),
             pct_M = sum(Sex == "M") / n,
@@ -399,7 +340,7 @@ meta_table <- left_join(clade_freq,meta_all, by = "cluster_no") %>%
 
 # Hele DK.
 heleDK <- left_join(clade_freq,meta_all, by = "cluster_no" )%>% 
-  filter(date_consensus >= date_rng[1]  & date_consensus <= date_rng[2] & !is.na(cluster_no)) %>% 
+  filter(date_sampling >= date_rng[1]  & date_sampling <= date_rng[2] & !is.na(cluster_no)) %>% 
   group_by(cluster_no) %>% 
   summarize(n = n(),
             pct_M = sum(Sex == "M") / n,
@@ -432,7 +373,7 @@ Figuren nedenfor viser den geografiske spredning for de `r nClust` største clus
 ```{r, fig.height=7, fig.width = 7}
 meta_map <- meta_all %>%
   mutate(cluster_no = gsub("Cluster ","",x = cluster_name)) %>%
-  filter(date_consensus >= date_rng[1]  & date_consensus <= date_rng[2] &
+  filter(date_sampling >= date_rng[1]  & date_sampling <= date_rng[2] &
            cluster_no %in% heleDK$cluster_no[1:nClust]) %>%
   group_by(cluster_name) %>%
   mutate(n = n()) %>%
@@ -441,7 +382,7 @@ meta_map <- meta_all %>%
   mutate(cluster_no = paste0(cluster_no," (n = ",n,")")) %>%
   mutate(cluster_no = factor(cluster_no,levels = unique(cluster_no)))
 
-p <- ggplot(data = meta_map, aes(x= long, y = lat, color = cluster_no)) +
+p <- ggplot(data = meta_map, aes(x= lon_adr, y = lat_adr, color = cluster_no)) +
   geom_polygon(data = dk_nuts2, inherit.aes = F,
                aes(x = long, y = lat, group = group), color = "black", fill = "grey95") +
   geom_jitter(size = 2,height = 0.05,width = 0.05) +
