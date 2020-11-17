@@ -162,15 +162,20 @@ echo ""
 echo "[$(date +"%T")] Removing human reads from demultiplexed data"
 echo ""
 
-singularity \
-  --silent \
-  exec \
-  -B $WORKFLOW_PATH:$WORKFLOW_PATH \
-  -B $OUT_DIR:$OUT_DIR \
-  -B $INPUT_DIR:$INPUT_DIR \
-  -B $RUNTIME_DIR:/run/user/$UID \
-  $SINGIMG \
-  bash -c "INDIR=$OUT_DIR/demultiplexed; THREADS=$THREADS; HUMREF=$HUMREF; . $WORKFLOW_PATH/human-filtering-reads.sh"
+if [ -s $OUT_DIR/demultiplexed/human-filtered.txt ]; then 
+  echo "filtering of human reads already done, skipping..."
+else 
+
+  singularity \
+    --silent \
+    exec \
+    -B $WORKFLOW_PATH:$WORKFLOW_PATH \
+    -B $OUT_DIR:$OUT_DIR \
+    -B $INPUT_DIR:$INPUT_DIR \
+    -B $RUNTIME_DIR:/run/user/$UID \
+    $SINGIMG \
+    bash -c "INDIR=$OUT_DIR/demultiplexed; THREADS=$THREADS; HUMREF=$HUMREF; . $WORKFLOW_PATH/human-filtering-reads.sh"
+fi
 
 exit 1
 
