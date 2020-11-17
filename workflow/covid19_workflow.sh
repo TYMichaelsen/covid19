@@ -162,7 +162,7 @@ echo ""
 echo "[$(date +"%T")] Removing human reads from demultiplexed data"
 echo ""
 
-if [ -s $OUT_DIR/demultiplexed/human-filtered.txt ]; then 
+if [ -s $OUT_DIR/demultiplexed/filtered.txt ]; then 
   echo "filtering of human reads already done, skipping..."
 else 
 
