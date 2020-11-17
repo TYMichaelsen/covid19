@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 VERSION=0.1.0
-set -x
+
 ### Description ----------------------------------------------------------------
 
 USAGE="$(basename "$0") [-h] [-s file -m file -a string -o dir -t int] 
