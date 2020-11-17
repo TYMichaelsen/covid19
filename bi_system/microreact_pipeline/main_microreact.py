@@ -4,7 +4,8 @@ import logging
 import pandas as pd
 import math
 
-from config_controller import get_config, set_config_nextstrain, set_config_linelist, update_latest_nextstrain
+from shutil import copyfile
+from config_controller import get_config, set_config_paths
 from data_cleansing_metadata import check_file, check_errors
 from convert_to_microreact_files import execute_query, convert_to_microreact_format, get_tree, replace_tree_ids, filter_data_by_min_cases
 from convert_to_microreact_files import get_unmatched_ids_in_tree, add_empty_records, save_csv, save_tree
@@ -64,8 +65,20 @@ def convert_to_microreact(df, tree, config):
     return data, tree
 
 def save_micro_react_files(config, data, tree):
+    backup(config)
     save_csv(config, data)
     save_tree(config, tree)
+
+def backup(config):
+    metadata_src = config['out_react_tsv']
+    metadata_dst = '/'.join(metadata_src.split('/')[:-1])
+    metadata_dst = '{}/microreact_backup.tsv'.format(metadata_dst)
+    tree_src = config['out_react_nwk']
+    tree_dst = '/'.join(tree_src.split('/')[:-1])
+    tree_dst = '{}/microreact_backup.nwk'.format(tree_dst)
+
+    copyfile(metadata_src, metadata_dst)
+    copyfile(tree_src, tree_dst)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -79,10 +92,7 @@ if __name__ == '__main__':
     date_suffix = args.date_folder_suffix
 
     set_logging(config)
-    
-    # update_latest_nextstrain(config)
-    # config = set_config_nextstrain(config, date_str, date_suffix)
-    # config = set_config_linelist(config, date_str)
+    config = set_config_paths(config)
 
     create_metadata_files(config)
     data = get_data(config)
@@ -90,4 +100,4 @@ if __name__ == '__main__':
     data, tree = convert_to_microreact(data, tree, config)
     
     save_micro_react_files(config, data, tree)
-    # upload(config)
+    upload(config)

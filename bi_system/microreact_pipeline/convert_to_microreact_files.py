@@ -4,9 +4,7 @@ import uuid
 import pandas as pd
 import numpy as np
 import math
-
 from datetime import datetime, timedelta
-from utilities import datestr_to_week_func, nut3_to_nut2_func, get_linelist
 
 LOGGER = logging.getLogger("to microreact")
 
@@ -164,13 +162,9 @@ def _get_epi_week(infected_date, epidemic_start_date):
       w_start_epidemic = epidemic_start_date - timedelta(days=epidemic_start_date.weekday())
       return (_get_first_day_of_week(w_start_infected) - _get_first_day_of_week(w_start_epidemic)).days / 7
 
-# def _get_epi_start_date(df): 
-#       return min(df['date'])
-#       # return min(e[2] for e in data)
-
 def _get_cases_per_region_week(config):
-      df = get_linelist(config)
-      df[FIELD.sample_date] = df['SampleDate'].apply(lambda x: datetime.strptime(x, '%Y-%m-%d'))
+      df = pd.read_csv(config['raw_ssi_file'], sep='\t')
+      df[FIELD.sample_date] = df['date_linelist'].apply(lambda x: datetime.strptime(x, '%Y-%m-%d'))
       df[FIELD.sample_date] = df[FIELD.sample_date].apply(lambda x: x.isocalendar()[1])
       df[FIELD.region] = df['NUTS3Code'].apply(lambda x: str(x)[:-1] if 'DK' in str(x) else 'Unknown')
       return df.groupby([FIELD.sample_date, FIELD.region]).size().reset_index(name="Cases")
