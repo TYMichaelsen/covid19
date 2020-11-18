@@ -119,28 +119,42 @@ dk_nuts2 <- read_delim(file = "/srv/rbd/ma/test/maps/DK_NUTS2.txt", delim ="\t")
 name_clusters <- meta_ll %>%
   filter(!is.na(direct_mutations)) %>%
   group_by(direct_mutations) %>%
-  summarise(cluster_count = n(), 
-            cluster_start = min(as.Date(date_sampling)),
-            cluster_end = max(as.Date(date_sampling))) %>%
+  summarise(cluster_aa_mutation = dplyr::first(direct_aa_mutations),
+            cluster_count = n(), 
+            cluster_start = min(as.Date(date_linelist), na.rm = T),
+            cluster_end = max(as.Date(date_linelist), na.rm = T)) %>%
   arrange(cluster_start) %>%
   mutate(cluster_no   = 1:n()) %>%
   mutate(cluster_name = paste0("Cluster ",cluster_no)) %>%
   group_by(cluster_name) %>%
   mutate(cluster_size  = paste0(sum(cluster_count)),
-         cluster_start = min(as.Date(cluster_start)),
-         cluster_end   = max(as.Date(cluster_end)))
+         cluster_start = min(as.Date(cluster_start), na.rm = T),
+         cluster_end   = max(as.Date(cluster_end), na.rm = T))
+
+# Dump cluster names
+write_csv(name_clusters, path = file.path(dirname(inputFile),paste0(format(Sys.Date(),"%d-%m-%Y"),"_cluster_definition.csv")))
+#write_csv(name_clusters, path = file.path("/srv/rbd/rfb/R_scripts/Report",paste0(format(Sys.Date(),"%d-%m-%Y"),"_cluster_definition.csv")))
 
 meta_all <- left_join(meta_ll,name_clusters,by = "direct_mutations") %>% 
   mutate(
   genome_qc    = factor(genome_qc,levels = c("HQ","MQ","Fail")),
-  firstDayWeek = {floor_date(date_sampling,"week", week_start = 1)} %>% as.Date(),
+  firstDayWeek = {floor_date(date_linelist,"week", week_start = 1)} %>% as.Date(),
   clade        = sub("/.*","",x = clade)) %>%
   group_by(firstDayWeek) %>%
   mutate(cluster_cov     = sum(!is.na(cluster_name))/n()) %>%
   ungroup() %>% group_by(firstDayWeek,Region) %>%
   mutate(cluster_cov_reg = sum(!is.na(cluster_name))/n()) %>%
   ungroup() %>% 
-  filter(date_sampling <= date_rng[2])
+  filter(date_linelist <= date_rng[2])
+```
+
+```{r}
+gg <- meta_ll %>%
+  filter(!is.na(direct_mutations)) %>%
+  group_by(direct_mutations) %>%
+  summarise(n_aa = length(unique(direct_aa_mutations)),
+            aa = dplyr::first(direct_aa_mutations)) %>% 
+  arrange(-n_aa)
 ```
 
 
@@ -199,18 +213,18 @@ nGenomes <- meta_all %>%
 
 nGenomesThisWeek <- meta_all %>%
   filter(genome_qc %in% c("MQ", "HQ")) %>%
-  filter(date_sampling >= date_rng[1]) %>%
+  filter(date_linelist >= date_rng[1]) %>%
   nrow()
 
 nDirMut  <- meta_all %>% filter(!is.na(direct_mutations) & 
                                   duplicated(direct_mutations) == F) %>% nrow()
 
-nDirMutOld <- meta_all %>% filter(date_sampling < date_rng[1] & 
+nDirMutOld <- meta_all %>% filter(date_linelist < date_rng[1] & 
                                     !is.na(direct_mutations) 
                                   & duplicated(direct_mutations) == F) %>% nrow()
 ```
 
-I denne rapport indgår data fra perioden `r format(min(meta_all$date_sampling), '%d-%m-%Y')` til `r format(date_rng[2], '%d-%m-%Y')`. Der er særligt fokus på uge `r weeks` (`r format(date_rng[1], '%d-%m-%Y')` til `r format(date_rng[2], '%d-%m-%Y')`). Data der anvendes i denne rapport inkluderer:
+I denne rapport indgår data fra perioden `r format(min(meta_all$date_linelist), '%d-%m-%Y')` til `r format(date_rng[2], '%d-%m-%Y')`. Der er særligt fokus på uge `r weeks` (`r format(date_rng[1], '%d-%m-%Y')` til `r format(date_rng[2], '%d-%m-%Y')`). Data der anvendes i denne rapport inkluderer:
 
 * Metadata fra linelisten, senest opdateret d. `r format(as.Date(timestmp_ll), '%d-%m-%Y')`
 * Fylogenetisk træ, senest opdateret d. `r format(as.Date(timestmp_nxt), '%d-%m-%Y')`
@@ -272,7 +286,7 @@ Figuren nedenfor viser udviklingen af clusters over tid. Rækker angiver cluster
 ```{r}
 ## Identify clades with more than 10 samples in the period.
 clade_freq <- meta_all %>% 
-  filter(date_sampling >= date_rng[1]  & date_sampling <= date_rng[2] & !is.na(genome_qc)) %>% 
+  filter(date_linelist >= date_rng[1]  & date_linelist <= date_rng[2] & !is.na(genome_qc)) %>% 
   group_by(cluster_no,cluster_start,cluster_end,clade) %>% 
   summarize(n = n()) %>% 
   #filter(n >= 10 & !is.na(cluster_no)) %>%
@@ -286,7 +300,7 @@ clade_freq <- meta_all %>%
 
 ```{r, fig.height=10, fig.width = 12}
 # Make a nation-wide figure, all clusters >=20.
-d_clades_week <- filter(meta_all, !is.na(clade) & date_sampling <= date_rng[2]) %>%
+d_clades_week <- filter(meta_all, !is.na(clade) & date_linelist <= date_rng[2]) %>%
   filter(!is.na(cluster_no)) %>%
   group_by(firstDayWeek,clade,cluster_no,cluster_size,cluster_start) %>%
   summarise(count = n()) %>%
@@ -331,7 +345,7 @@ ggplot(
 ```{r}
 # Per region.
 meta_table <- left_join(clade_freq,meta_all, by = "cluster_no") %>% 
-  filter(date_sampling >= date_rng[1]  & date_sampling <= date_rng[2] & !is.na(Region) & !is.na(cluster_no)) %>% 
+  filter(date_linelist >= date_rng[1]  & date_linelist <= date_rng[2] & !is.na(Region) & !is.na(cluster_no)) %>% 
   group_by(Region,cluster_no) %>% 
   summarize(n = n(),
             pct_M = sum(Sex == "M") / n,
@@ -340,7 +354,7 @@ meta_table <- left_join(clade_freq,meta_all, by = "cluster_no") %>%
 
 # Hele DK.
 heleDK <- left_join(clade_freq,meta_all, by = "cluster_no" )%>% 
-  filter(date_sampling >= date_rng[1]  & date_sampling <= date_rng[2] & !is.na(cluster_no)) %>% 
+  filter(date_linelist >= date_rng[1]  & date_linelist <= date_rng[2] & !is.na(cluster_no)) %>% 
   group_by(cluster_no) %>% 
   summarize(n = n(),
             pct_M = sum(Sex == "M") / n,
@@ -373,7 +387,7 @@ Figuren nedenfor viser den geografiske spredning for de `r nClust` største clus
 ```{r, fig.height=7, fig.width = 7}
 meta_map <- meta_all %>%
   mutate(cluster_no = gsub("Cluster ","",x = cluster_name)) %>%
-  filter(date_sampling >= date_rng[1]  & date_sampling <= date_rng[2] &
+  filter(date_linelist >= date_rng[1]  & date_linelist <= date_rng[2] &
            cluster_no %in% heleDK$cluster_no[1:nClust]) %>%
   group_by(cluster_name) %>%
   mutate(n = n()) %>%
