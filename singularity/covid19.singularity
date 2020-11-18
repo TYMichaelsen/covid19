@@ -95,5 +95,5 @@ From: covid19_1.5.sif
   unzip aau.zip && rm aau.zip
 
   # Install nextclade
-  conda create -n nextclade -y nodejs 
+  conda create -n nextclade -c conda-forge -y nodejs 
   conda run -n nextclade npm install --global @neherlab/nextclade
