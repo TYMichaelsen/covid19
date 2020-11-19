@@ -58,7 +58,7 @@ echo ""
 # Script paths
 WORKFLOW_PATH="$(dirname "$(readlink -f "$0")")"
 COVID19_PATH=${WORKFLOW_PATH%/*}
-SINGIMG="${COVID19_PATH}/singularity/covid19_latest.sif"
+SINGIMG="/srv/rbd/thecontainer/covid19_latest.sif"
 RUNTIME_DIR="/tmp/sing.${UID}"
 if [ -d ${RUNTIME_DIR} ]; then
     rm -rf ${RUNTIME_DIR}
