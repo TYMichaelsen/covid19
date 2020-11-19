@@ -163,25 +163,28 @@ def construct_division_locations(df_dl):
 
 def construct_clades(df):
     begin_translaction()
-    ds = df.clade.apply(lambda x: x.split('/'))
-    print('Constructing clade nodes.')
-
-    [add_node('Strain', v) for v in ds.explode().unique() if is_valid_value(v)]
-
-    l = len(ds)
     
-    for i,clades in ds.iteritems():
-        print(f'\rConstructing clade -> clade relationships {i+1}/{l}.', end='')
-        if clades[0] == '':
-            continue
-        previous_node = None
-        for clade in clades:
-            if previous_node == None:
-                previous_node = NODES['Strain'][clade]
-                continue
-            node = NODES['Strain'][clade]
-            add_relationship(previous_node, node, 'Contains')
-    print()
+    print('Constructing clades.')
+    [add_node('Strain', v) for v in df.clade.apply(lambda x: x.split('/')[0]).unique() if is_valid_value(v)] 
+    [add_node('Strain', v) for v in df.clade.unique() if is_valid_value(v)] 
+    
+    print('Constructing clade relationships.')
+    for node_key in NODES['Strain'].keys():
+        parent_found = False
+        closest_parent = node_key
+        while parent_found == False:
+            closest_parent = '/'.join(closest_parent.split('/')[:-1])
+            if closest_parent == '':
+                print(f'{node_key} - Failed to find parent of node. Skipping...')
+                parent_found = True
+            else:
+                parent_node = get_node('Strain', closest_parent)
+                if parent_node == None:
+                    continue
+                node = get_node('Strain', node_key)
+                add_relationship(node, parent_node, 'EvolvedFrom')
+                parent_found = True
+  
     commit_transaction()
 
 def construct_people(df, df_dl):
@@ -210,7 +213,7 @@ def construct_people(df, df_dl):
         add_relationship(person_node, get_node('Sex', v.sex), 'ISA')
         add_relationship(person_node, get_node('AgeGroup', v.age_group), 'InGroup')
         add_relationship(person_node, get_node('Division', v.division), 'PartOf')
-        [add_relationship(person_node, get_node('Strain', c), 'HasStrain') for c in v.clade.split('/')]
+        add_relationship(person_node, get_node('Strain', v.clade), 'HasStrain')
 
     print()
     commit_transaction()
