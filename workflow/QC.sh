@@ -63,7 +63,6 @@ exec &> >(tee -a "$LOG_NAME")
 exec 2>&1
 
 REF=$AAU_COVID19_PATH/dependencies/ref/MN908947.3.gb
-CLADES=$AAU_COVID19_PATH/dependencies/nextstrain/pangolin_clades.tsv
 
 ###############################################################################
 # Setup data to be used in QC.
@@ -71,7 +70,8 @@ CLADES=$AAU_COVID19_PATH/dependencies/nextstrain/pangolin_clades.tsv
 
 # Copy over sequences.
 cp $INPUT_DIR/processing/results/consensus.fasta $INPUT_DIR/QC/aligntree/sequences.fasta
-#cat export/*_export/sequences.fasta > QC/aligntree/sequences.fasta
+
+source activate nextstrain
 
 ### Alignment ###
 augur align \
@@ -95,33 +95,20 @@ augur tree \
 --alignment $INPUT_DIR/QC/aligntree/masked.fasta \
 --output $INPUT_DIR/QC/aligntree/tree_raw.nwk \
 --nthreads $THREADS
-  
-#augur refine \
-#--tree $INPUT_DIR/QC/aligntree/tree_raw.nwk \
-#--output-tree $INPUT_DIR/QC/aligntree/tree.nwk
+ 
+source deactivate nextstrain
 
-### ancestral tree.
-#augur ancestral \
-#  --tree $INPUT_DIR/QC/aligntree/tree.nwk \
-#  --alignment $INPUT_DIR/QC/aligntree/masked.fasta \
-#  --output-node-data $INPUT_DIR/QC/aligntree/nt_muts.json \
-#  --inference joint \
-#  --infer-ambiguous
-  
-### Translate NT ot AA.
-#augur translate \
-#  --tree $INPUT_DIR/QC/aligntree/tree.nwk \
-#  --ancestral-sequences $INPUT_DIR/QC/aligntree/nt_muts.json \
-#  --reference-sequence $REF \
-#  --output-node-data $INPUT_DIR/QC/aligntree/aa_muts.json
-                       
-### add clades.
-#augur clades \
-#  --tree $INPUT_DIR/QC/aligntree/tree.nwk \
-#  --mutations $INPUT_DIR/QC/aligntree/nt_muts.json $INPUT_DIR/QC/aligntree/aa_muts.json \
-#  --clades $CLADES \
-#  --output-node-data $INPUT_DIR/QC/aligntree/clades.json
-  
+source activate nextclade 
+
+### Nextclade ###
+nextclade \
+--input-pcr-primers ${AAU_COVID19_PATH}/dependencies/primer_schemes/nCoV-2019/${SCHEME}/custom_primer.csv \
+--input-fasta $INPUT_DIR/QC/aligntree/sequences.fasta \
+--output-tsv $INPUT_DIR/QC/nextclade.tsv \
+--jobs 5
+
+source deactivate nextclade
+
 ###############################################################################
 # Generate the QC report.
 ###############################################################################
