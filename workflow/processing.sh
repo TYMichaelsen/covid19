@@ -130,33 +130,6 @@ for i in $FILES; do
   fi
 done
 
-### Coverage. #################################################################
-
-#echo -e 'library_id\tposition\tcoverage' > $OUTDIR/results/coverage.tsv
-
-# Function for moving average.
-#mvavg () {
-#  FILE=$1
-#  MVINT=$2
-#  NAMECOL=$3
-#  
-#  awk -v id=$NAMECOL -v mvint=$MVINT '{sum+=$3} (NR%10)==0 {print id"\t"$2-(mvint/2)"\t"sum/mvint; sum=0}' $FILE
-#}
-#export -f mvavg
-
-# Compute coverage.
-#parallel -j $THREADS \
-#'
-#SAMPLE="$(basename {1} .fastq)";
-
-#if [ -f {2}/articminion/$SAMPLE.sorted.bam ]; then
-#  samtools depth -a -d 0 {2}/articminion/$SAMPLE.sorted.bam | mvavg - 10 $SAMPLE > {2}/TMPDIR/$SAMPLE.cov.tsv;
-#fi
-#' ::: $FILES ::: $OUTDIR ::: $HUMANREF
-
-#cat $OUTDIR/TMPDIR/*.cov.tsv >> $OUTDIR/results/coverage.tsv
-#rm $OUTDIR/TMPDIR/*.cov.tsv
-
 ### Call naive variants in parallel. ##########################################
 MINALT=0.05 # the minimum fraction of bases which supports the alternative base.
 BAMFILES=$OUTDIR/articminion/*_1.sorted.bam
@@ -258,24 +231,12 @@ done
 rm $OUTDIR/TMPDIR/pass 	 
 rm $OUTDIR/TMPDIR/fail
 
-
-### Dump genomes passing crude QC filter ######################################
-rm -f $OUTDIR/results/filtered.txt
-MAXN=3000
-MINLENGT=25000
+### Concat sequences and rename ######################################
 
 # need wierd for loop because some files has ref name as header.
 rm -f $OUTDIR/results/consensus.fasta
 for file in $OUTDIR/articminion/*.consensus.fasta; do 
   if ! fgrep ">MN908947.3" $file > /dev/null; then
-    cat $file >> $OUTDIR/results/consensus.fasta
+    awk '/^>/ {sub(/\/ARTIC.*$/,"",$0)}1' $file >> $OUTDIR/results/consensus.fasta
   fi
 done
-
-cat $OUTDIR/results/consensus.fasta |
-awk '/^>/ {printf("\n%s\n",$0);next; } { printf("%s",$0);}  END {printf("\n");}' - | awk 'NR > 1' - | # make one-line fasta.
-awk '/^>/ {sub(/\/ARTIC.*$/,"",$0)}1' - |
-awk -v THR=$MAXN -v LEN=$MINLENGTH -v outdir=$OUTDIR '!/^>/ { next } { getline seq; seq2=seq; Nn=gsub(/N/,"",seq) }; {if (length(seq2) > LEN && Nn <= THR) { print $0 "\n" seq2 } else {sub(/^>/,"",$0); print $0 >> outdir"/results/filtered.txt"}}' - > tmp && mv tmp $OUTDIR/results/consensus.fasta # Tidy header.
-
-echo "$(wc -l $OUTDIR/results/filtered.txt | sed 's/ .*//') genomes failed QC, see $OUTDIR/results/filtered.txt"
-
