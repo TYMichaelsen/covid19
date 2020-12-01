@@ -41,7 +41,7 @@ tmp <- list.files("/srv/rbd/covid19/metadata",pattern = "linelist") %>%
   .[[1]] 
 
 timestmp      <- tmp[1]
-timestmp_ll   <- tmp[2] %>%   sub(".tsv","",x = .) %>%  as.Date(format = "%d%m%y")
+timestmp_ll   <- tmp[2] %>%   sub(".tsv","",x = .) %>%  as.Date()
 
 ### Load the data.--------------------------------------------------------------
 

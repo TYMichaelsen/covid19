@@ -14,7 +14,7 @@ knit: (function(inputFile, encoding) { rmarkdown::render(inputFile, encoding = e
 ### USER SPECIFIED PARAMETERS ##################################################
 
 # Set week to focus at, according to the ISO standard. Can be multiple.
-weeks <- c(46)
+weeks <- c(47)
 
 # !OBS: The linelist, genome metadata and phylogenetic tree are automatically loaded from the latest data build.
 ```
@@ -54,46 +54,51 @@ date_rng_prev <- paste0("2020-W",c(head(prev_week,n=1),tail(prev_week,n=1)),c("-
   as.Date()
 ```
 
-```{r}
+```{r read_data}
 # Read data
 source("read_data.R")
 ```
 
-```{r, eval = F}
+```{r, eval = T}
+## Temp clade hack
+meta_ll$clade <- sub("\\.EU[1-2]", "", meta_ll$clade )
+```
+
+
+```{r read_old_cluster, eval = T}
 # Read cluster definitions
 cluster_files <- list.files("/srv/rbd/covid19/metadata/cluster_definition",pattern = "_definition", full.names = T)
 name_clusters_old <- read_csv(cluster_files[length(cluster_files)]) %>% 
   select(substitutions, cluster_no)
-
-left_join(name_clusters_old, by = "substitutions")
-  name_clusters$cluster_no[is.na(name_clusters$cluster_no)] <- (max(name_clusters$cluster_no, na.rm = T) +1):
 ```
 
 
-```{r}
-# Define clusters.
+```{r gen_new_cluster}
+# Summarize clusters and merge old definitions
 name_clusters <- meta_ll %>%
   filter(!is.na(substitutions)) %>%
   group_by(substitutions) %>%
   summarise(cluster_aa_mutation = dplyr::first(aa_mutations),
-            cluster_count = n(), 
+            cluster_size = n(), 
             cluster_start = min(as.Date(date_linelist), na.rm = T),
             cluster_end = max(as.Date(date_linelist), na.rm = T)) %>%
   arrange(cluster_start) %>% 
-  mutate(cluster_no   = 1:n()) %>%
-  mutate(cluster_name = paste0("Cluster ",cluster_no)) %>%
-  group_by(cluster_name) %>%
-  mutate(cluster_size  = paste0(sum(cluster_count)),
-         cluster_start = min(as.Date(cluster_start), na.rm = T),
-         cluster_end   = max(as.Date(cluster_end), na.rm = T))
+  left_join(name_clusters_old, by = "substitutions")
 
+# Add numbers for new clusters
+name_clusters$cluster_no[is.na(name_clusters$cluster_no)] <- 
+  (1:length(name_clusters$cluster_no[is.na(name_clusters$cluster_no)]) + max(name_clusters$cluster_no, na.rm = T))
+  
+# Add cluster name
+name_clusters <- name_clusters %>% 
+  mutate(cluster_name = paste0("Cluster ",cluster_no)) 
 # Dump cluster names
 write_csv(name_clusters, path = file.path("/srv/rbd/covid19/metadata/cluster_definition/",
                                           paste0(format(Sys.Date(),"%Y-%m-%d"),"_cluster_definition.csv")))
 ```
 
 
-```{r}
+```{r merge_cluster}
 meta_ll <- left_join(meta_ll,name_clusters,by = "substitutions") %>% 
   group_by(firstDayWeek) %>%
   mutate(cluster_cov     = sum(!is.na(cluster_name))/n()) %>%
@@ -147,7 +152,7 @@ Data for perioden indeholder `r nPos` positive prøver, hvoraf der er sekventere
 # Coronavirus typer over tid og regioner
 I figurerne nedenfor vises antallet af de 5 overordnede klader defineret af nextstrain grupperet per måned og region.
 
-```{r, fig.height = 8, dpi=300}
+```{r summarize_clades, fig.height = 8, dpi=300}
 cumclade <- filter(meta_ll,!is.na(firstDayWeek) & !is.na(Region)) %>% 
   filter(!is.na(clade)) %>% 
   select(clade,firstDayWeek, Region) %>%
@@ -174,7 +179,7 @@ cumclade_DK <- group_by(cumclade,firstDayWeek,clade) %>%
 cumclade_DK <- bind_rows(cumclade_DK, cumclade)
 ```
 
-```{r, fig.height = 8, fig.width=7, dpi=300}
+```{r plot_clades, fig.height = 8, fig.width=7, dpi=300}
 p <- ggplot(cumclade_DK,aes(x = firstDayWeek, y = n, group = clade, fill = clade)) +
     geom_area() + 
   facet_wrap(~Region, ncol = 2, scales = "free_y") + 
@@ -191,7 +196,7 @@ plot(p)
 # Hurtigt voksende smittekæder
 Figuren nedenfor viser udviklingen af clusters over tid. Rækker angiver clusters (ens genomer) sorteret indenfor de overordnede virusklader, mens søjlerne angiver fortløbende uger siden starten af epidemien. De enkelte clusters er arbitrært navngivne, og størrelsen på punktet angiver hvor mange sekventerede prøver der var for den givne cluster/uge, mens farven angiver hvor stor en procentdel af det samlede antal prøver i en uge et cluster udgør.
 
-```{r}
+```{r filter_clusters_time}
 ## Identify clades with more than 10 samples in the period.
 clade_freq <- meta_ll %>% 
   filter(date_linelist >= date_rng[1]  & date_linelist <= date_rng[2] & is.na(sequence_exclude)) %>% 
@@ -206,7 +211,7 @@ clade_freq <- meta_ll %>%
 #    kable_paper("hover", full_width = T)
 ```
 
-```{r, fig.height=10, fig.width = 12, dpi=300}
+```{r plot_clusters_time, fig.height=10, fig.width = 12, dpi=300}
 # Make a nation-wide figure, all clusters >=20.
 d_clades_week <- filter(meta_ll, !is.na(clade) & date_linelist <= date_rng[2]) %>%
   filter(!is.na(cluster_no)) %>%
@@ -250,7 +255,7 @@ ggplot(
 
 
 
-```{r}
+```{r tab_clusters}
 # Per region.
 meta_table <- left_join(clade_freq,meta_ll, by = "cluster_no") %>% 
   filter(date_linelist >= date_rng[1]  & date_linelist <= date_rng[2] & !is.na(Region) & !is.na(cluster_no)) %>% 
@@ -292,7 +297,7 @@ nClust <- 5
 
 Figuren nedenfor viser den geografiske spredning for de `r nClust` største clusters i uge `r weeks`.
 
-```{r, fig.height=7, fig.width = 7, dpi=300}
+```{r plot_clusers_map, fig.height=7, fig.width = 7, dpi=300}
 meta_map <- meta_ll %>%
   mutate(cluster_no = gsub("Cluster ","",x = cluster_name)) %>%
   filter(date_linelist >= date_rng[1]  & date_linelist <= date_rng[2] &
