@@ -9,7 +9,7 @@ USAGE="$(basename "$0") [-h] [-d dir -s dir -o dir -t string -a flag]
 
 Arguments:
     -h  Show this help text.
-    -d  Library pool directory. MUST BE RELATIVE TO CURRENT WORKING DIRECTORY.
+    -i  Input directory.
     -s  Scheme version directory. 
     -o  Output directory.
     -t  Number of threads.
@@ -25,10 +25,10 @@ This is beta software!
 ### Terminal Arguments ---------------------------------------------------------
 
 # Import user arguments
-while getopts ':hd:s:o:t:a' OPTION; do
+while getopts ':hi:s:o:t:a' OPTION; do
   case $OPTION in
     h) echo "$USAGE"; exit 1;;
-    d) POOLDIR=$OPTARG;;
+    i) INDIR=$OPTARG;;
     s) SCHEMEVERS=$OPTARG;;
     o) OUTDIR=$OPTARG;;
     t) THREADS=$OPTARG;;
@@ -40,18 +40,19 @@ done
 
 # Check missing arguments
 MISSING="is missing but required. Exiting."
-if [ -z ${POOLDIR+x} ]; then echo "-d $MISSING"; exit 1; fi;
+if [ -z ${INDIR+x} ]; then echo "-d $MISSING"; exit 1; fi;
 if [ -z ${SCHEMEVERS+x} ]; then echo "-s $MISSING"; exit 1; fi;
 if [ -z ${OUTDIR+x} ]; then echo "-d $MISSING"; exit 1; fi;
 if [ -z ${THREADS+x} ]; then THREADS=50; fi;
 
 ### Code.----------------------------------------------------------------------
 mkdir -p $OUTDIR
+
 AAU_COVID19_PATH="$(dirname "$(readlink -f "$0")")"
+
 # Logging
 LOG_NAME="$OUTDIR/processing_log_$(date +"%Y-%m-%d_%H-%M").txt"
 echo "processing log" >> $LOG_NAME
-#echo "AAU COVID-19 revision - $(git -C $AAU_COVID19_PATH rev-parse --short HEAD)" >> $LOG_NAME ##Not working in singularity
 echo "Command: $0 $*" >> $LOG_NAME
 exec &> >(tee -a "$LOG_NAME")
 exec 2>&1
@@ -66,15 +67,7 @@ rm -rf $OUTDIR/TMPDIR; mkdir $OUTDIR/TMPDIR/
 mkdir -p $OUTDIR/results/
 mkdir -p $OUTDIR/results/mapped_fastq
 
-# Setup log.
-echo "# input settings (created on $(date))" > $OUTDIR/log.out
-echo "-d: "$POOLDIR >> $OUTDIR/log.out
-echo "-s: "$SCHEMEVERS >> $OUTDIR/log.out
-echo "-o: "$OUTDIR >> $OUTDIR/log.out
-echo "-t: "$THREADS >> $OUTDIR/log.out
-echo "-a: "$RERUN >> $OUTDIR/log.out
-
-FILES=$POOLDIR/demultiplexed/*.fastq
+FILES=$INDIR/*.fastq
 
 # For artic, need to make sure we are pointing correctly at files.
 nrep=$(echo $OUTDIR/articminion | awk -F'/' '{for (i = 1; i <= NF; i++) a=a"../"; print a}')
@@ -163,7 +156,10 @@ echo -e 'library_id\tposition\tfrac_ALT' > $OUTDIR/results/naive_vcf.tsv
 
 echo "Creating $OUTDIR/results/naive_vcf.tsv"
 
-parallel -j $THREADS \
+# Need to lower the number of threads to avoid crashing parallel. No idea why this error appears.
+THREADS_PAR=$((($THREADS+1)/3));
+
+parallel -j $THREADS_PAR \
 ' 
 IN_NAME="$(sed s/\\_1\\.sorted\\.bam// <<< {1})";
 OUT_NAME="$(basename $IN_NAME .primertrimmed.nCoV-2019)";
@@ -191,18 +187,18 @@ done
 
 ### Fetch longshot .vcf files #################################################
 
-echo "Creating $OUTDIR/results/longshot_all.tsv"
+#echo "Creating $OUTDIR/results/longshot_all.tsv"
 
-echo -e "library_id\tposition\tref\talt\tstring" > $OUTDIR/results/longshot_all.tsv
-grep -v "#" $OUTDIR/articminion/*longshot.vcf |
-awk -F'\t' '{sub(/.longshot.*/,"",$1); sub(/.*\//,"",$1); print $1"\t"$2"\t"$4"\t"$5"\t"$8}' >> $OUTDIR/results/longshot_all.tsv 
+#echo -e "library_id\tposition\tref\talt\tstring" > $OUTDIR/results/longshot_all.tsv
+#grep -v "#" $OUTDIR/articminion/*longshot.vcf |
+#awk -F'\t' '{sub(/.longshot.*/,"",$1); sub(/.*\//,"",$1); print $1"\t"$2"\t"$4"\t"$5"\t"$8}' >> $OUTDIR/results/longshot_all.tsv 
 
 ### Fetch masked regions ######################################################
 
-echo "Creating $OUTDIR/results/cov_mask_all.tsv"
+#echo "Creating $OUTDIR/results/cov_mask_all.tsv"
 
-echo -e "library_id\tstart\tend" > $OUTDIR/results/cov_mask_all.tsv
-awk -F'\t' '{sub(/.coverage_mask.txt.*/,"",FILENAME); sub(/.*\//,"",FILENAME); print FILENAME"\t"$2"\t"$3}' $OUTDIR/articminion/*mask.txt >> $OUTDIR/results/cov_mask_all.tsv
+#echo -e "library_id\tstart\tend" > $OUTDIR/results/cov_mask_all.tsv
+#awk -F'\t' '{sub(/.coverage_mask.txt.*/,"",FILENAME); sub(/.*\//,"",FILENAME); print FILENAME"\t"$2"\t"$3}' $OUTDIR/articminion/*mask.txt >> $OUTDIR/results/cov_mask_all.tsv
 
 ### Fetch pass/fail .vcf files ###############################################
 
