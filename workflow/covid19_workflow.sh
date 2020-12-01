@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-VERSION=0.1.0
+VERSION=0.2.0
 
 ### Description ----------------------------------------------------------------
 
@@ -162,8 +162,8 @@ echo ""
 echo "[$(date +"%T")] Removing human reads from demultiplexed data"
 echo ""
 
-if [ -s $OUT_DIR/demultiplexed/filtered.txt ]; then 
-  echo "filtering of human reads already done, skipping..."
+if [ -d $OUT_DIR/filtered ]; then 
+  echo "$OUT_DIR/filtered directory exists. Human read filtering is skipped..."
 else 
 
   singularity \
@@ -174,7 +174,7 @@ else
     -B $INPUT_DIR:$INPUT_DIR \
     -B $RUNTIME_DIR:/run/user/$UID \
     $SINGIMG \
-    bash -c "INDIR=$OUT_DIR/demultiplexed; THREADS=$THREADS; HUMREF=$HUMREF; . $WORKFLOW_PATH/human-filtering-reads.sh"
+    bash -c "INdir=$INPUT_DIR/demultiplexed; OUTdir=$OUT_DIR/filtered; THREADS=$THREADS; HUMREF=$HUMREF; . $WORKFLOW_PATH/human-filtering-reads.sh"
 fi
 
 ###############################################################################
@@ -187,31 +187,36 @@ echo ""
 echo "[$(date +"%T")] Generating genomes with ARTIC medaka pipeline"
 echo ""
 
-singularity \
-  --silent \
-  exec \
-  -B $WORKFLOW_PATH:$WORKFLOW_PATH \
-  -B $INPUT_DIR:$INPUT_DIR \
-  -B $OUT_DIR:$OUT_DIR \
-  -B $RUNTIME_DIR:/run/user/$UID \
-  $SINGIMG \
-  bash -c "
-    source activate artic-ncov2019;
-    # Medaka cannot control mem, need to scale down.
-    THREADS_MEDAKA=$((($THREADS+1)/3));
-    # Rerun artic only if not existing.
-    if [ -d $OUT_DIR/processing/articminion ]; then
-      Flag='-a'
-    fi;
-    $WORKFLOW_PATH/processing.sh \
-      -d $OUT_DIR \
-      -s nCoV-2019/$SCHEME \
-      -o $OUT_DIR/processing \
-      -t \$THREADS_MEDAKA \
-      \$Flag;
-    retn_code=$?;
-    if [ \$retn_code == 1 ]; then echo 'ERROR in processing.sh, exitting.'; exit; fi
-    "
+if [ -d $OUT_DIR/processing ]; then 
+  echo "$OUT_DIR/processing directory exists. ARTIC pipeline is skipped..."
+else 
+
+  singularity \
+    --silent \
+    exec \
+    -B $WORKFLOW_PATH:$WORKFLOW_PATH \
+    -B $INPUT_DIR:$INPUT_DIR \
+    -B $OUT_DIR:$OUT_DIR \
+    -B $RUNTIME_DIR:/run/user/$UID \
+    $SINGIMG \
+    bash -c "
+      source activate artic-ncov2019;
+      # Medaka cannot control mem, need to scale down.
+      THREADS_MEDAKA=$((($THREADS+1)/2));
+      # Rerun artic only if not existing.
+      if [ -d $OUT_DIR/processing/articminion ]; then
+        Flag='-a'
+      fi;
+      $WORKFLOW_PATH/processing.sh \
+        -i $OUT_DIR/filtered \
+        -s nCoV-2019/$SCHEME \
+        -o $OUT_DIR/processing \
+        -t \$THREADS_MEDAKA \
+        \$Flag;
+      retn_code=$?;
+      if [ \$retn_code == 1 ]; then echo 'ERROR in processing.sh, exitting.'; exit; fi
+      "
+fi
 
 ###############################################################################
 # Run QC
@@ -231,7 +236,6 @@ singularity \
   --no-home \
   $SINGIMG \
   bash -c "
-    source activate nextstrain
     $WORKFLOW_PATH/QC.sh \
       -i $OUT_DIR \
       -b $RUN_ID \
