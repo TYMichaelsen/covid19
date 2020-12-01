@@ -65,45 +65,45 @@ meta_ll$clade <- sub("\\.EU[1-2]", "", meta_ll$clade )
 ```
 
 
-```{r read_old_cluster, eval = T}
-# Read cluster definitions
-cluster_files <- list.files("/srv/rbd/covid19/metadata/cluster_definition",pattern = "_definition", full.names = T)
-name_clusters_old <- read_csv(cluster_files[length(cluster_files)]) %>% 
-  select(substitutions, cluster_no)
+```{r read_old_variant, eval = T}
+# Read variant definitions
+variant_files <- list.files("/srv/rbd/covid19/metadata/cluster_definition",pattern = "_definition", full.names = T)
+name_variants_old <- read_csv(variant_files[length(variant_files)]) %>% 
+  select(substitutions, variant_no)
 ```
 
 
-```{r gen_new_cluster}
-# Summarize clusters and merge old definitions
-name_clusters <- meta_ll %>%
+```{r gen_new_variant}
+# Summarize variants and merge old definitions
+name_variants <- meta_ll %>%
   filter(!is.na(substitutions)) %>%
   group_by(substitutions) %>%
-  summarise(cluster_aa_mutation = dplyr::first(aa_mutations),
-            cluster_size = n(), 
-            cluster_start = min(as.Date(date_linelist), na.rm = T),
-            cluster_end = max(as.Date(date_linelist), na.rm = T)) %>%
-  arrange(cluster_start) %>% 
-  left_join(name_clusters_old, by = "substitutions")
+  summarise(variant_aa_mutation = dplyr::first(aa_mutations),
+            variant_size = n(), 
+            variant_start = min(as.Date(date_linelist), na.rm = T),
+            variant_end = max(as.Date(date_linelist), na.rm = T)) %>%
+  arrange(variant_start) %>% 
+  left_join(name_variants_old, by = "substitutions")
 
-# Add numbers for new clusters
-name_clusters$cluster_no[is.na(name_clusters$cluster_no)] <- 
-  (1:length(name_clusters$cluster_no[is.na(name_clusters$cluster_no)]) + max(name_clusters$cluster_no, na.rm = T))
+# Add numbers for new variants
+name_variants$variant_no[is.na(name_variants$variant_no)] <- 
+  (1:length(name_variants$variant_no[is.na(name_variants$variant_no)]) + max(name_variants$variant_no, na.rm = T))
   
-# Add cluster name
-name_clusters <- name_clusters %>% 
-  mutate(cluster_name = paste0("Cluster ",cluster_no)) 
-# Dump cluster names
-write_csv(name_clusters, path = file.path("/srv/rbd/covid19/metadata/cluster_definition/",
-                                          paste0(format(Sys.Date(),"%Y-%m-%d"),"_cluster_definition.csv")))
+# Add variant name
+name_variants <- name_variants %>% 
+  mutate(variant_name = paste0("variant ",variant_no)) 
+# Dump variant names
+write_csv(name_variants, path = file.path("/srv/rbd/covid19/metadata/cluster_definition",
+                                          paste0(format(Sys.Date(),"%Y-%m-%d"),"_variant_definition.csv")))
 ```
 
 
-```{r merge_cluster}
-meta_ll <- left_join(meta_ll,name_clusters,by = "substitutions") %>% 
+```{r merge_variant}
+meta_ll <- left_join(meta_ll,name_variants,by = "substitutions") %>% 
   group_by(firstDayWeek) %>%
-  mutate(cluster_cov     = sum(!is.na(cluster_name))/n()) %>%
+  mutate(variant_cov     = sum(!is.na(variant_name))/n()) %>%
   ungroup() %>% group_by(firstDayWeek,Region) %>%
-  mutate(cluster_cov_reg = sum(!is.na(cluster_name))/n()) %>%
+  mutate(variant_cov_reg = sum(!is.na(variant_name))/n()) %>%
   ungroup() %>% 
   filter(date_linelist <= date_rng[2])
 ```
@@ -194,38 +194,38 @@ plot(p)
 ```
 
 # Hurtigt voksende smittekæder
-Figuren nedenfor viser udviklingen af clusters over tid. Rækker angiver clusters (ens genomer) sorteret indenfor de overordnede virusklader, mens søjlerne angiver fortløbende uger siden starten af epidemien. De enkelte clusters er arbitrært navngivne, og størrelsen på punktet angiver hvor mange sekventerede prøver der var for den givne cluster/uge, mens farven angiver hvor stor en procentdel af det samlede antal prøver i en uge et cluster udgør.
+Figuren nedenfor viser udviklingen af varianter over tid. Rækker angiver varianter (ens genomer) sorteret indenfor de overordnede virusklader, mens søjlerne angiver fortløbende uger siden starten af epidemien. De enkelte varianter er arbitrært navngivne, og størrelsen på punktet angiver hvor mange sekventerede prøver der var for den givne variant/uge, mens farven angiver hvor stor en procentdel af det samlede antal prøver i en uge en variant udgør.
 
-```{r filter_clusters_time}
+```{r filter_variants_time}
 ## Identify clades with more than 10 samples in the period.
 clade_freq <- meta_ll %>% 
   filter(date_linelist >= date_rng[1]  & date_linelist <= date_rng[2] & is.na(sequence_exclude)) %>% 
-  group_by(cluster_no,cluster_start,cluster_end,clade) %>% 
+  group_by(variant_no,variant_start,variant_end,clade) %>% 
   summarize(n = n()) %>% 
-  #filter(n >= 10 & !is.na(cluster_no)) %>%
+  #filter(n >= 10 & !is.na(variant_no)) %>%
   arrange(-n)
 
 #ungroup(clade_freq) %>%
-#  select(cluster_no,clade,n,cluster_start) %>%
-#  kable(col.names = c("Cluster", "Klade", "antal","Først observeret")) %>% 
+#  select(variant_no,clade,n,variant_start) %>%
+#  kable(col.names = c("variant", "Klade", "antal","Først observeret")) %>% 
 #    kable_paper("hover", full_width = T)
 ```
 
-```{r plot_clusters_time, fig.height=10, fig.width = 12, dpi=300}
-# Make a nation-wide figure, all clusters >=20.
+```{r plot_variants_time, fig.height=10, fig.width = 12, dpi=300}
+# Make a nation-wide figure, all variants >=20.
 d_clades_week <- filter(meta_ll, !is.na(clade) & date_linelist <= date_rng[2]) %>%
-  filter(!is.na(cluster_no)) %>%
-  group_by(firstDayWeek,clade,cluster_no,cluster_size,cluster_start) %>%
+  filter(!is.na(variant_no)) %>%
+  group_by(firstDayWeek,clade,variant_no,variant_size,variant_start) %>%
   summarise(count = n()) %>%
   group_by(firstDayWeek) %>%
   mutate(rel = count/sum(count)*100) %>%
-  group_by(cluster_no) %>%
+  group_by(variant_no) %>%
   mutate(mutsum = sum(count)) %>%
   #filter(mutsum >= 20) %>%
-  filter(mutsum >= 20 | cluster_no %in% clade_freq$cluster_no[1:5]) %>%
-  mutate(txt = paste0("Cluster ",as.character(cluster_no), ", n = ", as.character(cluster_size))) %>%
+  filter(mutsum >= 20 | variant_no %in% clade_freq$variant_no[1:5]) %>%
+  mutate(txt = paste0("variant ",as.character(variant_no), ", n = ", as.character(variant_size))) %>%
   ungroup() %>%
-  arrange(cluster_no,clade) %>%
+  arrange(variant_no,clade) %>%
   mutate(txt = factor(txt,levels = unique(txt))) 
 
 ggplot(
@@ -241,7 +241,7 @@ ggplot(
     #scale_x_date(date_breaks = "1 week",date_labels = "%W",expand = c(0.01,0.01)) +
     scale_color_viridis_c(trans = "log10", breaks = c(1, 10, 50),) +
     labs(
-      title = "Der vises kun clusters med mere end 20 personer samt top5 for den aktive uge",
+      title = "Der vises kun varianter med mere end 20 personer samt top5 for den aktive uge",
       color = "Procendel af sekventerede prøver pr. uge",
       x     = "Uge", 
       size  = "Antal") +
@@ -255,20 +255,20 @@ ggplot(
 
 
 
-```{r tab_clusters}
+```{r tab_variants}
 # Per region.
-meta_table <- left_join(clade_freq,meta_ll, by = "cluster_no") %>% 
-  filter(date_linelist >= date_rng[1]  & date_linelist <= date_rng[2] & !is.na(Region) & !is.na(cluster_no)) %>% 
-  group_by(Region,cluster_no) %>% 
+meta_table <- left_join(clade_freq,meta_ll, by = "variant_no") %>% 
+  filter(date_linelist >= date_rng[1]  & date_linelist <= date_rng[2] & !is.na(Region) & !is.na(variant_no)) %>% 
+  group_by(Region,variant_no) %>% 
   summarize(n = n(),
             pct_M = sum(Sex == "M") / n,
             pct_DK = sum(CitizenshipText == "Danmark") / n,
             alder  = median_iqr(as.numeric(SampleAge)))
 
 # Hele DK.
-heleDK <- left_join(clade_freq,meta_ll, by = "cluster_no" )%>% 
-  filter(date_linelist >= date_rng[1]  & date_linelist <= date_rng[2] & !is.na(cluster_no)) %>% 
-  group_by(cluster_no) %>% 
+heleDK <- left_join(clade_freq,meta_ll, by = "variant_no" )%>% 
+  filter(date_linelist >= date_rng[1]  & date_linelist <= date_rng[2] & !is.na(variant_no)) %>% 
+  group_by(variant_no) %>% 
   summarize(n = n(),
             pct_M = sum(Sex == "M") / n,
             pct_DK = sum(CitizenshipText == "Danmark") / n,
@@ -278,51 +278,51 @@ heleDK <- left_join(clade_freq,meta_ll, by = "cluster_no" )%>%
 #tables <- list()
 #
 #tables[["Hele Danmark"]] <- heleDK %>%
-#  kable(digits = 2, col.names = c("Cluster", "n", "Mænd (%)", "Dansk (%)", "Alder (median, iqr)")) %>% 
+#  kable(digits = 2, col.names = c("variant", "n", "Mænd (%)", "Dansk (%)", "Alder (median, iqr)")) %>% 
 #  kable_paper("hover", full_width = T)
 #
 #for (reg in unique(meta_table$Region)){
 #  tables[[reg]] <- filter(meta_table,Region == reg) %>%
 #    ungroup() %>% select(-Region) %>% arrange(-n) %>%
-#    kable(digits = 2, col.names = c("Cluster", "n", "Mænd (%)", "Dansk (%)", "Alder (median, iqr)")) %>% 
+#    kable(digits = 2, col.names = c("variant", "n", "Mænd (%)", "Dansk (%)", "Alder (median, iqr)")) %>% 
 #    kable_paper("hover", full_width = T)
 #}
 ```
 \newpage
 
-## Geografisk spredning af clusters
+## Geografisk spredning af varianter
 ```{r}
 nClust <- 5
 ```
 
-Figuren nedenfor viser den geografiske spredning for de `r nClust` største clusters i uge `r weeks`.
+Figuren nedenfor viser den geografiske spredning for de `r nClust` hyppigste varianter i uge `r weeks`.
 
 ```{r plot_clusers_map, fig.height=7, fig.width = 7, dpi=300}
 meta_map <- meta_ll %>%
-  mutate(cluster_no = gsub("Cluster ","",x = cluster_name)) %>%
+  mutate(variant_no = gsub("variant ","",x = variant_name)) %>%
   filter(date_linelist >= date_rng[1]  & date_linelist <= date_rng[2] &
-           cluster_no %in% heleDK$cluster_no[1:nClust]) %>%
-  group_by(cluster_name) %>%
+           variant_no %in% heleDK$variant_no[1:nClust]) %>%
+  group_by(variant_name) %>%
   mutate(n = n()) %>%
   ungroup() %>%
   arrange(-n) %>%
-  mutate(cluster_no = paste0(cluster_no," (n = ",n,")")) %>%
-  mutate(cluster_no = factor(cluster_no,levels = unique(cluster_no)))
+  mutate(variant_no = paste0(variant_no," (n = ",n,")")) %>%
+  mutate(variant_no = factor(variant_no,levels = unique(variant_no)))
 
-p <- ggplot(data = meta_map, aes(x= zip_lon, y = zip_lat, color = cluster_no)) +
-  #p <- ggplot(data = meta_map, aes(x= lon_adr, y = lat_adr, color = cluster_no)) +
+p <- ggplot(data = meta_map, aes(x= zip_lon, y = zip_lat, color = variant_no)) +
+  #p <- ggplot(data = meta_map, aes(x= lon_adr, y = lat_adr, color = variant_no)) +
   geom_polygon(data = dk_nuts2, inherit.aes = F,
                aes(x = long, y = lat, group = group), color = "black", fill = "grey95") +
   geom_jitter(size = 2,height = 0.05,width = 0.05) +
   #scale_color_viridis_d() +
   scale_color_manual(values = unname(branded_colors)) + 
-  labs(colour = "Cluster") +
+  labs(colour = "Variant") +
   theme_void() +
   theme(legend.position = c(1,1),legend.justification = c(1.5,1.5))
 
 if (nrow(heleDK) == 0){
   qplot(1,1,shape = NA) + 
-    annotate("text",label = "No clusters detected in the selected period.",x = 1,y = 1) + 
+    annotate("text",label = "No variants detected in the selected period.",x = 1,y = 1) + 
     theme_void()
 } else {
   p
