@@ -68,8 +68,17 @@ REF=$AAU_COVID19_PATH/dependencies/ref/MN908947.3.gb
 # Setup data to be used in QC.
 ###############################################################################
 
-# Copy over sequences.
-cp $INPUT_DIR/processing/results/consensus.fasta $INPUT_DIR/QC/aligntree/sequences.fasta
+# Remove failed genomes from downstream tree building and clade assignment.
+MAXN=3000
+MINLENGTH=25000
+
+rm -f $INPUT_DIR/QC/aligntree/failed.fasta
+
+cat $INPUT_DIR/processing/results/consensus.fasta |
+awk '/^>/ {printf("\n%s\n",$0);next; } { printf("%s",$0);}  END {printf("\n");}' - | awk 'NR > 1' - | # make one-line fasta.
+awk -v THR=$MAXN -v LEN=$MINLENGTH -v outdir=$INPUT_DIR/QC/aligntree '!/^>/ { next } { getline seq; seq2=seq; Nn=gsub(/N/,"",seq) }; {if (length(seq2) > LEN && Nn <= THR) { print $0 "\n" seq2 } else {print $0 "\n" seq2 >> outdir"/failed.fasta"}}' - > $INPUT_DIR/QC/aligntree/sequences.fasta # Tidy header.
+
+echo "$(grep ">" -c $INPUT_DIR/QC/aligntree/failed.fasta) genomes were not used for tree building and nextclade, see $INPUT_DIR/QC/failed.fasta"
 
 source activate nextstrain
 
@@ -113,14 +122,11 @@ source deactivate nextclade
 # Generate the QC report.
 ###############################################################################
 
-# Fetch path lab metadata.            
-pth=$(grep "\-d" $INPUT_DIR/processing/log.out | sed 's/-d: //')
-
-if [ ! -f $pth/sample_sheet.csv ]; then 
-  echo "ERROR: could not find lab metadata. Searched for '$pth/*sequencing.csv', but found nothing."
+if [ ! -f $INPUT_DIR/sample_sheet.csv ]; then 
+  echo "ERROR: could not find lab metadata. Searched for '$INPUT_DIR/sample_sheet.csv', but found nothing."
   exit 1
 else
-  labmeta=$(find $pth/sample_sheet.csv)
+  labmeta=$INPUT_DIR/sample_sheet.csv
 fi
 
 # Run .rmd script.
