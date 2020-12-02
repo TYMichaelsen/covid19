@@ -1,10 +1,14 @@
 #!/bin/bash 
 
-# This script checks for new batches in /srv/rbd/covid19/processing. If a new batch is present, it monitors for a while -
-# if the folder is static and has >20Gb it starts the covid19_workflow.sh script.
+# This script checks for new batches in:
+# - /srv/rbd/covid19/processing
+# - /srv/data_1
 
-# List all batches processed so far. Criteria for proccesed is consensus.fasta in /final_output/ folder.
-for batch in $(ls -dtr /srv/rbd/covid19/processing/?J*); do 
+# If a new batch is present, it monitors for a while -
+# if the folder is static and has enough data it starts the covid19_workflow.sh script.
+
+# List all batches processed so far. Criteria for proccesed is a non-empty consensus.fasta in /final_output/ folder.
+for batch in $(ls -dtr /srv/rbd/covid19/processing/?J*) $(ls -dtr /srv/data_1/?J*); do
   if [ -s $batch/final_output/consensus.fasta ]; then
     echo $batch
   fi
@@ -13,7 +17,7 @@ done > /srv/rbd/covid19/processing/processed.txt
 while : ; do
 
 # Check if a new batch has arrived.
-comm -23 <(ls -d /srv/rbd/covid19/processing/?J* | sort) <(sort /srv/rbd/covid19/processing/processed.txt) > /srv/rbd/covid19/processing/missing.txt
+comm -23 <(ls -d /srv/rbd/covid19/processing/?J* /srv/data_1/?J* | sort) <(sort /srv/rbd/covid19/processing/processed.txt) > /srv/rbd/covid19/processing/missing.txt
 
 while [ -s /srv/rbd/covid19/processing/missing.txt ]; do 
   
@@ -35,7 +39,7 @@ while [ -s /srv/rbd/covid19/processing/missing.txt ]; do
   if [ -z "$diff_files" ]; then 
     echo "[$(date +"%b %d %T")] $(basename $DIR) is static, continue with workflow processing." 
 
-    ### Test if there is >20 Gb data. If not, cancel the job.----------------------------------------------------------- 
+    ### Test if there is enough data. If not, cancel the job.----------------------------------------------------------- 
     nfastq=$(find $DIR/fastq -name *fastq | wc -l)
     nbases=$(( $nfastq * 4000 * 1050 ))
     
@@ -44,7 +48,8 @@ while [ -s /srv/rbd/covid19/processing/missing.txt ]; do
     
     if [ $nbases -ge $DATACAP ]; then
 
-      # Run the workflow.  
+      # Run the workflow. 
+      cd $(dirname $DIR) 
       covid19_workflow.sh -i $(basename $DIR) -s aau_long_v3.1
 
       # Remove from top of missing.txt and add to processed.txt
