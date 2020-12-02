@@ -38,7 +38,7 @@ while [ -s /srv/rbd/covid19/processing/missing.txt ]; do
     
   echo "[$(date +"%b %d %T")] Wait 2 min to check if $(basename $DIR) is static."
     
-  sleep 1
+  sleep 2m
     
   new_files=$(find $DIR)
    
