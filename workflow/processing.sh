@@ -184,21 +184,6 @@ for i in $FILES; do
   fi
 done
 
-### Fetch longshot .vcf files #################################################
-
-#echo "Creating $OUTDIR/results/longshot_all.tsv"
-
-#echo -e "library_id\tposition\tref\talt\tstring" > $OUTDIR/results/longshot_all.tsv
-#grep -v "#" $OUTDIR/articminion/*longshot.vcf |
-#awk -F'\t' '{sub(/.longshot.*/,"",$1); sub(/.*\//,"",$1); print $1"\t"$2"\t"$4"\t"$5"\t"$8}' >> $OUTDIR/results/longshot_all.tsv 
-
-### Fetch masked regions ######################################################
-
-#echo "Creating $OUTDIR/results/cov_mask_all.tsv"
-
-#echo -e "library_id\tstart\tend" > $OUTDIR/results/cov_mask_all.tsv
-#awk -F'\t' '{sub(/.coverage_mask.txt.*/,"",FILENAME); sub(/.*\//,"",FILENAME); print FILENAME"\t"$2"\t"$3}' $OUTDIR/articminion/*mask.txt >> $OUTDIR/results/cov_mask_all.tsv
-
 ### Fetch pass/fail .vcf files ###############################################
 
 echo "Creating $OUTDIR/results/artic_vcf.tsv"
