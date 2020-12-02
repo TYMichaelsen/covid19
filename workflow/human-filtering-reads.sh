@@ -2,12 +2,18 @@
 
 source activate artic-ncov2019
 
-# for each fastq, run sanitizeme.
+mkdir $OUTdir
+
+# Logging
+LOG_NAME="$OUTdir/human-filtering_log_$(date +"%Y-%m-%d_%H-%M").txt"
+echo "human read filtering log" >> $LOG_NAME
+echo "Command: $0 $*" >> $LOG_NAME
+exec &> >(tee -a "$LOG_NAME")
+exec 2>&1
+
+# for each fastq, map to human reference and remove reads that mapped.
 parallel -j $THREADS '
 
-minimap2 -ax map-ont -t 1 {2} {1} | samtools view --threads 1 -u -f 4 - | samtools fastq --threads - > {1}.tmp && mv {1}.tmp {1}
+minimap2 -ax map-ont -t 1 {3} {1} | samtools view --threads 1 -u -f 4 - | samtools fastq --threads - > {2}/{1/}
 
-' ::: $INDIR/*fastq ::: $HUMREF
-
-# Save that the files has been filtered.
-echo "Data has been human filtered" > $INDIR/filtered.txt
+' ::: $INdir/*fastq ::: $OUTdir ::: $HUMREF
