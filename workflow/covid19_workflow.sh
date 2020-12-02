@@ -58,7 +58,7 @@ echo ""
 # Script paths
 WORKFLOW_PATH="$(dirname "$(readlink -f "$0")")"
 COVID19_PATH=${WORKFLOW_PATH%/*}
-SINGIMG="/srv/rbd/thecontainer/covid19_latest.sif"
+SINGIMG="${COVID19_PATH}/singularity/covid19_latest.sif"
 RUNTIME_DIR="/tmp/sing.${UID}"
 if [ -d ${RUNTIME_DIR} ]; then
     rm -rf ${RUNTIME_DIR}
@@ -155,29 +155,6 @@ if [ -s $OUT_DIR/demultiplexed/missing.txt ]; then
 fi
 
 ###############################################################################
-# Remove human reads
-###############################################################################
-
-echo ""
-echo "[$(date +"%T")] Removing human reads from demultiplexed data"
-echo ""
-
-if [ -s $OUT_DIR/demultiplexed/filtered.txt ]; then 
-  echo "filtering of human reads already done, skipping..."
-else 
-
-  singularity \
-    --silent \
-    exec \
-    -B $WORKFLOW_PATH:$WORKFLOW_PATH \
-    -B $OUT_DIR:$OUT_DIR \
-    -B $INPUT_DIR:$INPUT_DIR \
-    -B $RUNTIME_DIR:/run/user/$UID \
-    $SINGIMG \
-    bash -c "INDIR=$OUT_DIR/demultiplexed; THREADS=$THREADS; HUMREF=$HUMREF; . $WORKFLOW_PATH/human-filtering-reads.sh"
-fi
-
-###############################################################################
 # Generate genomes
 ###############################################################################
 
@@ -196,7 +173,7 @@ singularity \
   -B $RUNTIME_DIR:/run/user/$UID \
   $SINGIMG \
   bash -c "
-    source activate artic-ncov2019;
+    source activate artic-ncov2019-medaka;
     # Medaka cannot control mem, need to scale down.
     THREADS_MEDAKA=$((($THREADS+1)/3));
     # Rerun artic only if not existing.
