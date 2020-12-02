@@ -238,7 +238,6 @@ singularity \
   bash -c "
     $WORKFLOW_PATH/QC.sh \
       -i $OUT_DIR \
-      -b $RUN_ID \
       -s $SCHEME \
       -r $WORKFLOW_PATH/QC.rmd \
       -t $THREADS
@@ -248,5 +247,5 @@ singularity \
 # Sweep important data and put in "output"
 ################################################################################
 
-cp $OUT_DIR/QC/${RUN_ID}.html $OUT_DIR/final_output/${RUN_ID}.html
+cp $OUT_DIR/QC/*.html $OUT_DIR/final_output/*.html
 cp $OUT_DIR/processing/results/consensus.fasta $OUT_DIR/final_output/consensus.fasta
