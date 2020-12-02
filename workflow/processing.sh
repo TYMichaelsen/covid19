@@ -65,7 +65,6 @@ HUMANREF=$AAU_COVID19_PATH/dependencies/ref/human_g1k_v37.fasta
 # setup output folders.
 rm -rf $OUTDIR/TMPDIR; mkdir $OUTDIR/TMPDIR/
 mkdir -p $OUTDIR/results/
-mkdir -p $OUTDIR/results/mapped_fastq
 
 FILES=$INDIR/*.fastq
 
