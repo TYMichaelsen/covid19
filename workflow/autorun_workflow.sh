@@ -1,23 +1,31 @@
 #!/bin/bash 
 
+# Need to work here to get permission to make temporary files.
+cd /srv/rbd/covid19/processing
+
 # This script checks for new batches in:
 # - /srv/rbd/covid19/processing
 # - /srv/data_1
+# - /srv/data_1/gridion
 
 # If a new batch is present, it monitors for a while -
 # if the folder is static and has enough data it starts the covid19_workflow.sh script.
 
 # List all batches processed so far. Criteria for proccesed is a non-empty consensus.fasta in /final_output/ folder.
-for batch in $(ls -dtr /srv/rbd/covid19/processing/?J*) $(ls -dtr /srv/data_1/?J*); do
+for batch in $(ls -dtr /srv/rbd/covid19/processing/?J*) $(ls -dtr /srv/data_1/?J*) $(ls -dtr /srv/data_1/gridion/?J*); do
   if [ -s $batch/final_output/consensus.fasta ]; then
     echo $batch
   fi
 done > /srv/rbd/covid19/processing/processed.txt
 
+chmod 777 /srv/rbd/covid19/processing/processed.txt
+
 while : ; do
 
 # Check if a new batch has arrived.
-comm -23 <(ls -d /srv/rbd/covid19/processing/?J* /srv/data_1/?J* | sort) <(sort /srv/rbd/covid19/processing/processed.txt) > /srv/rbd/covid19/processing/missing.txt
+comm -23 <(ls -d /srv/rbd/covid19/processing/?J* /srv/data_1/?J* /srv/data_1/gridion/?J* | sort) <(sort /srv/rbd/covid19/processing/processed.txt) > /srv/rbd/covid19/processing/missing.txt
+
+chmod 777 /srv/rbd/covid19/processing/missing.txt
 
 while [ -s /srv/rbd/covid19/processing/missing.txt ]; do 
   
@@ -30,7 +38,7 @@ while [ -s /srv/rbd/covid19/processing/missing.txt ]; do
     
   echo "[$(date +"%b %d %T")] Wait 2 min to check if $(basename $DIR) is static."
     
-  sleep 2m
+  sleep 1
     
   new_files=$(find $DIR)
    
@@ -53,23 +61,23 @@ while [ -s /srv/rbd/covid19/processing/missing.txt ]; do
       covid19_workflow.sh -i $(basename $DIR) -s aau_long_v3.1
 
       # Remove from top of missing.txt and add to processed.txt
-      tail -n +2 /srv/rbd/covid19/processing/missing.txt > tmp && mv tmp /srv/rbd/covid19/processing/missing.txt
-      cat /srv/rbd/covid19/processing/processed.txt <(echo $DIR) > tmp && mv tmp /srv/rbd/covid19/processing/processed.txt
+      tail -n +2 /srv/rbd/covid19/processing/missing.txt > tmp_auto && mv tmp_auto /srv/rbd/covid19/processing/missing.txt
+      cat /srv/rbd/covid19/processing/processed.txt <(echo $DIR) > tmp_auto && mv tmp_auto /srv/rbd/covid19/processing/processed.txt
 
     else
     
       echo "[$(date +"%b %d %T")] $(basename $DIR) is static but has <20 Gb data, adding it to bottom of missing.txt and continue." 
     
       # Remove from top of missing.txt and add to bottom of missing.txt
-      tail -n +2 /srv/rbd/covid19/processing/missing.txt       > tmp && mv tmp /srv/rbd/covid19/processing/missing.txt
-      cat /srv/rbd/covid19/processing/missing.txt <(echo $DIR) > tmp && mv tmp /srv/rbd/covid19/processing/missing.txt
+      tail -n +2 /srv/rbd/covid19/processing/missing.txt       > tmp_auto && mv tmp_auto /srv/rbd/covid19/processing/missing.txt
+      cat /srv/rbd/covid19/processing/missing.txt <(echo $DIR) > tmp_auto && mv tmp_auto /srv/rbd/covid19/processing/missing.txt
     fi
   else 
     echo "[$(date +"%b %d %T")] $(basename $DIR) was not static, adding it to bottom of missing.txt and continue." 
 
     # Remove from top of missing.txt and add to bottom of missing.txt
-    tail -n +2 /srv/rbd/covid19/processing/missing.txt       > tmp && mv tmp /srv/rbd/covid19/processing/missing.txt
-    cat /srv/rbd/covid19/processing/missing.txt <(echo $DIR) > tmp && mv tmp /srv/rbd/covid19/processing/missing.txt
+    tail -n +2 /srv/rbd/covid19/processing/missing.txt       > tmp_auto && mv tmp_auto /srv/rbd/covid19/processing/missing.txt
+    cat /srv/rbd/covid19/processing/missing.txt <(echo $DIR) > tmp_auto && mv tmp_auto /srv/rbd/covid19/processing/missing.txt
   fi
 
 done
