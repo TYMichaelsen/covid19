@@ -58,7 +58,7 @@ echo ""
 # Script paths
 WORKFLOW_PATH="$(dirname "$(readlink -f "$0")")"
 COVID19_PATH=${WORKFLOW_PATH%/*}
-SINGIMG="/srv/rbd/thecontainer/singularity/covid19_latest.sif"
+SINGIMG="/srv/rbd/thecontainer/covid19_latest.sif"
 RUNTIME_DIR="/tmp/sing.${UID}"
 if [ -d ${RUNTIME_DIR} ]; then
     rm -rf ${RUNTIME_DIR}
@@ -176,6 +176,8 @@ else
     $SINGIMG \
     bash -c "INdir=$INPUT_DIR/demultiplexed; OUTdir=$OUT_DIR/filtered; THREADS=$THREADS; HUMREF=$HUMREF; . $WORKFLOW_PATH/human-filtering-reads.sh"
 fi
+
+exit 1
 
 ###############################################################################
 # Generate genomes
