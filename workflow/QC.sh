@@ -1,6 +1,6 @@
 #!/bin/bash
 # By Thomas Y. Michaelsen
-VERSION=0.1.0
+VERSION=0.2.0
 
 ### Description ----------------------------------------------------------------
 
@@ -10,7 +10,6 @@ USAGE="$(basename "$0") [-h] [-d dir -r file]
 Arguments:
     -h  Show this help text.
     -i  Input directory.
-    -b  What batch to do QC for.
     -s  What scheme you are running. See Schemes below.
     -r  R script to run to generate QC report.
     -t  Number of threads.
@@ -25,11 +24,10 @@ Schemes:
 ### Terminal Arguments ---------------------------------------------------------
 
 # Import user arguments
-while getopts ':hi:b:s:r:t:' OPTION; do
+while getopts ':hi:s:r:t:' OPTION; do
   case $OPTION in
     h) echo "$USAGE"; exit 1;;
     i) INPUT_DIR=$OPTARG;;
-    b) BATCH=$OPTARG;;
     s) SCHEME=$OPTARG;;
     r) RMD=$OPTARG;;
     t) THREADS=$OPTARG;;
@@ -41,7 +39,6 @@ done
 # Check missing arguments
 MISSING="is missing but required. Exiting."
 if [ -z ${INPUT_DIR+x} ]; then echo "-i $MISSING"; exit 1; fi;
-if [ -z ${BATCH+x} ]; then echo "-b $MISSING"; exit 1; fi;
 if [ -z ${SCHEME+x} ]; then echo "-s $MISSING"; exit 1; fi;
 if [ -z ${RMD+x} ]; then echo "-r $MISSING"; exit 1; fi;
 if [ -z ${THREADS+x} ]; then THREADS=50; fi;
@@ -78,7 +75,8 @@ cat $INPUT_DIR/processing/results/consensus.fasta |
 awk '/^>/ {printf("\n%s\n",$0);next; } { printf("%s",$0);}  END {printf("\n");}' - | awk 'NR > 1' - | # make one-line fasta.
 awk -v THR=$MAXN -v LEN=$MINLENGTH -v outdir=$INPUT_DIR/QC/aligntree '!/^>/ { next } { getline seq; seq2=seq; Nn=gsub(/N/,"",seq) }; {if (length(seq2) > LEN && Nn <= THR) { print $0 "\n" seq2 } else {print $0 "\n" seq2 >> outdir"/failed.fasta"}}' - > $INPUT_DIR/QC/aligntree/sequences.fasta # Tidy header.
 
-echo "$(grep ">" -c $INPUT_DIR/QC/aligntree/failed.fasta) genomes were not used for tree building and nextclade, see $INPUT_DIR/QC/failed.fasta"
+if [ -s $INPUT_DIR/QC/aligntree/failed.fasta ]; then nfail=$(grep ">" -c $INPUT_DIR/QC/aligntree/failed.fasta); else nfail=0; fi
+echo "$nfail genomes were not used for tree building and nextclade, see $INPUT_DIR/QC/failed.fasta" 
 
 source activate nextstrain
 
@@ -132,6 +130,7 @@ fi
 # Run .rmd script.
 REF_PATH=$AAU_COVID19_PATH/dependencies/ref/MN908947.3.fasta
 SCHEME_PATH=$AAU_COVID19_PATH/dependencies/primer_schemes/nCoV-2019/$SCHEME
+BATCH=$(basename $INPUT_DIR)
 
 Rscript \
   -e \
@@ -141,7 +140,6 @@ Rscript \
     output_file='$INPUT_DIR/QC/$BATCH.html',
     knit_root_dir='$INPUT_DIR',
     params=list(
-      batch='$BATCH',
       labmeta='$labmeta',
       input_dir='$INPUT_DIR',
       scheme_dir='$SCHEME_PATH',
