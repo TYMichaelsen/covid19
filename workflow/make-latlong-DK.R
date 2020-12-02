@@ -1,3 +1,7 @@
+#
+# This script makes the file needed for nextstrain to plot zipcode and region GPS coordinates.
+#
+
 
 library(httr)
 library(jsonlite)
