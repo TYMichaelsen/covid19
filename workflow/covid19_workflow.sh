@@ -177,8 +177,6 @@ else
     bash -c "INdir=$INPUT_DIR/demultiplexed; OUTdir=$OUT_DIR/filtered; THREADS=$THREADS; HUMREF=$HUMREF; . $WORKFLOW_PATH/human-filtering-reads.sh"
 fi
 
-exit 1
-
 ###############################################################################
 # Generate genomes
 ###############################################################################
