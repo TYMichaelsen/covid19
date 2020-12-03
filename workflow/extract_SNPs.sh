@@ -80,10 +80,12 @@ if [ -n "$CUSTOM_BUILD" ]; then
 fi
 
 if [ -n "$AAVARS" ]; then
+    AAVARS=$(readlink -f $AAVARS)
     SNAKE_ADD="variant_list=$AAVARS $SNAKE_ADD"
 fi
 
 if [ -n "$ALIGNEDSEQS" ]; then
+    ALIGNEDSEQS=$(readlink -f $ALIGNEDSEQS)
     SNAKE_ADD="alignment=$ALIGNEDSEQS $SNAKE_ADD"
 fi
 
