@@ -11,6 +11,13 @@ cd /srv/rbd/covid19/processing
 # If a new batch is present, it monitors for a while -
 # if the folder is static and has enough data it starts the covid19_workflow.sh script.
 
+# Logging
+LOG_NAME="/srv/rbd/covid19/processing/autorun_log_$(date +"%Y-%m-%d_%H-%M").txt"
+echo "autorun log" >> $LOG_NAME
+echo "Command: $0 $*" >> $LOG_NAME
+exec &> >(tee -a "$LOG_NAME")
+exec 2>&1
+
 # List all batches processed so far. Criteria for proccesed is a non-empty consensus.fasta in /final_output/ folder.
 for batch in $(ls -dtr /srv/rbd/covid19/processing/?J*) $(ls -dtr /srv/data_1/?J*) $(ls -dtr /srv/data_1/gridion/?J*); do
   if [ -s $batch/final_output/consensus.fasta ]; then
