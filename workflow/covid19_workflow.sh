@@ -249,3 +249,19 @@ singularity \
 
 cp $OUT_DIR/QC/*.html $OUT_DIR/final_output/*.html
 cp $OUT_DIR/processing/results/consensus.fasta $OUT_DIR/final_output/consensus.fasta
+
+################################################################################
+# Set group permissions for output folders.
+################################################################################
+
+chgrp -R cli_a1024-gc1-e-03-srv-aau-dk_hostaccess@srv.aau.dk $OUT_DIR/demultiplexed
+chgrp -R cli_a1024-gc1-e-03-srv-aau-dk_hostaccess@srv.aau.dk $OUT_DIR/filtered
+chgrp -R cli_a1024-gc1-e-03-srv-aau-dk_hostaccess@srv.aau.dk $OUT_DIR/processing
+chgrp -R cli_a1024-gc1-e-03-srv-aau-dk_hostaccess@srv.aau.dk $OUT_DIR/QC
+chgrp -R cli_a1024-gc1-e-03-srv-aau-dk_hostaccess@srv.aau.dk $OUT_DIR/final_output
+
+chmod -R g+rwx $OUT_DIR/demultiplexed
+chmod -R g+rwx $OUT_DIR/filtered
+chmod -R g+rwx $OUT_DIR/processing
+chmod -R g+rwx $OUT_DIR/QC
+chmod -R g+rwx $OUT_DIR/final_output
