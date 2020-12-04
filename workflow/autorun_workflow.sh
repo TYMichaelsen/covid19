@@ -18,6 +18,8 @@ echo "Command: $0 $*" >> $LOG_NAME
 exec &> >(tee -a "$LOG_NAME")
 exec 2>&1
 
+chmod 777 $LOG_NAME
+
 # List all batches processed so far. Criteria for proccesed is a non-empty consensus.fasta in /final_output/ folder.
 for batch in $(ls -dtr /srv/rbd/covid19/processing/?J*) $(ls -dtr /srv/data_1/?J*) $(ls -dtr /srv/data_1/gridion/?J*); do
   if [ -s $batch/final_output/consensus.fasta ]; then
