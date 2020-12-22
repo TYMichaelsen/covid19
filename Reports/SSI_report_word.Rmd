@@ -14,7 +14,7 @@ knit: (function(inputFile, encoding) { rmarkdown::render(inputFile, encoding = e
 ### USER SPECIFIED PARAMETERS ##################################################
 
 # Set week to focus at, according to the ISO standard. Can be multiple.
-weeks <- c(47)
+weeks <- c(49,50)
 
 # !OBS: The linelist, genome metadata and phylogenetic tree are automatically loaded from the latest data build.
 ```
@@ -69,21 +69,22 @@ meta_ll$clade <- sub("\\.EU[1-2]", "", meta_ll$clade )
 # Read variant definitions
 variant_files <- list.files("/srv/rbd/covid19/metadata/cluster_definition",pattern = "_definition", full.names = T)
 name_variants_old <- read_csv(variant_files[length(variant_files)]) %>% 
-  select(substitutions, variant_no)
+  #mutate(nt_substitutions = substitutions) %>% 
+  select(nt_substitutions, variant_no)
 ```
 
 
 ```{r gen_new_variant}
 # Summarize variants and merge old definitions
 name_variants <- meta_ll %>%
-  filter(!is.na(substitutions)) %>%
-  group_by(substitutions) %>%
-  summarise(variant_aa_mutation = dplyr::first(aa_mutations),
+  filter(!is.na(nt_substitutions)) %>%
+  group_by(nt_substitutions) %>%
+  summarise(variant_aa_substitutions = dplyr::first(aa_substitutions),
             variant_size = n(), 
             variant_start = min(as.Date(date_linelist), na.rm = T),
             variant_end = max(as.Date(date_linelist), na.rm = T)) %>%
   arrange(variant_start) %>% 
-  left_join(name_variants_old, by = "substitutions")
+  left_join(name_variants_old, by = "nt_substitutions")
 
 # Add numbers for new variants
 name_variants$variant_no[is.na(name_variants$variant_no)] <- 
@@ -99,7 +100,7 @@ write_csv(name_variants, path = file.path("/srv/rbd/covid19/metadata/cluster_def
 
 
 ```{r merge_variant}
-meta_ll <- left_join(meta_ll,name_variants,by = "substitutions") %>% 
+meta_ll <- left_join(meta_ll,name_variants,by = "nt_substitutions") %>% 
   group_by(firstDayWeek) %>%
   mutate(variant_cov     = sum(!is.na(variant_name))/n()) %>%
   ungroup() %>% group_by(firstDayWeek,Region) %>%
@@ -132,12 +133,12 @@ nGenomesThisWeek <- meta_ll %>%
   filter(date_linelist >= date_rng[1]) %>%
   nrow()
 
-nDirMut  <- meta_ll %>% filter(!is.na(substitutions) & 
-                                  duplicated(substitutions) == F) %>% nrow()
+nDirMut  <- meta_ll %>% filter(!is.na(nt_substitutions) & 
+                                  duplicated(nt_substitutions) == F) %>% nrow()
 
 nDirMutOld <- meta_ll %>% filter(date_linelist < date_rng[1] & 
-                                    !is.na(substitutions) 
-                                  & duplicated(substitutions) == F) %>% nrow()
+                                    !is.na(nt_substitutions) 
+                                  & duplicated(nt_substitutions) == F) %>% nrow()
 ```
 
 I denne rapport indgår data fra perioden `r format(min(meta_ll$date_linelist), '%d-%m-%Y')` til `r format(date_rng[2], '%d-%m-%Y')`. Der er særligt fokus på uge `r weeks` (`r format(date_rng[1], '%d-%m-%Y')` til `r format(date_rng[2], '%d-%m-%Y')`). Data der anvendes i denne rapport inkluderer:
@@ -193,7 +194,7 @@ p <- ggplot(cumclade_DK,aes(x = firstDayWeek, y = n, group = clade, fill = clade
 plot(p)
 ```
 
-# Hurtigt voksende smittekæder
+# Tidsmæssig fordeling af unikke varianter
 Figuren nedenfor viser udviklingen af varianter over tid. Rækker angiver varianter (ens genomer) sorteret indenfor de overordnede virusklader, mens søjlerne angiver fortløbende uger siden starten af epidemien. De enkelte varianter er arbitrært navngivne, og størrelsen på punktet angiver hvor mange sekventerede prøver der var for den givne variant/uge, mens farven angiver hvor stor en procentdel af det samlede antal prøver i en uge en variant udgør.
 
 ```{r filter_variants_time}
