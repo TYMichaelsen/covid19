@@ -38,6 +38,7 @@ library("ape")
 ```{r,eval=F}
 # For build mode.
 input_dir  <- "/srv/rbd/covid19/processing/CJ238"
+input_dir  <- "/srv/rbd/tym/test-batches/test_CJ186"
 batch      <- basename(input_dir)
 labmeta    <- paste0(input_dir,"/sample_sheet.csv")
 scheme_dir <- "/srv/rbd/tym/covid19/workflow/dependencies/primer_schemes/nCoV-2019/aau_long_v3.1"
@@ -101,37 +102,6 @@ nsnv <- read_delim(file = paste0(input_dir,"/processing/results/naive_vcf.tsv"),
   mutate(library_id = str_match(library_id, "_(.*?)_")[,2])
 ```
 
-
-<!-- ```{r} -->
-<!-- # Load artic snv frequencies.--------------------------------------------------- -->
-
-<!-- asnv <- read_delim(file = paste0(input_dir,"/processing/results/artic_vcf.tsv"), delim = "\t") %>% -->
-<!--   mutate( -->
-<!--     library_id = str_match(library_id, "_(.*?)_")[,2], -->
-<!--     depth      = str_match(INFO, "DP=(.*?);")[,2] %>% as.numeric(), -->
-<!--     AC         = str_match(INFO, "AC=(.*?);")[,2]) %>% -->
-<!--   separate(AC, into = c("ref_count", "alt_count"), sep = ",", convert = T) %>% -->
-<!--   mutate(alt_frac = round(alt_count/depth, 2)) %>% -->
-<!--   mutate(snv_type = ifelse(nchar(REF) > nchar(ALT), "D",  -->
-<!--                     ifelse(nchar(REF) < nchar(ALT), "I", ALT)), -->
-<!--          het = ifelse(grepl(pattern = "^0/1", x = SAMPLE), "het", "norm")) %>% -->
-<!--   dplyr::rename(position = POS,  -->
-<!--                 ref = REF,  -->
-<!--                 alt = ALT) %>% -->
-<!--   select(library_id, type, position, ref, alt, depth, ref_count, alt_count, alt_frac, snv_type, het, SAMPLE) %>% -->
-<!--   filter(depth > 10) %>%   -->
-<!--   mutate(position = ifelse(!(snv_type %in% c("D","I")) & nchar(ref) > 1, -->
-<!--                            mapply(function(pos,ref){paste(seq(pos,pos+(nchar(ref)-1)),collapse = ",")},pos = position,ref = ref),position), -->
-<!--          ref      = ifelse(!(snv_type %in% c("D","I")) & nchar(ref) > 1, -->
-<!--                            gsub('(?<=.)(?=.)', ',', ref,perl=TRUE),ref), -->
-<!--          alt      = ifelse(!(snv_type %in% c("D","I")) & nchar(ref) > 1, -->
-<!--                            gsub('(?<=.)(?=.)', ',', alt,perl=TRUE),alt), -->
-<!--         snv_type = ifelse(!(snv_type %in% c("D","I")) & nchar(ref) > 1, -->
-<!--                           alt,snv_type)) %>% -->
-<!--   separate_rows(position,ref,alt,snv_type,sep = ",") %>% -->
-<!--   mutate(position = as.numeric(position)) -->
-<!-- ``` -->
-
 ```{r}
 # Load N's.---------------------------------------------------------------------
 genome_qc <- read_delim(file = paste0(input_dir,"/processing/results/N_counts.tsv"), delim = "\t") %>%
@@ -187,9 +157,8 @@ snv <- ape::read.dna(file = paste0(input_dir,"/QC/aligntree/aligned.fasta"),
 # Load nextclade.---------------------------------------------------------------
 nextclade <- read_delim(file = paste0(input_dir,"/QC/nextclade.tsv"), delim = "\t") %>%
   dplyr::rename(
-    library_id    = seqName,
     pcr_mutations = pcrPrimerChanges) %>%
-  mutate(library_id = str_match(library_id, "_(.*?)_")[,2]) 
+  mutate(library_id = str_match(seqName, "_(.*?)_")[,2]) 
 
 # primer mutations as data.frame.
 primer_muts <- nextclade %>%
@@ -205,6 +174,86 @@ primer_muts <- nextclade %>%
   unnest(cols = "primer_id") %>%
   mutate(primer_id = as.numeric(as.character(primer_id))) %>%
   select(-pcr_mutations)
+
+# Make df with positions of ambiguous sites.------------------------------------
+# If code has been run before we need to remove added columns 
+wh_rm <- c("ambiguous","del_substitutions") %>%
+  intersect(colnames(nextclade))
+
+nextclade <- nextclade %>% select(-one_of(wh_rm))
+
+maxN <- 9 # Maximum number of N's in a row to report. 9 corresponds to 3 tandem deletions.
+
+ambig_sites <- nextclade %>%
+  filter(!is.na(missing) | missing == "") %>%
+  {setNames(
+    object = .$missing,
+    nm     = .$seqName)} %>%
+  lapply(function(i){
+    tmp <- strsplit(i,split = ",")[[1]] %>% 
+      sapply(strsplit,split = "-") %>%
+      lapply(as.numeric) %>%
+      lapply(function(l){seq(min(l),max(l),by = 1)}) %>%
+      {.[sapply(.,length) <= maxN]} %>%
+      unlist() %>%
+      unname()
+    
+    if (length(tmp) == 0){
+      out <- data.frame(position = NA)
+    } else {
+      out <- data.frame(position = tmp)
+    } 
+    out
+  }) %>% 
+  bind_rows(.id = "seqName") %>%
+  filter(!is.na(position)) %>%
+  mutate(position = as.character(position))
+
+# Merge with reference to get correct substitution string.
+ambig_sites <- left_join(ambig_sites,nt_ref,by = "position") %>%
+  mutate(subs = paste0(toupper(ref),position,"N")) %>%
+  group_by(seqName) %>%
+  summarise(ambiguous = paste(subs,collapse = ","))
+
+# Make df with positions of deletions sites.------------------------------------
+
+del_sites <- nextclade %>%
+  filter(!is.na(deletions) | deletions == "") %>%
+  {setNames(
+    object = .$deletions,
+    nm     = .$seqName)} %>%
+  lapply(function(i){
+    tmp <- strsplit(i,split = ",")[[1]] %>% 
+      sapply(strsplit,split = "-") %>%
+      lapply(as.numeric) %>%
+      lapply(function(l){seq(min(l),max(l),by = 1)}) %>%
+      unlist() %>%
+      unname()
+    
+    if (length(tmp) == 0){
+      out <- data.frame(position = NA)
+    } else {
+      out <- data.frame(position = tmp)
+    } 
+    out
+  }) %>% 
+  bind_rows(.id = "seqName") %>%
+  filter(!is.na(position)) %>%
+  mutate(position = as.character(position))
+
+# Merge with reference to get correct substitution string.
+del_sites <- left_join(del_sites,nt_ref,by = "position") %>%
+  mutate(subs = paste0(toupper(ref),position,"-")) %>%
+  group_by(seqName) %>%
+  summarise(del_substitutions = paste(subs,collapse = ","))
+
+# Merge and dump.
+nextclade_out <- nextclade %>%
+  left_join(ambig_sites,by = "seqName") %>%
+  left_join(del_sites,by = "seqName") %>%
+  select(-library_id)
+
+write_tsv(nextclade_out,file = paste0(input_dir,"/QC/nextclade.tsv"))
 ```
 
 ```{r}
