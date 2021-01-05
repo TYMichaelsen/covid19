@@ -37,7 +37,7 @@ library("ape")
 
 ```{r,eval=F}
 # For build mode.
-input_dir  <- "/srv/rbd/covid19/processing/CJ238"
+#input_dir  <- "/srv/rbd/covid19/processing/CJ238"
 input_dir  <- "/srv/rbd/tym/test-batches/test_CJ186"
 batch      <- basename(input_dir)
 labmeta    <- paste0(input_dir,"/sample_sheet.csv")
@@ -156,15 +156,13 @@ snv <- ape::read.dna(file = paste0(input_dir,"/QC/aligntree/aligned.fasta"),
 ```{r}
 # Load nextclade.---------------------------------------------------------------
 nextclade <- read_delim(file = paste0(input_dir,"/QC/nextclade.tsv"), delim = "\t") %>%
-  dplyr::rename(
-    pcr_mutations = pcrPrimerChanges) %>%
   mutate(library_id = str_match(seqName, "_(.*?)_")[,2]) 
 
 # primer mutations as data.frame.
 primer_muts <- nextclade %>%
-  select(library_id,pcr_mutations) %>%
-  filter(!is.na(pcr_mutations)) %>%
-  mutate(primer_id = lapply(pcr_mutations,function(i){
+  select(library_id,pcrPrimerChanges) %>%
+  filter(!is.na(pcrPrimerChanges)) %>%
+  mutate(primer_id = lapply(pcrPrimerChanges,function(i){
     strsplit(i,split = ",")[[1]] %>% 
       str_match(pattern = "_(.*?)_") %>% 
       .[,2] %>% 
@@ -173,10 +171,10 @@ primer_muts <- nextclade %>%
   })) %>%
   unnest(cols = "primer_id") %>%
   mutate(primer_id = as.numeric(as.character(primer_id))) %>%
-  select(-pcr_mutations)
+  select(-pcrPrimerChanges)
 
 # Make df with positions of ambiguous sites.------------------------------------
-# If code has been run before we need to remove added columns 
+# If code has been run before we need to remove added columns. 
 wh_rm <- c("ambiguous","del_substitutions") %>%
   intersect(colnames(nextclade))
 
