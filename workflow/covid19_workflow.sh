@@ -158,24 +158,24 @@ fi
 # Remove human reads
 ###############################################################################
 
-echo ""
-echo "[$(date +"%T")] Removing human reads from demultiplexed data"
-echo ""
+#echo ""
+#echo "[$(date +"%T")] Removing human reads from demultiplexed data"
+#echo ""
 
-if [ -d $OUT_DIR/filtered ]; then 
-  echo "$OUT_DIR/filtered directory exists. Human read filtering is skipped..."
-else 
+#if [ -d $OUT_DIR/filtered ]; then 
+#  echo "$OUT_DIR/filtered directory exists. Human read filtering is skipped..."
+#else 
 
-  singularity \
-    --silent \
-    exec \
-    -B $WORKFLOW_PATH:$WORKFLOW_PATH \
-    -B $OUT_DIR:$OUT_DIR \
-    -B $INPUT_DIR:$INPUT_DIR \
-    -B $RUNTIME_DIR:/run/user/$UID \
-    $SINGIMG \
-    bash -c "INdir=$INPUT_DIR/demultiplexed; OUTdir=$OUT_DIR/filtered; THREADS=$THREADS; HUMREF=$HUMREF; . $WORKFLOW_PATH/human-filtering-reads.sh"
-fi
+#  singularity \
+#    --silent \
+#    exec \
+#    -B $WORKFLOW_PATH:$WORKFLOW_PATH \
+#    -B $OUT_DIR:$OUT_DIR \
+#    -B $INPUT_DIR:$INPUT_DIR \
+#    -B $RUNTIME_DIR:/run/user/$UID \
+#    $SINGIMG \
+#    bash -c "INdir=$INPUT_DIR/demultiplexed; OUTdir=$OUT_DIR/filtered; THREADS=$THREADS; HUMREF=$HUMREF; . $WORKFLOW_PATH/human-filtering-reads.sh"
+#fi
 
 ###############################################################################
 # Generate genomes
@@ -208,7 +208,7 @@ else
         Flag='-a'
       fi;
       $WORKFLOW_PATH/processing.sh \
-        -i $OUT_DIR/filtered \
+        -i $OUT_DIR/demultiplexed \
         -s nCoV-2019/$SCHEME \
         -o $OUT_DIR/processing \
         -t \$THREADS_MEDAKA \
