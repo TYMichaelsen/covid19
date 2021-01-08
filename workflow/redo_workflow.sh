@@ -9,10 +9,16 @@ RERUN=$2
 
 # Takes as input the string 'rerun' to force-run workflow completely.
 
-
 while read DIR; do
   
   if [ ! -z "$RERUN" ]; then
+    echo "[$(basename $DIR)] force runnning from scratch!"
+     
+    rm -rf $DIR/demultiplexed
+    rm -rf $DIR/processing
+    rm -rf $DIR/QC
+    rm -rf $DIR/final_output
+
     cd $(dirname $DIR) 
     covid19_workflow.sh -i $(basename $DIR) -s aau_long_v3.1
   else
