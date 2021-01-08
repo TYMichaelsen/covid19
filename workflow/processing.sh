@@ -72,6 +72,10 @@ FILES=$INDIR/*.fastq
 nrep=$(echo $OUTDIR/articminion | awk -F'/' '{for (i = 1; i <= NF; i++) a=a"../"; print a}')
 FILES_ARTIC=$(for i in $FILES; do echo $nrep$i; done)
 
+echo ""
+echo "[$(date +"%T")] Running ARTIC pipeline..."
+echo ""
+
 ### Basic artic workflow in parallel.##########################################
 if [ -z ${RERUN+x} ]; then
   mkdir -p $OUTDIR/articminion/
@@ -220,3 +224,7 @@ for file in $OUTDIR/articminion/*.consensus.fasta; do
     awk '/^>/ {sub(/\/ARTIC.*$/,"",$0)}1' $file >> $OUTDIR/results/consensus.fasta
   fi
 done
+
+echo ""
+echo "[$(date +"%T")] Processing done..."
+echo ""
