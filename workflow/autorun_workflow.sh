@@ -17,9 +17,9 @@ cd /srv/rbd/covid19/processing
 LIFESIGN=60
 ATTEMPT=0
 
-rm /srv/rbd/covid19/processing/missing.txt
-rm /srv/rbd/covid19/processing/processed.txt
-rm /srv/rbd/covid19/processing/forcestart.txt 
+rm -f /srv/rbd/covid19/processing/missing.txt
+rm -f /srv/rbd/covid19/processing/processed.txt
+rm -f /srv/rbd/covid19/processing/forcestart.txt 
 
 # Logging
 LOG_NAME="/srv/rbd/covid19/processing/autorun_log_$(date +"%Y-%m-%d_%H-%M").txt"
@@ -37,7 +37,7 @@ while : ; do
   CUR_TIME=$(date +%H%M | sed 's/^0*//')
 
   # List all batches processed so far. Criteria for proccesed is a non-empty consensus.fasta in /final_output/ folder.
-  for batch in $(ls -dtr /srv/rbd/covid19/processing/?J*/) $(ls -dtr /srv/data_1/?J*/) $(ls -dtr /srv/data_1/gridion/?J*/); do
+  for batch in $(ls -dtr /srv/rbd/covid19/processing/?J*/ /srv/data_1/?J*/ /srv/data_1/gridion/?J*/); do
     if [ -s $batch/final_output/consensus.fasta ]; then
       echo $batch
     fi
