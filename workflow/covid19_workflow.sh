@@ -124,6 +124,11 @@ else
     return
   fi
   
+  # compute the ammount of .fastq data used for demultiplexing.
+  rm -f $OUT_DIR/data_used.txt 
+  echo $(($(find $FASTQ_DIR -name *.fastq | wc -l) * 4000 * 1050)) > $OUT_DIR/data_used.txt
+  chmod 777 $OUT_DIR/data_used.txt
+
   # Demultiplexing
   singularity \
     --silent \
@@ -201,18 +206,15 @@ else
     $SINGIMG \
     bash -c "
       source activate artic-ncov2019;
+
       # Medaka cannot control mem, need to scale down.
       THREADS_MEDAKA=$((($THREADS+1)/2));
-      # Rerun artic only if not existing.
-      if [ -d $OUT_DIR/processing/articminion ]; then
-        Flag='-a'
-      fi;
+
       $WORKFLOW_PATH/processing.sh \
         -i $OUT_DIR/demultiplexed \
         -s nCoV-2019/$SCHEME \
         -o $OUT_DIR/processing \
-        -t \$THREADS_MEDAKA \
-        \$Flag;
+        -t \$THREADS_MEDAKA;
       retn_code=$?;
       if [ \$retn_code == 1 ]; then echo 'ERROR in processing.sh, exitting.'; exit; fi
       "
