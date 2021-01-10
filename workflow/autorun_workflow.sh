@@ -60,19 +60,17 @@ while : ; do
       echo "[$(date +"%b %d %T")] Forced start triggered!"
 
       # Order missing batches according to amount of data.
-      while read DIR; do
+      BATCH_ORD=$(while read DIR; do
         nfastq=$(find $DIR/fastq -name *fastq | wc -l)
         nbases=$(( $nfastq * 4000 * 1050 ))
 
         echo -e $DIR"\t"$nbases
       done < /srv/rbd/covid19/processing/missing.txt |
       sort -rn -k2,2 | 
-      cut -f1 > /srv/rbd/covid19/processing/forcestart.txt 
-      
-      chmod 777 /srv/rbd/covid19/processing/forcestart.txt 
+      cut -f1 -)
 
       # Run workflow for all.
-      while read DIR; do 
+      for DIR in $BATCH_ORD; do 
         cd $(dirname $DIR) 
         #--------------------------------------------------------------------------------
         covid19_workflow.sh -i $(basename $DIR) -s aau_long_v3.1 
@@ -80,7 +78,7 @@ while : ; do
         #echo "hest" > $DIR/final_output/consensus.fasta
         #--------------------------------------------------------------------------------
         echo "[$(date +"%b %d %T")] workflow completed for $(basename $DIR)." 
-      done < /srv/rbd/covid19/processing/forcestart.txt
+      done
     else
 
       ATTEMPT=0
