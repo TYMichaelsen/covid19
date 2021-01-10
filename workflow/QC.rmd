@@ -1,5 +1,5 @@
 ---
-title: "QC report - `r params$batch`"
+title: "QC report - `r basename(params$input_dir)`"
 author: "Microflora Corona"
 date: "`r format(Sys.time(), '%d-%m-%Y')`, Aalborg, Denmark"
 output:
@@ -38,7 +38,7 @@ library("ape")
 ```{r,eval=F}
 # For build mode.
 #input_dir  <- "/srv/rbd/covid19/processing/CJ238"
-input_dir  <- "/srv/rbd/tym/test-batches/test_CJ186"
+input_dir  <- "/srv/rbd/tym/test-batches/test-CJ186"
 batch      <- basename(input_dir)
 labmeta    <- paste0(input_dir,"/sample_sheet.csv")
 scheme_dir <- "/srv/rbd/tym/covid19/workflow/dependencies/primer_schemes/nCoV-2019/aau_long_v3.1"
@@ -278,6 +278,23 @@ d <- d %>%
 ```
 
 # General overview
+
+```{r,results='asis'}
+tryCatch(expr = {
+  gb <- scan(paste0(input_dir,"/data_used.txt"),nmax = 1,quiet = T) / 1000000000
+  gb <- round(gb,1)
+  
+  txt <- paste(gb,"Giga Bases raw data was used for the pipeline.")
+  
+  tryCatch(expr = {
+    cap <- scan(paste0(input_dir,"/datacap.txt"),nmax = 1,quiet = T)
+    cap  <- round(cap,1)
+    
+    txt <- paste(txt,cap," Giga Bases was set as minimum data requirement.")
+  })
+  cat(txt)
+},error = function(e){})
+```
 
 ## Overview of genome qualities 
 
