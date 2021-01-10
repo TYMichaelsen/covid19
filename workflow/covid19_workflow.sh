@@ -207,8 +207,8 @@ else
     bash -c "
       source activate artic-ncov2019;
 
-      # Medaka cannot control mem, need to scale down.
-      THREADS_MEDAKA=$((($THREADS+1)/2));
+      # Medaka cannot control mem, need to scale down to 66%.
+      THREADS_MEDAKA=$((($THREADS * 2)/3));
 
       $WORKFLOW_PATH/processing.sh \
         -i $OUT_DIR/demultiplexed \
