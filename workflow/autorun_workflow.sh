@@ -56,7 +56,7 @@ while : ; do
     echo "[$(date +"%b %d %T")] checking for enough data."
 
     # Before doing anything, check that timepoint for forced start has not passed.
-    if [ $FORCE_START -gt $LAST_TIME ] && [ $FORCE_START -le $CUR_TIME ]; then
+    if [ $FORCE_START -ge $LAST_TIME ] && [ $FORCE_START -le $CUR_TIME ]; then
       echo "[$(date +"%b %d %T")] Forced start triggered!"
 
       # Order missing batches according to amount of data.
