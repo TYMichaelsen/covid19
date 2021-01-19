@@ -14,7 +14,7 @@ knit: (function(inputFile, encoding) { rmarkdown::render(inputFile, encoding = e
 ### USER SPECIFIED PARAMETERS ##################################################
 
 # Set week to focus at, according to the ISO standard. Can be multiple.
-weeks <- c(49,50)
+weeks <- c("2020-W53","2021-W01")
 
 # !OBS: The linelist, genome metadata and phylogenetic tree are automatically loaded from the latest data build.
 ```
@@ -31,7 +31,9 @@ library(Biostrings)
 library(ggmap)
 library(ggtree)
 library(ape)
+library(knitr)
 library(kableExtra)
+library(flextable)
 library(ISOweek)
 
 knitr::opts_chunk$set(
@@ -44,14 +46,12 @@ knitr::opts_chunk$set(
   echo       = F)
 
 # Format weeks.
-date_rng <- paste0("2020-W",c(head(weeks,n=1),tail(weeks,n=1)),c("-1","-7")) %>%
+date_rng <- paste0(weeks,c("-1","-7")) %>%
   ISOweek2date() %>%
   as.Date()
 
-prev_week     <- min(weeks) - 1
-date_rng_prev <- paste0("2020-W",c(head(prev_week,n=1),tail(prev_week,n=1)),c("-1","-7")) %>%
-  ISOweek2date() %>%
-  as.Date()
+# Previous week
+date_rng_prev <- c(min(date_rng)-7, min(date_rng -1))
 ```
 
 ```{r read_data}
@@ -80,6 +80,8 @@ name_variants <- meta_ll %>%
   filter(!is.na(nt_substitutions)) %>%
   group_by(nt_substitutions) %>%
   summarise(variant_aa_substitutions = dplyr::first(aa_substitutions),
+            variant_aa_deletions = dplyr::first(aa_deletions),
+            variant_clade = dplyr::first(clade),
             variant_size = n(), 
             variant_start = min(as.Date(date_linelist), na.rm = T),
             variant_end = max(as.Date(date_linelist), na.rm = T)) %>%
@@ -89,7 +91,7 @@ name_variants <- meta_ll %>%
 # Add numbers for new variants
 name_variants$variant_no[is.na(name_variants$variant_no)] <- 
   (1:length(name_variants$variant_no[is.na(name_variants$variant_no)]) + max(name_variants$variant_no, na.rm = T))
-  
+
 # Add variant name
 name_variants <- name_variants %>% 
   mutate(variant_name = paste0("variant ",variant_no)) 
@@ -98,7 +100,6 @@ write_csv(name_variants, path = file.path("/srv/rbd/covid19/metadata/cluster_def
                                           paste0(format(Sys.Date(),"%Y-%m-%d"),"_variant_definition.csv")))
 ```
 
-
 ```{r merge_variant}
 meta_ll <- left_join(meta_ll,name_variants,by = "nt_substitutions") %>% 
   group_by(firstDayWeek) %>%
@@ -106,8 +107,11 @@ meta_ll <- left_join(meta_ll,name_variants,by = "nt_substitutions") %>%
   ungroup() %>% group_by(firstDayWeek,Region) %>%
   mutate(variant_cov_reg = sum(!is.na(variant_name))/n()) %>%
   ungroup() %>% 
-  filter(date_linelist <= date_rng[2])
+  filter(date_linelist <= date_rng[2] & Region != "Grønland")
 ```
+
+
+
 
 # Genomisk overblik for SARS-CoV-2 i Danmark
 Danish Covid-19 Genome Consortium
@@ -134,11 +138,13 @@ nGenomesThisWeek <- meta_ll %>%
   nrow()
 
 nDirMut  <- meta_ll %>% filter(!is.na(nt_substitutions) & 
+                                 is.na(sequence_exclude) & 
                                   duplicated(nt_substitutions) == F) %>% nrow()
 
 nDirMutOld <- meta_ll %>% filter(date_linelist < date_rng[1] & 
-                                    !is.na(nt_substitutions) 
-                                  & duplicated(nt_substitutions) == F) %>% nrow()
+                                   is.na(sequence_exclude) & 
+                                    !is.na(nt_substitutions) &
+                                   duplicated(nt_substitutions) == F) %>% nrow()
 ```
 
 I denne rapport indgår data fra perioden `r format(min(meta_ll$date_linelist), '%d-%m-%Y')` til `r format(date_rng[2], '%d-%m-%Y')`. Der er særligt fokus på uge `r weeks` (`r format(date_rng[1], '%d-%m-%Y')` til `r format(date_rng[2], '%d-%m-%Y')`). Data der anvendes i denne rapport inkluderer:
@@ -149,16 +155,34 @@ I denne rapport indgår data fra perioden `r format(min(meta_ll$date_linelist), 
 Data for perioden indeholder `r nPos` positive prøver, hvoraf der er sekventeret virus fra `r nSeq`. Dette gav anledning til `r nGenomes` genomer, hvoraf `r nGenomesThisWeek` er tilføjet i uge `r weeks`. Samtlige genomer fordeler sig på `r nDirMut` unikke variantkombinationer mod `r nDirMutOld` i ugen før.
 
 \newpage
+# Definition af klader
+Klader defineres via nextstrain. Disse er blevet redefineret med 9 overordnede klader for 2020, se https://nextstrain.org/blog/2021-01-06-updated-SARS-CoV-2-clade-naming .
+
+Bemærk især at "Variants of concern" nu er defineret som selvstændige klader: 20I/501Y.V1 og 20H/501Y.V2.
+
+Der defineres følgende overordnede klader:
+
+* 20A: Basal pandemisk linje med S:614G spike mutation. Globalt distribueret.
+* 20B: Afledt af 20A med N 203K, N204R og ORF14 50N mutationer. Globalt distribueret.
+* 20C: Afledt af 20A med ORF3a 57H og ORF1a 265I mutationer. Globalt distribueret.
+* 20D: Afledt af 20B med ORF1a 1246I og ORF1a 3278S mutationer. Koncentreret i Syd-Amerika, Syd-Europa og Syd-Afrika.
+* 20E: Afledt af 20A med N 220V, ORF10 30L, ORF14 67F og S 222V mutationer.Koncentreret i Europa.
+* 20F: Afledt af 20B med ORF1a 300F og S 477N mutationer. Koncentreret i Australien.
+* 20G: Afledt af 20C med ORF1b 1653D, ORF3a 172V, N 67S og N 199L mutationer. Koncentreret i USA.
+* 20H/501Y.V2: Afledt af 20C med S 80A, S 215G, S 484K, S 501Y, S 701V mutationer.Koncentreret i Syd-Afrika.
+* 20I/501Y.V1: Afledt af 20B med S 501Y, S 570D, S 681H, ORF8 27* mutationer. Koncenteret i Storbritanien, også kendt som b.1.1.7. 
+
+\newpage
+
 
 # Coronavirus typer over tid og regioner
-I figurerne nedenfor vises antallet af de 5 overordnede klader defineret af nextstrain grupperet per måned og region.
+I figurerne nedenfor vises antallet af de overordnede klader grupperet per måned og region.
 
 ```{r summarize_clades, fig.height = 8, dpi=300}
-cumclade <- filter(meta_ll,!is.na(firstDayWeek) & !is.na(Region)) %>% 
+cumclade <- filter(meta_ll,!is.na(firstDayWeek) & !is.na(Region) & is.na(sequence_exclude)) %>% 
   filter(!is.na(clade)) %>% 
   select(clade,firstDayWeek, Region) %>%
-  mutate(clade = substr(clade,1,3),
-         n = 1) %>%
+  mutate(n = 1) %>%
   group_by(Region, firstDayWeek,clade) %>%
   summarise(n = sum(n)) %>%
   ungroup() %>%
@@ -186,7 +210,8 @@ p <- ggplot(cumclade_DK,aes(x = firstDayWeek, y = n, group = clade, fill = clade
   facet_wrap(~Region, ncol = 2, scales = "free_y") + 
     theme_classic() +
     scale_x_date(date_breaks = "1 month",date_labels = "%b") +
-    scale_fill_manual(values = unname(branded_colors), name = "Klade") +
+    #scale_fill_manual(values = unname(branded_colors), name = "Klade") +
+  scale_fill_viridis_d(name = "Klade") +
     theme(legend.position = "bottom") +
     ylab("Antal Genomer") +
     xlab("Måned")
@@ -195,26 +220,29 @@ plot(p)
 ```
 
 # Tidsmæssig fordeling af unikke varianter
-Figuren nedenfor viser udviklingen af varianter over tid. Rækker angiver varianter (ens genomer) sorteret indenfor de overordnede virusklader, mens søjlerne angiver fortløbende uger siden starten af epidemien. De enkelte varianter er arbitrært navngivne, og størrelsen på punktet angiver hvor mange sekventerede prøver der var for den givne variant/uge, mens farven angiver hvor stor en procentdel af det samlede antal prøver i en uge en variant udgør.
+Figuren nedenfor viser udviklingen af varianter over tid. Rækker angiver varianter (ens genomer) sorteret indenfor de overordnede virusklader, mens søjlerne angiver fortløbende uger siden starten af epidemien. De enkelte varianter er arbitrært navngivne, og størrelsen på punktet angiver hvor mange sekventerede prøver der var for den givne variant/uge, mens farven angiver hvor stor en procentdel af det samlede antal prøver i en uge en variant udgør. 
+
+```{r, eval = F}
+### Change some variants to VOC2020
+meta_ll <- meta_ll %>% 
+  mutate(variant_name = ifelse(voc2020, "VOC-202012/01" ,variant_name),
+         variant_no = ifelse(voc2020, "VOC-202012/01",variant_no))
+```
+
 
 ```{r filter_variants_time}
-## Identify clades with more than 10 samples in the period.
+## Identify variants in the period and rank
 clade_freq <- meta_ll %>% 
-  filter(date_linelist >= date_rng[1]  & date_linelist <= date_rng[2] & is.na(sequence_exclude)) %>% 
-  group_by(variant_no,variant_start,variant_end,clade) %>% 
+  filter(date_linelist >= date_rng[1]  & date_linelist <= date_rng[2] &
+           !is.na(variant_no) & is.na(sequence_exclude)) %>% 
+  group_by(variant_no) %>% 
   summarize(n = n()) %>% 
-  #filter(n >= 10 & !is.na(variant_no)) %>%
   arrange(-n)
-
-#ungroup(clade_freq) %>%
-#  select(variant_no,clade,n,variant_start) %>%
-#  kable(col.names = c("variant", "Klade", "antal","Først observeret")) %>% 
-#    kable_paper("hover", full_width = T)
 ```
 
 ```{r plot_variants_time, fig.height=10, fig.width = 12, dpi=300}
 # Make a nation-wide figure, all variants >=20.
-d_clades_week <- filter(meta_ll, !is.na(clade) & date_linelist <= date_rng[2]) %>%
+d_clades_week <- filter(meta_ll, !is.na(clade) & date_linelist <= date_rng[2] & is.na(sequence_exclude)) %>%
   filter(!is.na(variant_no)) %>%
   group_by(firstDayWeek,clade,variant_no,variant_size,variant_start) %>%
   summarise(count = n()) %>%
@@ -222,14 +250,13 @@ d_clades_week <- filter(meta_ll, !is.na(clade) & date_linelist <= date_rng[2]) %
   mutate(rel = count/sum(count)*100) %>%
   group_by(variant_no) %>%
   mutate(mutsum = sum(count)) %>%
-  #filter(mutsum >= 20) %>%
-  filter(mutsum >= 20 | variant_no %in% clade_freq$variant_no[1:5]) %>%
-  mutate(txt = paste0("variant ",as.character(variant_no), ", n = ", as.character(variant_size))) %>%
+  filter(mutsum >= 30 | variant_no %in% clade_freq$variant_no[1:5]) %>%
+  mutate(txt = paste0("variant ",as.character(variant_no), ", n = ", as.character(mutsum))) %>%
   ungroup() %>%
   arrange(variant_no,clade) %>%
   mutate(txt = factor(txt,levels = unique(txt))) 
 
-ggplot(
+p <- ggplot(
   data = d_clades_week,
     aes(
       x     = substr(date2ISOweek(firstDayWeek),1,8) %>% sub(pattern = "W", replacement = ""),
@@ -239,10 +266,9 @@ ggplot(
     geom_point() +
     scale_y_discrete(position = "right") +
     scale_size_area(breaks = c(1, 10, 50), max_size = 10) +
-    #scale_x_date(date_breaks = "1 week",date_labels = "%W",expand = c(0.01,0.01)) +
-    scale_color_viridis_c(trans = "log10", breaks = c(1, 10, 50),) +
+    scale_color_viridis_c(trans = "log10", breaks = c(1, 10, 40)) +
     labs(
-      title = "Der vises kun varianter med mere end 20 personer samt top5 for den aktive uge",
+      title = "Der vises kun varianter med mere end 30 personer samt top5 for den aktive uge",
       color = "Procendel af sekventerede prøver pr. uge",
       x     = "Uge", 
       size  = "Antal") +
@@ -251,44 +277,11 @@ ggplot(
           axis.title.y = element_blank(),
           axis.text.y = element_text(hjust = 0, size = 6),
           axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+          strip.text.y = element_text(angle = 0),
           legend.position = "top")
+p
 ```
 
-
-
-```{r tab_variants}
-# Per region.
-meta_table <- left_join(clade_freq,meta_ll, by = "variant_no") %>% 
-  filter(date_linelist >= date_rng[1]  & date_linelist <= date_rng[2] & !is.na(Region) & !is.na(variant_no)) %>% 
-  group_by(Region,variant_no) %>% 
-  summarize(n = n(),
-            pct_M = sum(Sex == "M") / n,
-            pct_DK = sum(CitizenshipText == "Danmark") / n,
-            alder  = median_iqr(as.numeric(SampleAge)))
-
-# Hele DK.
-heleDK <- left_join(clade_freq,meta_ll, by = "variant_no" )%>% 
-  filter(date_linelist >= date_rng[1]  & date_linelist <= date_rng[2] & !is.na(variant_no)) %>% 
-  group_by(variant_no) %>% 
-  summarize(n = n(),
-            pct_M = sum(Sex == "M") / n,
-            pct_DK = sum(CitizenshipText == "Danmark") / n,
-            alder  = median_iqr(as.numeric(SampleAge))) %>%
-  arrange(-n)
-
-#tables <- list()
-#
-#tables[["Hele Danmark"]] <- heleDK %>%
-#  kable(digits = 2, col.names = c("variant", "n", "Mænd (%)", "Dansk (%)", "Alder (median, iqr)")) %>% 
-#  kable_paper("hover", full_width = T)
-#
-#for (reg in unique(meta_table$Region)){
-#  tables[[reg]] <- filter(meta_table,Region == reg) %>%
-#    ungroup() %>% select(-Region) %>% arrange(-n) %>%
-#    kable(digits = 2, col.names = c("variant", "n", "Mænd (%)", "Dansk (%)", "Alder (median, iqr)")) %>% 
-#    kable_paper("hover", full_width = T)
-#}
-```
 \newpage
 
 ## Geografisk spredning af varianter
@@ -299,10 +292,10 @@ nClust <- 5
 Figuren nedenfor viser den geografiske spredning for de `r nClust` hyppigste varianter i uge `r weeks`.
 
 ```{r plot_clusers_map, fig.height=7, fig.width = 7, dpi=300}
-meta_map <- meta_ll %>%
-  mutate(variant_no = gsub("variant ","",x = variant_name)) %>%
+meta_map <- meta_ll %>% 
   filter(date_linelist >= date_rng[1]  & date_linelist <= date_rng[2] &
-           variant_no %in% heleDK$variant_no[1:nClust]) %>%
+           variant_no %in% clade_freq$variant_no[1:nClust] &
+           is.na(sequence_exclude)) %>%
   group_by(variant_name) %>%
   mutate(n = n()) %>%
   ungroup() %>%
@@ -321,7 +314,7 @@ p <- ggplot(data = meta_map, aes(x= zip_lon, y = zip_lat, color = variant_no)) +
   theme_void() +
   theme(legend.position = c(1,1),legend.justification = c(1.5,1.5))
 
-if (nrow(heleDK) == 0){
+if (nrow(clade_freq) == 0){
   qplot(1,1,shape = NA) + 
     annotate("text",label = "No variants detected in the selected period.",x = 1,y = 1) + 
     theme_void()
@@ -330,3 +323,45 @@ if (nrow(heleDK) == 0){
 } 
 ```
 
+\newpage
+## B.1.1.7
+Figuren nedenfor viser den geografiske spredning for alle B.1.1.7 observationer i uge `r weeks`.
+
+```{r plot_clusers_map_voc, fig.height=7, fig.width = 7, dpi=300}
+meta_map_voc <- meta_ll %>% 
+  filter(date_linelist >= date_rng[1]  & date_linelist <= date_rng[2] &
+           is.na(sequence_exclude) & clade == "20I/501Y.V1") %>%
+  mutate(variant_name = "B.1.1.7") %>% 
+  group_by(variant_name) %>%
+  mutate(n = n()) %>%
+  ungroup() %>%
+  mutate(variant_name = paste0(variant_name," (n = ",n,")"))
+
+p <- ggplot(data = meta_map_voc, aes(x= zip_lon, y = zip_lat, color = variant_name)) +
+  #p <- ggplot(data = meta_map, aes(x= lon_adr, y = lat_adr, color = variant_no)) +
+  geom_polygon(data = dk_nuts2, inherit.aes = F,
+               aes(x = long, y = lat, group = group), color = "black", fill = "grey95") +
+  geom_jitter(size = 2,height = 0.05,width = 0.05) +
+  scale_color_manual(values = unname(branded_colors)) + 
+  labs(colour = "Variant") +
+  theme_void() +
+  theme(legend.position = c(1,1),legend.justification = c(1.5,1.5))
+p
+```
+
+
+```{r, eval = F}
+#Unikke varianter tilhørende VOC-202012/01 samt det observerede antal vises i tabellen nedenfor. 
+#df <- meta_ll %>% filter(voc2020 == TRUE) %>% 
+#  group_by(variant_no) %>% 
+#  summarize(n = n()) %>% 
+#  arrange(-n) %>% 
+#  dplyr::rename("Variant" = variant_no, `Antal Observationer` = n)
+
+df <- name_variants %>%  filter(variant_clade == "20I/501Y.V1") %>% 
+  select("variant_name", "variant_start", "variant_end", "variant_size") %>% 
+  dplyr::rename("Variant" = variant_name, `Antal Observationer` =variant_size, "Første observation" = variant_start, "Sidste Observation" = variant_end)
+
+
+flextable(df, cwidth = 1.8)
+```

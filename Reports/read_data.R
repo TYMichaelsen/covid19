@@ -50,16 +50,16 @@ meta_ll <- read_tsv(file = list.files("/srv/rbd/covid19/metadata",
                                       pattern = "linelist",
                                       full.names = T),
                     guess_max = 100000) %>% 
-  #filter(host == "Human") %>% 
-  filter(host == "Human"| is.na(host)) %>% 
+  filter(host == "human"| is.na(host)) %>% 
+  filter(is.na(metadata_exclude)) %>% 
   mutate(
     genome_qc    = factor(genome_qc,levels = c("HQ","MQ","Fail")),
-    firstDayWeek = {floor_date(date_linelist,"week", week_start = 1)} %>% as.Date(),
-    clade        = sub("/.*","",x = clade))
+    firstDayWeek = {floor_date(date_linelist,"week", week_start = 1)} %>% as.Date())
+    #clade        = sub("/.*","",x = clade))
 
 # Tree.
-tree     <- read.tree(file = paste0("/srv/rbd/covid19/nextstrain/",timestmp_nxt,"_nextstrain/results/Denmark_Full/tree_raw.nwk"))
-timetree <- read.tree(file = paste0("/srv/rbd/covid19/nextstrain/",timestmp_nxt,"_nextstrain/results/Denmark_Full/tree.nwk"))
+tree     <- read.tree(file = paste0("/srv/rbd/covid19/nextstrain/",timestmp_nxt,"_nextstrain/results/Denmark_Light/tree_raw.nwk"))
+timetree <- read.tree(file = paste0("/srv/rbd/covid19/nextstrain/",timestmp_nxt,"_nextstrain/results/Denmark_Light/tree.nwk"))
 
 # intersect tree and metadata.
 wh1 <- match(tree$tip.label,meta_ll$ssi_id) %>%
