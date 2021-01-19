@@ -72,6 +72,15 @@ while read DIR GB; do
       if [ $USED -ge $CAP ]; then
         echo "[$(basename $DIR)] This batch has been run with enough data, skipping."
       else 
+
+        # Deleting output files. 
+        if [ "$DRYRUN" != "true" ]; then
+          rm -rf $DIR/demultiplexed
+          rm -rf $DIR/processing
+          rm -rf $DIR/QC
+          rm -rf $DIR/final_output
+        fi
+
         cd $(dirname $DIR) 
         echo "[$(basename $DIR)] This batch was run with ${USED}Gb data, ${AVAIL}Gb is now available. Running workflow!"
         if [ "$DRYRUN" != "true" ]; then covid19_workflow.sh -i $(basename $DIR) -s aau_long_v3.1; fi
