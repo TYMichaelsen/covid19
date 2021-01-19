@@ -9,6 +9,8 @@ USAGE="$(basename "$0") [-h] [-m file -s file -o dir -t int]
 Arguments:
     -h  Show this help text.
     -s  Sequence file.
+    -a  Aligned sequence and with reference sequence included. Sequence file provided in -s will be ignored.
+    -l  Txt file contain hallmark amino acid variants, one variant per line.
     -b  Choose custom build among 'light' (default), 'full' or 'global'. Multiple builds also possible: light,full (no space around ',')
     -i  (Develop only) Specify a specific singularity image to use.
     -o  (Develop only) Specify output directory.
@@ -18,10 +20,12 @@ Arguments:
 ### Terminal Arguments ---------------------------------------------------------
 
 # Import user arguments
-while getopts ':hfpm:b:s:o:t:k:i:' OPTION; do
+while getopts ':hfpm:b:s:a:l:o:t:k:i:' OPTION; do
   case $OPTION in
     h) echo "$USAGE"; exit 1;;
     s) SEQS=$OPTARG;;
+    a) ALIGNEDSEQS=$OPTARG;;
+    l) AAVARS=$OPTARG;;
     m) META=$OPTARG;;
     b) CUSTOM_BUILD=$OPTARG;;
     o) OUTDIR=$OPTARG;;
@@ -75,6 +79,15 @@ if [ -n "$CUSTOM_BUILD" ]; then
     SNAKE_ADD="custom_build=$CUSTOM_BUILD $SNAKE_ADD"
 fi
 
+if [ -n "$AAVARS" ]; then
+    AAVARS=$(readlink -f $AAVARS)
+    SNAKE_ADD="variant_list=$AAVARS $SNAKE_ADD"
+fi
+
+if [ -n "$ALIGNEDSEQS" ]; then
+    ALIGNEDSEQS=$(readlink -f $ALIGNEDSEQS)
+    SNAKE_ADD="alignment=$ALIGNEDSEQS $SNAKE_ADD"
+fi
 
 
 GENOMEDIR=$(dirname $SEQS)
