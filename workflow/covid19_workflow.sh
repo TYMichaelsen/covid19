@@ -215,8 +215,6 @@ else
         -s nCoV-2019/$SCHEME \
         -o $OUT_DIR/processing \
         -t \$THREADS_MEDAKA;
-      retn_code=$?;
-      if [ \$retn_code == 1 ]; then echo 'ERROR in processing.sh, exitting.'; exit; fi
       "
 fi
 
@@ -244,6 +242,10 @@ singularity \
       -r $WORKFLOW_PATH/QC.rmd \
       -t $THREADS
     "
+
+echo ""
+echo "[$(date +"%T")] Workflow done, cleaning up..."
+echo ""
 
 ################################################################################
 # Sweep important data and put in "output"
