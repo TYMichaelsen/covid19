@@ -52,7 +52,7 @@ LOG_NAME="$OUT_DIR/demultiplex_log_$(date +"%Y-%m-%d_%H-%M").txt"
 echo "demultiplex log" >> $LOG_NAME
 # echo "AAU COVID-19 revision - $(git init; git -C $AAU_COVID19_PATH rev-parse --short HEAD)" >> $LOG_NAME ##Not working in singularity
 echo "Command: $0 $*" >> $LOG_NAME
-exec &> >(tee -a "$LOG_NAME")
+exec 1>>$LOG_NAME
 exec 2>&1
 
 # Compile barcode file
