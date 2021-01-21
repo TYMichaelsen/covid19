@@ -54,9 +54,8 @@ mkdir -p $INPUT_DIR/QC/aligntree
 # Logging
 LOG_NAME="$INPUT_DIR/QC/QC_log_$(date +"%Y-%m-%d_%H-%M").txt"
 echo "QC log" >> $LOG_NAME
-#echo "AAU COVID-19 revision - $(git -C $AAU_COVID19_PATH rev-parse --short HEAD)" >> $LOG_NAME
 echo "Command: $0 $*" >> $LOG_NAME
-exec &> >(tee -a "$LOG_NAME")
+exec 1>>$LOG_NAME
 exec 2>&1
 
 REF=$AAU_COVID19_PATH/dependencies/ref/MN908947.3.gb
@@ -105,9 +104,10 @@ augur tree \
  
 source deactivate nextstrain
 
+### Nextclade ###
+
 source activate nextclade 
 
-### Nextclade ###
 nextclade \
 --input-pcr-primers ${AAU_COVID19_PATH}/dependencies/primer_schemes/nCoV-2019/${SCHEME}/custom_primer.csv \
 --input-fasta $INPUT_DIR/QC/aligntree/sequences.fasta \
@@ -115,6 +115,14 @@ nextclade \
 --jobs 5
 
 source deactivate nextclade
+
+### Pangolin ###
+
+source activate pangolin 
+
+pangolin $INPUT_DIR/QC/aligntree/sequences.fasta -t 5 --outfile $INPUT_DIR/QC/pangolin.csv --tempdir $INPUT_DIR/QC
+
+source deactivate
 
 ###############################################################################
 # Generate the QC report.
@@ -146,4 +154,4 @@ Rscript \
       ref='$REF_PATH'
     )
   )
-  "
+  " 
