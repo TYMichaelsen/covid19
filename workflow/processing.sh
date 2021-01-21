@@ -54,7 +54,7 @@ AAU_COVID19_PATH="$(dirname "$(readlink -f "$0")")"
 LOG_NAME="$OUTDIR/processing_log_$(date +"%Y-%m-%d_%H-%M").txt"
 echo "processing log" >> $LOG_NAME
 echo "Command: $0 $*" >> $LOG_NAME
-exec &> >(tee -a "$LOG_NAME")
+exec 1>>$LOG_NAME
 exec 2>&1
 
 # Dependencies.
