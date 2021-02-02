@@ -14,7 +14,7 @@ knit: (function(inputFile, encoding) { rmarkdown::render(inputFile, encoding = e
 ### USER SPECIFIED PARAMETERS ##################################################
 
 # Set week to focus at, according to the ISO standard. Can be multiple.
-weeks <- c("2020-W53","2021-W01")
+weeks <- c("2021-W02","2021-W03")
 
 # !OBS: The linelist, genome metadata and phylogenetic tree are automatically loaded from the latest data build.
 ```
@@ -240,7 +240,7 @@ clade_freq <- meta_ll %>%
   arrange(-n)
 ```
 
-```{r plot_variants_time, fig.height=10, fig.width = 12, dpi=300}
+```{r plot_variants_time, fig.height=13, fig.width = 12, dpi=300}
 # Make a nation-wide figure, all variants >=20.
 d_clades_week <- filter(meta_ll, !is.na(clade) & date_linelist <= date_rng[2] & is.na(sequence_exclude)) %>%
   filter(!is.na(variant_no)) %>%
@@ -325,17 +325,23 @@ if (nrow(clade_freq) == 0){
 
 \newpage
 ## B.1.1.7
-Figuren nedenfor viser den geografiske spredning for alle B.1.1.7 observationer i uge `r weeks`.
+Figuren nedenfor viser den geografiske spredning for alle B.1.1.7 observationer i uge `r weeks`. De største undergrupper af unikke varianter tilhørende B.1.1.7 (20I/501Y.V1) er fremhævet i figuren
 
 ```{r plot_clusers_map_voc, fig.height=7, fig.width = 7, dpi=300}
+voc_major_clusters <- unique(d_clades_week$variant_no[d_clades_week$clade == "20I/501Y.V1" ])
+
 meta_map_voc <- meta_ll %>% 
   filter(date_linelist >= date_rng[1]  & date_linelist <= date_rng[2] &
            is.na(sequence_exclude) & clade == "20I/501Y.V1") %>%
-  mutate(variant_name = "B.1.1.7") %>% 
+  mutate(variant_name = ifelse(variant_no %in% voc_major_clusters, 
+                               variant_no,
+                               "Andre B.1.1.7")) %>% 
   group_by(variant_name) %>%
   mutate(n = n()) %>%
   ungroup() %>%
-  mutate(variant_name = paste0(variant_name," (n = ",n,")"))
+  mutate(variant_name = paste0(variant_name," (n = ",n,")")) %>% 
+  #mutate(variant_name = factor(variant_name, levels = rev(sort(unique(variant_name))))) %>% 
+  arrange(desc(variant_name))
 
 p <- ggplot(data = meta_map_voc, aes(x= zip_lon, y = zip_lat, color = variant_name)) +
   #p <- ggplot(data = meta_map, aes(x= lon_adr, y = lat_adr, color = variant_no)) +
@@ -347,6 +353,31 @@ p <- ggplot(data = meta_map_voc, aes(x= zip_lon, y = zip_lat, color = variant_na
   theme_void() +
   theme(legend.position = c(1,1),legend.justification = c(1.5,1.5))
 p
+```
+
+\newpage
+PÅ figuren nedenfor vises fordelingen over tid for cluster B.1.1.7 mod andre hyppige aminosyre mutationer.
+```{r, fig.height=7, fig.width = 7, dpi=300}
+plot_data <- meta_ll %>% filter(is.na(sequence_exclude) & !is.na(clade)) %>% select(firstDayWeek, clade, aa_substitutions)
+
+plot_data$variant <- ifelse(plot_data$clade ==  "20I/501Y.V1", "B1.1.7", "Andre varianter")
+plot_data$variant[grepl("S:A222V", plot_data$aa_substitutions)] <- "S:A222V" 
+plot_data$variant[grepl("S:S477N", plot_data$aa_substitutions)] <- "S:S477N"
+plot_data$variant[grepl("S:S477N", plot_data$aa_substitutions) & grepl("S:A222V", plot_data$aa_substitutions)] <- "S:S477N & S:A222V"
+
+plot_data %>% group_by(firstDayWeek, variant) %>% 
+  summarize(count = n()) %>% 
+  ggplot(aes(x = firstDayWeek, y = count, fill = variant)) + 
+  geom_bar(stat = "identity", position = "stack") +
+  scale_fill_viridis_d() +
+  scale_x_date(breaks = "1 month",date_labels = "%b") +
+  scale_y_continuous(expand = expansion(mult = c(0,.1))) +
+  #scale_fill_manual(values = unname(branded_colors[c("grey","yellow","blue")])) +
+  labs(x = "",y = "Antal genomer",fill = "") +
+  theme_classic(base_size = 12) +
+  theme(
+    legend.position      = c(0.01,1),
+    legend.justification = c(0,1))
 ```
 
 
