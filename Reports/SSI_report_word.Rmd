@@ -52,11 +52,47 @@ date_rng <- paste0(weeks,c("-1","-7")) %>%
 
 # Previous week
 date_rng_prev <- c(min(date_rng)-7, min(date_rng -1))
+
+branded_colors <- list(
+  "blue"   = "#00798c",
+  "red"    = "#d1495b",
+  "yellow" = "#edae49",
+  "green"  = "#66a182",
+  "navy"   = "#2e4057", 
+  "grey"   = "#8d96a3"
+)
+
 ```
 
 ```{r read_data}
 # Read data
-source("read_data.R")
+#source("read_data.R")
+
+# Select the most recent linelist data.
+tmp <- list.files("/srv/rbd/covid19/metadata",pattern = "linelist") %>%  
+  str_split(string = .,pattern = "_linelist") %>%  
+  .[[1]] 
+
+timestmp      <- tmp[1]
+timestmp_ll   <- tmp[2] %>%   sub(".tsv","",x = .) %>%  as.Date()
+
+### Load the data.--------------------------------------------------------------
+
+# Linelist
+meta_ll <- read_tsv(file = list.files("/srv/rbd/covid19/metadata",
+                                      pattern = "linelist",
+                                      full.names = T),
+                    guess_max = 100000) %>% 
+  filter(host == "human"| is.na(host)) %>% 
+  filter(is.na(metadata_exclude)) %>% 
+  mutate(
+    genome_qc    = factor(genome_qc,levels = c("HQ","MQ","Fail")),
+    firstDayWeek = {floor_date(date_linelist,"week", week_start = 1)} %>% as.Date())
+    #clade        = sub("/.*","",x = clade))
+
+# Misc data.--------------------------------------------------------------------
+# For plotting denmark.
+dk_nuts2 <- read_delim(file = "/srv/rbd/ma/test/maps/DK_NUTS2.txt", delim ="\t")
 ```
 
 ```{r, eval = T}
@@ -150,7 +186,6 @@ nDirMutOld <- meta_ll %>% filter(date_linelist < date_rng[1] &
 I denne rapport indgår data fra perioden `r format(min(meta_ll$date_linelist), '%d-%m-%Y')` til `r format(date_rng[2], '%d-%m-%Y')`. Der er særligt fokus på uge `r weeks` (`r format(date_rng[1], '%d-%m-%Y')` til `r format(date_rng[2], '%d-%m-%Y')`). Data der anvendes i denne rapport inkluderer:
 
 * Metadata fra linelisten, senest opdateret d. `r format(as.Date(timestmp_ll), '%d-%m-%Y')`
-* Fylogenetisk træ, senest opdateret d. `r format(as.Date(timestmp_nxt), '%d-%m-%Y')`
 
 Data for perioden indeholder `r nPos` positive prøver, hvoraf der er sekventeret virus fra `r nSeq`. Dette gav anledning til `r nGenomes` genomer, hvoraf `r nGenomesThisWeek` er tilføjet i uge `r weeks`. Samtlige genomer fordeler sig på `r nDirMut` unikke variantkombinationer mod `r nDirMutOld` i ugen før.
 
@@ -221,13 +256,6 @@ plot(p)
 
 # Tidsmæssig fordeling af unikke varianter
 Figuren nedenfor viser udviklingen af varianter over tid. Rækker angiver varianter (ens genomer) sorteret indenfor de overordnede virusklader, mens søjlerne angiver fortløbende uger siden starten af epidemien. De enkelte varianter er arbitrært navngivne, og størrelsen på punktet angiver hvor mange sekventerede prøver der var for den givne variant/uge, mens farven angiver hvor stor en procentdel af det samlede antal prøver i en uge en variant udgør. 
-
-```{r, eval = F}
-### Change some variants to VOC2020
-meta_ll <- meta_ll %>% 
-  mutate(variant_name = ifelse(voc2020, "VOC-202012/01" ,variant_name),
-         variant_no = ifelse(voc2020, "VOC-202012/01",variant_no))
-```
 
 
 ```{r filter_variants_time}
