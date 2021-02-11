@@ -1,0 +1,10 @@
+{
+  "data_file":"",
+  "data_save_path":"",
+  "data_server_path":"",
+  "stats_file":"",
+  "stats_server_path":"",
+  "stats_save_path":"",
+  "log_filepath":"",
+  "host":"", "user":"", "password":""
+}

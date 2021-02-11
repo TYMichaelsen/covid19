@@ -1,31 +1,28 @@
-import csv
-import uuid
 import re
+import logging 
+import uuid
+import pandas as pd
+import numpy as np
+import math
+from datetime import datetime, timedelta
 
-from pandas import read_excel
-from datetime import date, datetime, timedelta
-from enum import Enum
-
-CONFIG_FILEPATH = "/srv/rbd/mp/covid19/bi_system/config.json"
-
-QUERY =     'SELECT P.ssi_id, date, C.low_res_clade, R.code, R.longitude, R.latitude, day(date), month(date), year(date)' \
-            'FROM Persons P LEFT OUTER JOIN Municipalities M ON P.MunicipalityCode=M.code LEFT OUTER JOIN NUTS3_Regions R ON M.region=R.code ' \
-            'JOIN Clade_assignment C ON P.ssi_id =  C.ssi_id ' \
-            ';'
+LOGGER = logging.getLogger("to microreact")
 
 class FIELD():
       ID = "ID"
       orig_id = "orig_id"
       sample_date = "sample_date"
-      epi_week= "epi_weel"
+      epi_week= "epi_week"
       country="country"
-      region="region__autocolor"
+      region="region"
+      region_name="region__autocolor"
       lineage="lineage__autocolor"
       latitude="latitude"
       longitude="longitude"
       day="day"
       month="month"
       year="year"
+      age_group="age_group"
 
 def execute_query(connection, query):
       cursor = connection.cursor()
@@ -35,31 +32,29 @@ def execute_query(connection, query):
       assert len(records) > 0, "Query resulted in 0 records."
       return records
 
-def convert_to_microreact_format(data):
-      formatted_data = []
-      epidemic_start_date = _get_epi_start_date(data)
-      for e in data:
-            week_start_date = _get_first_day_of_week(e[1])
-            data_obj = {
-                  FIELD.ID:str(uuid.uuid4()),
-                  FIELD.orig_id:e[0],
-                  FIELD.sample_date:e[1].isocalendar()[1],
-                  FIELD.epi_week:_get_epi_week(e[1], epidemic_start_date),
-                  FIELD.country:"DK01",
-                  FIELD.region:e[3],
-                  FIELD.lineage:e[2],
-                  FIELD.latitude:e[5],
-                  FIELD.longitude:e[4],
-                  FIELD.day:week_start_date.day,
-                  FIELD.month:week_start_date.month,
-                  FIELD.year:week_start_date.year
-            }
-            formatted_data.append(data_obj)
-      return formatted_data
+def convert_to_microreact_format(df):
+      LOGGER.info('Converting metadatada to microreact format...')
+      df['date'] = df['date'].apply(lambda x: datetime.strptime(x, '%Y-%m-%d'))
+      df[FIELD.ID] = pd.Series(index=range(len(df.index))).apply(lambda _: str(uuid.uuid4()))
+      df[FIELD.sample_date] = df['date'].apply(lambda x: x.isocalendar()[1])
+      df[FIELD.epi_week] = df['date'].apply(_get_epi_week, args=(min(df['date']),))
+      df[FIELD.country] = pd.Series(index=range(len(df.index))).apply(lambda _: 'Denmark')
+      df[FIELD.day] = df['date'].apply(lambda x: _get_first_day_of_week(x).day)
+      df[FIELD.month] = df['date'].apply(lambda x: _get_first_day_of_week(x).month)
+      df[FIELD.year] = df['date'].apply(lambda x: _get_first_day_of_week(x).year)
+
+      df[FIELD.region] = df['code'].apply(lambda x: x if type(x) == str else 'Unknown')
+      df[FIELD.lineage] = df['clade'].apply(lambda x: x if type(x) == str else 'Unknown')
+      df[FIELD.lineage] = df[FIELD.lineage].apply(lambda x: x.split('/')[0])
+
+      df = df.rename(columns={'strain':FIELD.orig_id, 'NUTS2_name':FIELD.region_name})
+      df = df[[FIELD.ID, FIELD.orig_id, FIELD.sample_date, FIELD.epi_week, FIELD.country, FIELD.region, FIELD.region_name, FIELD.lineage, FIELD.latitude, FIELD.longitude, FIELD.day, FIELD.month, FIELD.year]]  
+
+      return df
 
 def save_tree(config, tree):
       path = config['out_react_nwk']
-      print('Saving tree to {}'.format(path))
+      LOGGER.info('Saving tree to {}'.format(path))
       with open(path, "w") as f:
             f.write(tree)
 
@@ -68,33 +63,56 @@ def get_tree(config):
       with open(path, "r") as f:
             return f.read()
 
-def replace_tree_ids(data, tree):
-    for e in data:
-        replacement_id = e[FIELD.ID]
-        original_id = e[FIELD.orig_id]
+def replace_tree_ids(df, tree):
+      LOGGER.info('Replacing Tree IDs with generrated UUIDs...')
+      for _,row in df.iterrows():
+            replacement_id = row[FIELD.ID]
+            original_id = row[FIELD.orig_id]
 
-        match_idx = _find_replacement_idx(tree, original_id)
-        if match_idx == -1:
-            print("Failed to find and replace ID: {}".format(original_id))
-            continue
+            match_idx = _find_replacement_idx(tree, original_id)
+            if match_idx == -1:
+                  LOGGER.warning("Failed to find and replace ID: {}".format(original_id))
+                  continue
 
-        tree = tree[:match_idx] + replacement_id + tree[match_idx + len(original_id):]
-    return tree
+            tree = tree[:match_idx] + replacement_id + tree[match_idx + len(original_id):]
+      return tree
 
-def filter_data_by_min_cases(data, config, min_cases=3):
-      cases = _get_cases_per_region_week(config['raw_ssi_file'])
+def filter_data_by_min_cases(df, config, min_cases=3):
+      LOGGER.info('Filtering data with minimum number of cases per week and region (min number of cases - {})...'.format(min_cases))
+      cases = _get_cases_per_region_week(config)
       filtered_data = []
-      skipped_ids = []
-      for example in data:
-            match = cases.loc[(cases['Week'] == example[FIELD.sample_date]) & (cases['NUTS3Code'] == example[FIELD.region])]
+      skipped_ids = {}
+
+      region_less = []
+
+      for _,example in df.iterrows():
+            if example[FIELD.region] == 'Unknown':
+                  region_less.append(example.to_dict())
+                  continue
+      
+            match = cases.loc[(cases[FIELD.sample_date] == example[FIELD.sample_date]) & (cases[FIELD.region] == example[FIELD.region])]
             if len(match.index) != 1:
-                  print("Cases did not properly match the example, continuing... (cases: {}, id: {})".format(len(match.index), example[FIELD.orig_id]))
-                  skipped_ids.append(example[FIELD.ID])
+                  LOGGER.warning("Cases did not properly match the example, continuing... (cases: {}, id: {})".format(len(match.index), example[FIELD.orig_id]))
+                  skipped_ids[example[FIELD.ID]] = example[FIELD.lineage]
                   continue
+            
             if match['Cases'].iloc[0] < min_cases:
-                  skipped_ids.append(example[FIELD.ID])
+                  LOGGER.warning('Example with id: {} does not satisfy minimum number of cases. Cases: {}'.format(example[FIELD.orig_id], len(match.index)))
+                  skipped_ids[example[FIELD.ID]] = example[FIELD.lineage]
                   continue
-            filtered_data.append(example)
+
+            filtered_data.append(example.to_dict())
+
+      if len(region_less) < min_cases:
+            LOGGER.warning('There are less than {} cases without region - skipping...'.format(min_cases))
+            for example in region_less:
+                  skipped_ids[example[FIELD.ID]] = example[FIELD.lineage]
+      else:
+            LOGGER.info('Appending region less cases...')
+            filtered_data.extend(region_less)
+
+      LOGGER.info('Data entries after filtering: {}'.format(len(filtered_data)))
+      LOGGER.info('Skipped entries: {}'.format(len(skipped_ids)))
       return filtered_data, skipped_ids
 
 def get_unmatched_ids_in_tree(tree, id_prefix_lst):
@@ -112,31 +130,29 @@ def add_empty_records(data, skipped_ids):
             empty_data_obj = {
                   FIELD.ID:skipped_id,
                   FIELD.orig_id:None,
-                  FIELD.sample_date:None,
-                  FIELD.epi_week:None,
-                  FIELD.country:None,
-                  FIELD.region:None,
-                  FIELD.lineage:None,
-                  FIELD.latitude:None,
-                  FIELD.longitude:None,
-                  FIELD.day:None,
-                  FIELD.month:None,
-                  FIELD.year:None
+                  FIELD.sample_date:'Unknown',
+                  FIELD.epi_week:'0',
+                  FIELD.country:'Denmark',
+                  FIELD.region_name:'Unknown',
+                  FIELD.region:'Unknown',
+                  FIELD.lineage:skipped_ids[skipped_id],
+                  FIELD.latitude:'Unknown',
+                  FIELD.longitude:'Unknown',
+                  FIELD.day:'Unknown',
+                  FIELD.month:'Unknown',
+                  FIELD.year:'Unknown',
             }
             data.append(empty_data_obj)
       return data
 
 def save_csv(config, data):
       path = config['out_react_tsv']
-      print('Saving data to {}'.format(path))
-      with open(path, "w") as f:
-            writer = csv.DictWriter(f,
-                  fieldnames=[FIELD.ID, FIELD.sample_date, FIELD.epi_week, FIELD.country, FIELD.region, FIELD.lineage, FIELD.latitude, FIELD.longitude, 
-                        FIELD.day, FIELD.month, FIELD.year])
-            writer.writeheader()
-            for data_obj in data:
-                  del data_obj[FIELD.orig_id]
-                  writer.writerow(data_obj)
+      LOGGER.info('Saving data to {}'.format(path))
+
+      df = pd.DataFrame(data)
+      df = df.drop(columns=[FIELD.orig_id, FIELD.region], axis=1)
+
+      df.to_csv(path, sep='\t', index=False)
 
 def _get_first_day_of_week(date):
       return date - timedelta(days=date.weekday())
@@ -146,17 +162,12 @@ def _get_epi_week(infected_date, epidemic_start_date):
       w_start_epidemic = epidemic_start_date - timedelta(days=epidemic_start_date.weekday())
       return (_get_first_day_of_week(w_start_infected) - _get_first_day_of_week(w_start_epidemic)).days / 7
 
-def _get_epi_start_date(data): 
-      return min(e[1] for e in data)
-
-def _datestr_to_week_func():
-      return lambda date: datetime.strptime(date, '%Y-%m-%d').isocalendar()[1]
-
-def _get_cases_per_region_week(linelist_filepath):
-      linelist=read_excel(linelist_filepath)
-      assert linelist.empty == False
-      linelist['Week']=linelist['SampleDate'].apply(_datestr_to_week_func())
-      return linelist.groupby(['Week', 'NUTS3Code']).size().reset_index(name="Cases")
+def _get_cases_per_region_week(config):
+      df = pd.read_csv(config['raw_ssi_file'], sep='\t')
+      df[FIELD.sample_date] = df['date_linelist'].apply(lambda x: datetime.strptime(x, '%Y-%m-%d'))
+      df[FIELD.sample_date] = df[FIELD.sample_date].apply(lambda x: x.isocalendar()[1])
+      df[FIELD.region] = df['NUTS3Code'].apply(lambda x: str(x)[:-1] if 'DK' in str(x) else 'Unknown')
+      return df.groupby([FIELD.sample_date, FIELD.region]).size().reset_index(name="Cases")
 
 def _find_replacement_idx(tree, key):
       for match in re.finditer(key, tree):
