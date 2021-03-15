@@ -8,6 +8,11 @@ shopt -s extglob
 
 while : ; do
   
+  # Backup metadata.
+  rsync -arv --log-file=/srv/backup/backup.log /srv/rbd/covid19/metadata/ /srv/backup/metadata
+
+  /srv/rbd/covid19/metadata  
+
   # List all batches processed so far. Criteria for backed up proccesed is a non-empty consensus.fasta in /final_output/ folder.
   batches=$(for batch in $(ls -dtr /srv/rbd/covid19/processing/?J*/) $(ls -dtr /srv/data_1/?J*/) $(ls -dtr /srv/data_1/gridion/?J*/); do
     if [ -s $batch/final_output/consensus.fasta ]; then
@@ -22,8 +27,8 @@ while : ; do
 
   done 
   
-  # Wait 3 hours and do it again.
-  sleep 3h
+  # Wait 12 hours and do it again.
+  sleep 12h
 
 done
   
