@@ -9,6 +9,8 @@ cd /srv/rbd/covid19/processing
 # - /srv/rbd/covid19/processing
 # - /srv/data_1
 # - /srv/data_1/gridion
+# - /srv/data_2
+# - /srv/data_2/gridion
 
 # If a new batch is present, it monitors for a while -
 # if the folder has enough data it starts the covid19_workflow.sh script.
@@ -37,7 +39,7 @@ while : ; do
   CUR_TIME=$(date +%H%M | sed 's/^0*//')
 
   # List all batches processed so far. Criteria for proccesed is a non-empty consensus.fasta in /final_output/ folder.
-  for batch in $(ls -dtr /srv/rbd/covid19/processing/?J*/ /srv/data_1/?J*/ /srv/data_1/gridion/?J*/); do
+  for batch in $(ls -dtr /srv/rbd/covid19/processing/?J*/ /srv/data_1/?J*/ /srv/data_1/gridion/?J*/ /srv/data_2/?J*/ /srv/data_2/gridion/?J*/); do
     if [ -s $batch/final_output/consensus.fasta ]; then
       echo $batch
     fi
@@ -46,7 +48,7 @@ while : ; do
   chmod 777 /srv/rbd/covid19/processing/processed.txt
 
   # List all batches NOT processed.
-  comm -23 <(ls -d /srv/rbd/covid19/processing/?J*/ /srv/data_1/?J*/ /srv/data_1/gridion/?J*/ | sort) <(sort /srv/rbd/covid19/processing/processed.txt) > /srv/rbd/covid19/processing/missing.txt
+  comm -23 <(ls -d /srv/rbd/covid19/processing/?J*/ /srv/data_1/?J*/ /srv/data_1/gridion/?J*/ /srv/data_2/?J*/ /srv/data_2/gridion/?J*/ | sort) <(sort /srv/rbd/covid19/processing/processed.txt) > /srv/rbd/covid19/processing/missing.txt
 
   chmod 777 /srv/rbd/covid19/processing/missing.txt
 
