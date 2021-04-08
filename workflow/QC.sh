@@ -104,6 +104,23 @@ augur tree \
  
 source deactivate nextstrain
 
+# Function to add version to nextclade and pangolin.
+add_vers() {
+  file=$1
+  vers_string=$2
+  delim=$3
+  colname_string=$4
+
+  awk -F$delim -v vers=$vers_string -v colname=$colname_string -v delimiter=$delim '
+    BEGIN {OFS=delimiter}
+    NR == 1 {gsub(/\r/,"",$0); print $0,colname"\r"} 
+    NR > 1 {gsub(/\r/,"",$0); print $0,vers"\r"}
+  ' $file > tmpfile
+  
+  mv tmpfile $file
+}
+export -f add_vers
+
 ### Nextclade ###
 
 source activate nextclade 
@@ -113,6 +130,11 @@ nextclade \
 --input-fasta $INPUT_DIR/QC/aligntree/sequences.fasta \
 --output-tsv $INPUT_DIR/QC/nextclade.tsv \
 --jobs 5
+ 
+# Add nextclade version to table. 
+nxtclade_vers=$(nextclade --version)
+
+add_vers $INPUT_DIR/QC/nextclade.tsv $nxtclade_vers "\t" nextclade_version
 
 source deactivate nextclade
 
@@ -120,7 +142,12 @@ source deactivate nextclade
 
 source activate pangolin 
 
-pangolin $INPUT_DIR/QC/aligntree/sequences.fasta -t 5 --outfile $INPUT_DIR/QC/pangolin.csv --tempdir $INPUT_DIR/QC
+pangolin $INPUT_DIR/QC/aligntree/sequences.fasta -t 1 --outfile $INPUT_DIR/QC/pangolin.csv --tempdir $INPUT_DIR/QC
+
+# Add pangolin version to table. 
+pangolin_vers=$(sed 's/.*\s//' <(pangolin --version))
+
+add_vers $INPUT_DIR/QC/pangolin.csv $pangolin_vers , pangolin_version
 
 source deactivate
 
